@@ -11,7 +11,7 @@ import SwiftUI
 struct DurigoApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            BillGenerator()
         }
     }
 }

@@ -57,7 +57,8 @@ struct Bill: View {
                         Text("Total: ₹\(finalTotal)")
                             .font(.system(size: 20))
                             .bold()
-                        if let uiImage = "upi://pay?pa=9545925489@okbizaxis&pn=Durigo&am=\(String(currentMenuItems.getTotal())).00".getQRCodeImage() {
+                        //"upi://pay?pa=9545925489@okbizaxis&pn=Durigo&am=\(String(currentMenuItems.getTotal())).00"
+                        if let uiImage = "upi://pay?pa=9545925489@okbizaxis&pn=Durigo".getQRCodeImage() {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .frame(width: 50, height: 50)
@@ -108,7 +109,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: 17, name: "Item 18", quantity: 1, price: 100),
                 MenuItem(id: 18, name: "Item 19", quantity: 1, price: 100),
                 MenuItem(id: 19, name: "Item 20", quantity: 1, price: 100)
-            ], first: false, finalTotal: nil)
+            ], first: true, finalTotal: 270)
                 .frame(width: 420, height: 595)
                 .background(Color.white)
             Spacer()

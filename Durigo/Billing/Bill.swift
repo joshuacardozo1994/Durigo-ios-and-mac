@@ -109,7 +109,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: 17, name: "Item 18", quantity: 1, price: 100),
                 MenuItem(id: 18, name: "Item 19", quantity: 1, price: 100),
                 MenuItem(id: 19, name: "Item 20", quantity: 1, price: 100)
-            ], first: true, finalTotal: 270)
+            ], first: false, finalTotal: nil)
                 .frame(width: 420, height: 595)
                 .background(Color.white)
             Spacer()

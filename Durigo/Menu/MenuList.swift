@@ -17,7 +17,7 @@ struct MenuList: View {
             return categories
         } else {
             let filteredCategories = categories.map { category in
-                Category(id: category.id, type: category.type, name: category.name, dishes: category.dishes.filter({ item in
+                Category(id: category.id, type: category.type, name: category.name, menus: category.menus.filter({ item in
                     item.name.lowercased().contains(searchQuery.lowercased())
                 }))
                 
@@ -25,7 +25,7 @@ struct MenuList: View {
             }
             print(filteredCategories)
             return filteredCategories.filter { category in
-                !category.dishes.isEmpty
+                !category.menus.isEmpty
             }
         }
     }
@@ -38,10 +38,10 @@ struct MenuList: View {
                 .padding()
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
                 .padding()
-            
-            List(getFilteredResults() ?? [Category.placeholder, Category.placeholder]) { category in
+            let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
+            List(items) { category in
                 Section {
-                    ForEach(category.dishes) { menuItem in
+                    ForEach(category.menus) { menuItem in
                         HStack {
                             if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
                                 Text("\(quantity.wrappedValue)")

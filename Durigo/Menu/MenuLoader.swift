@@ -35,5 +35,51 @@ class MenuLoader: ObservableObject {
         }
         
     }
+    
+    @MainActor
+    func loadServerMenu() async {
+        enum CategoryType: String, Decodable {
+            case food
+            case drinks
+        }
+        struct Category: Decodable {
+            let name: String
+            let id: UUID
+            let type: CategoryType
+            let description: String?
+        }
+        do {
+            let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
+            let decoder = JSONDecoder()
+            let menu = try decoder.decode([Category].self, from: data)
+            print("menu", menu)
+        } catch {
+            print("error")
+        }
+        
+    }
+    
+    @MainActor
+    func addCategory() async {
+        enum CategoryType: String, Decodable {
+            case food
+            case drinks
+        }
+        struct Category: Decodable {
+            let name: String
+            let id: UUID
+            let type: CategoryType
+            let description: String?
+        }
+        do {
+            let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
+            let decoder = JSONDecoder()
+            let menu = try decoder.decode([Category].self, from: data)
+            print("menu", menu)
+        } catch {
+            print("error")
+        }
+        
+    }
 
 }

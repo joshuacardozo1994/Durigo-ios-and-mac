@@ -89,26 +89,26 @@ struct Bill_Previews: PreviewProvider {
         VStack {
             Spacer()
             Bill(currentMenuItems: [
-                MenuItem(id: 0, name: "Soda", quantity: 1, price: 20),
-                MenuItem(id: 1, name: "Fresh Lemon Soda", quantity: 2, price: 90),
-                MenuItem(id: 2, name: "Virgin Mojito", quantity: 1, price: 220),
-                MenuItem(id: 3, name: "Chonok", quantity: 1, price: 500),
-                MenuItem(id: 4, name: "Chilli Chicken", quantity: 2, price: 250),
-                MenuItem(id: 5, name: "Chicken Pulao", quantity: 1, price: 200),
-                MenuItem(id: 6, name: "Beef Soup", quantity: 1, price: 160),
-                MenuItem(id: 7, name: "Mackerel", quantity: 2, price: 180),
-                MenuItem(id: 8, name: "Ice Cream", quantity: 1, price: 100),
-                MenuItem(id: 9, name: "Caramel Pudding", quantity: 1, price: 100),
-                MenuItem(id: 10, name: "Pankcakes", quantity: 2, price: 100),
-                MenuItem(id: 11, name: "Item 12", quantity: 1, price: 100),
-                MenuItem(id: 12, name: "Item 13", quantity: 1, price: 100),
-                MenuItem(id: 13, name: "Item 14", quantity: 1, price: 100),
-                MenuItem(id: 14, name: "Item 15", quantity: 1, price: 100),
-                MenuItem(id: 15, name: "Item 16", quantity: 1, price: 100),
-                MenuItem(id: 16, name: "Item 17", quantity: 1, price: 100),
-                MenuItem(id: 17, name: "Item 18", quantity: 1, price: 100),
-                MenuItem(id: 18, name: "Item 19", quantity: 1, price: 100),
-                MenuItem(id: 19, name: "Item 20", quantity: 1, price: 100)
+                MenuItem(id: UUID(), name: "Soda", quantity: 1, price: 20),
+                MenuItem(id: UUID(), name: "Fresh Lemon Soda", quantity: 2, price: 90),
+                MenuItem(id: UUID(), name: "Virgin Mojito", quantity: 1, price: 220),
+                MenuItem(id: UUID(), name: "Chonok", quantity: 1, price: 500),
+                MenuItem(id: UUID(), name: "Chilli Chicken", quantity: 2, price: 250),
+                MenuItem(id: UUID(), name: "Chicken Pulao", quantity: 1, price: 200),
+                MenuItem(id: UUID(), name: "Beef Soup", quantity: 1, price: 160),
+                MenuItem(id: UUID(), name: "Mackerel", quantity: 2, price: 180),
+                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),
+                MenuItem(id: UUID(), name: "Item 12", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 13", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 14", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 15", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
             ], first: false, finalTotal: nil)
                 .frame(width: 420, height: 595)
                 .background(Color.white)

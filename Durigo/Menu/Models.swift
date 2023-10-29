@@ -8,7 +8,7 @@
 import Foundation
 
 struct MenuItem: Identifiable, Equatable {
-    var id: Int
+    var id: UUID
     var name: String
     var quantity: Int
     var price: Int
@@ -24,27 +24,27 @@ extension Array where Element == MenuItem {
     }
 }
 
-enum FoodType: Int, Decodable {
-    case drinks = 1
-    case food = 2
+enum FoodType: String, Decodable {
+    case drinks
+    case food
 }
 
 struct Category: Decodable, Identifiable {
-    struct Dish: Decodable, Identifiable {
-        let id: Int
+    struct Menu: Decodable, Identifiable {
+        let id: UUID
         let name: String
-        let price: Int?
+        let price: Int
         let subtext: String?
     }
     
-    let id: Int
+    let id: UUID
     let type: FoodType
     let name: String
-    let dishes: [Dish]
+    let menus: [Menu]
     
     static var placeholder: Category {
-        let dishes = (1...7).map { _ in Category.Dish(id: Int.random(in: 1...1000), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil) }
-        let category = Category(id: Int.random(in: 1...1000), type: .drinks, name: "XXXXXX", dishes: dishes)
+        let menus = (1...7).map { _ in Category.Menu(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil) }
+        let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", menus: menus)
         return category
     }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */; };
 		E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */; };
 		E7ED3A162AEAE9AE00F2DDA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */; };
 		E7ED3A1A2AEAE9AE00F2DDA8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A192AEAE9AE00F2DDA8 /* Preview Assets.xcassets */; };
@@ -14,32 +15,14 @@
 		E7ED3A2E2AEAE9AE00F2DDA8 /* DurigoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A2D2AEAE9AE00F2DDA8 /* DurigoUITests.swift */; };
 		E7ED3A302AEAE9AE00F2DDA8 /* DurigoUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A2F2AEAE9AE00F2DDA8 /* DurigoUITestsLaunchTests.swift */; };
 		E7ED3A3E2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A3D2AEAE9FC00F2DDA8 /* BillGenerator.swift */; };
-		E7ED3A3F2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A3D2AEAE9FC00F2DDA8 /* BillGenerator.swift */; };
-		E7ED3A402AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A3D2AEAE9FC00F2DDA8 /* BillGenerator.swift */; };
 		E7ED3A422AEAEA9C00F2DDA8 /* Bill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A412AEAEA9C00F2DDA8 /* Bill.swift */; };
-		E7ED3A432AEAEA9C00F2DDA8 /* Bill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A412AEAEA9C00F2DDA8 /* Bill.swift */; };
-		E7ED3A442AEAEA9C00F2DDA8 /* Bill.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A412AEAEA9C00F2DDA8 /* Bill.swift */; };
 		E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A472AEAEAC400F2DDA8 /* BillPreview.swift */; };
-		E7ED3A492AEAEAC400F2DDA8 /* BillPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A472AEAEAC400F2DDA8 /* BillPreview.swift */; };
-		E7ED3A4A2AEAEAC400F2DDA8 /* BillPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A472AEAEAC400F2DDA8 /* BillPreview.swift */; };
 		E7ED3A4E2AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4B2AEAEADE00F2DDA8 /* MenuLoader.swift */; };
-		E7ED3A4F2AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4B2AEAEADE00F2DDA8 /* MenuLoader.swift */; };
-		E7ED3A502AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4B2AEAEADE00F2DDA8 /* MenuLoader.swift */; };
 		E7ED3A512AEAEADE00F2DDA8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4C2AEAEADE00F2DDA8 /* Models.swift */; };
-		E7ED3A522AEAEADE00F2DDA8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4C2AEAEADE00F2DDA8 /* Models.swift */; };
-		E7ED3A532AEAEADE00F2DDA8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4C2AEAEADE00F2DDA8 /* Models.swift */; };
 		E7ED3A542AEAEADE00F2DDA8 /* MenuList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4D2AEAEADE00F2DDA8 /* MenuList.swift */; };
-		E7ED3A552AEAEADE00F2DDA8 /* MenuList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4D2AEAEADE00F2DDA8 /* MenuList.swift */; };
-		E7ED3A562AEAEADE00F2DDA8 /* MenuList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A4D2AEAEADE00F2DDA8 /* MenuList.swift */; };
 		E7ED3A5B2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A592AEAEB1F00F2DDA8 /* Date+Extensions.swift */; };
-		E7ED3A5C2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A592AEAEB1F00F2DDA8 /* Date+Extensions.swift */; };
-		E7ED3A5D2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A592AEAEB1F00F2DDA8 /* Date+Extensions.swift */; };
 		E7ED3A5E2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */; };
-		E7ED3A5F2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */; };
-		E7ED3A602AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */; };
 		E7ED3A632AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A622AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf */; };
-		E7ED3A642AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A622AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf */; };
-		E7ED3A652AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A622AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEditor.swift; sourceTree = "<group>"; };
 		E7ED3A0E2AEAE9AC00F2DDA8 /* Durigo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Durigo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurigoApp.swift; sourceTree = "<group>"; };
 		E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -183,6 +167,7 @@
 				E7ED3A4D2AEAEADE00F2DDA8 /* MenuList.swift */,
 				E7ED3A4B2AEAEADE00F2DDA8 /* MenuLoader.swift */,
 				E7ED3A4C2AEAEADE00F2DDA8 /* Models.swift */,
+				E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */,
 			);
 			path = Menu;
 			sourceTree = "<group>";
@@ -327,7 +312,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7ED3A642AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,7 +319,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7ED3A652AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -349,6 +332,7 @@
 				E7ED3A3E2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */,
 				E7ED3A5B2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
 				E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
+				E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */,
 				E7ED3A422AEAEA9C00F2DDA8 /* Bill.swift in Sources */,
 				E7ED3A5E2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */,
 				E7ED3A512AEAEADE00F2DDA8 /* Models.swift in Sources */,
@@ -362,15 +346,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7ED3A3F2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */,
-				E7ED3A5C2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
-				E7ED3A492AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
-				E7ED3A432AEAEA9C00F2DDA8 /* Bill.swift in Sources */,
-				E7ED3A5F2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */,
-				E7ED3A522AEAEADE00F2DDA8 /* Models.swift in Sources */,
-				E7ED3A4F2AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */,
 				E7ED3A242AEAE9AE00F2DDA8 /* DurigoTests.swift in Sources */,
-				E7ED3A552AEAEADE00F2DDA8 /* MenuList.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -378,16 +354,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7ED3A602AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */,
-				E7ED3A442AEAEA9C00F2DDA8 /* Bill.swift in Sources */,
-				E7ED3A502AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */,
-				E7ED3A5D2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
-				E7ED3A562AEAEADE00F2DDA8 /* MenuList.swift in Sources */,
-				E7ED3A402AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */,
 				E7ED3A302AEAE9AE00F2DDA8 /* DurigoUITestsLaunchTests.swift in Sources */,
 				E7ED3A2E2AEAE9AE00F2DDA8 /* DurigoUITests.swift in Sources */,
-				E7ED3A4A2AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
-				E7ED3A532AEAEADE00F2DDA8 /* Models.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

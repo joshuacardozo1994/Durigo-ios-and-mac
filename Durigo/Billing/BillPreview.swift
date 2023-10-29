@@ -35,7 +35,9 @@ struct BillPreview: View {
                         .background(Color.white)
                 }
             }
+            #if os(iOS)
             .tabViewStyle(.page)
+            #endif
         }
         .background(Color.gray.opacity(0.5))
     }

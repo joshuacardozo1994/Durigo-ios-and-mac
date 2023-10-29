@@ -25,7 +25,9 @@ struct BillItem: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             TextField("Price", value: $price, format: .number)
+            #if os(iOS)
                 .keyboardType(.numberPad)
+            #endif
                 .bold()
                 .frame(width: 35)
         }
@@ -54,6 +56,7 @@ struct BillGenerator: View {
                 }
                 Button("Cancel", role: .cancel) {}
             }
+            #if os(iOS)
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarLeading) {
                     EditButton()
@@ -65,6 +68,7 @@ struct BillGenerator: View {
                     printButton
                 }
             }
+            #endif
             .task {
                 await menuLoader.loadMenu()
             }

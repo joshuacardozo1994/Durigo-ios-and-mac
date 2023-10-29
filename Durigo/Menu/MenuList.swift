@@ -58,10 +58,12 @@ struct MenuList: View {
                                         if let subtext = menuItem.subtext {
                                             name += " (\(subtext))"
                                         }
-                                        menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, quantity: 1, price: menuItem.price ?? 0))
+                                        menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, quantity: 1, price: menuItem.price))
                                     }
+                                    #if os(iOS)
                                     let impactMed = UIImpactFeedbackGenerator(style: .medium)
                                     impactMed.impactOccurred()
+                                    #endif
                                 }) {
                                     Image(systemName: "circle")
                                         .padding(4)
@@ -73,7 +75,7 @@ struct MenuList: View {
                                 Text("(\(subtext))")
                                     .italic()
                             }
-                            Text("\(menuItem.price ?? 0)")
+                            Text("\(menuItem.price)")
                                 .bold()
                             Spacer()
                         }

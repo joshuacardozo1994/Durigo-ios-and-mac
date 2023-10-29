@@ -59,10 +59,11 @@ struct Bill: View {
                             .bold()
                         //"upi://pay?pa=9545925489@okbizaxis&pn=Durigo&am=\(String(currentMenuItems.getTotal())).00"
                         if let uiImage = "upi://pay?pa=9545925489@okbizaxis&pn=Durigo".getQRCodeImage() {
+                            #if os(iOS)
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .frame(width: 50, height: 50)
-                            
+                            #endif
                             
                         }
                     }

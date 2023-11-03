@@ -25,6 +25,7 @@ struct BillItem: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             TextField("Price", value: $price, format: .number)
+                .multilineTextAlignment(.trailing)
             #if os(iOS)
                 .keyboardType(.numberPad)
             #endif
@@ -46,6 +47,7 @@ struct BillGenerator: View {
                 billItemsList
                 totalSection
             }
+            .navigationTitle("Bill")
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
             }

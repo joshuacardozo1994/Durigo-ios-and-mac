@@ -43,41 +43,54 @@ struct MenuList: View {
                 Section {
                     ForEach(category.menus) { menuItem in
                         HStack {
-                            if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
-                                Text("\(quantity.wrappedValue)")
-                                    .bold()
-                                    .padding(.trailing, 8)
-                                let _ = print(quantity.wrappedValue)
-                                Stepper("Quantity", value: quantity, in: 0...100)
-                                    .labelsHidden()
-                            } else {
-                                Button(action: {
-                                    if !menuLoader.billItems.contains(where: { $0.name == menuItem.name
-                                    }) {
-                                        var name = menuItem.name
-                                        if let subtext = menuItem.subtext {
-                                            name += " (\(subtext))"
-                                        }
-                                        menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, quantity: 1, price: menuItem.price))
-                                    }
-                                    #if os(iOS)
-                                    let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                                    impactMed.impactOccurred()
-                                    #endif
-                                }) {
-                                    Image(systemName: "circle")
-                                        .padding(4)
+                            HStack {
+                                if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
+                                    Text("\(quantity.wrappedValue)")
+                                        .bold()
+                                } else {
+                                    Text("0").hidden()
                                 }
                             }
-                            
+                            .frame(width: 14)
                             Text(menuItem.name)
+                                .bold()
                             if let subtext = menuItem.subtext {
                                 Text("(\(subtext))")
                                     .italic()
                             }
-                            Text("\(menuItem.price)")
-                                .bold()
                             Spacer()
+                            HStack {
+                                if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
+                                    
+                                    Stepper("Quantity", value: quantity, in: 0...100)
+                                        .labelsHidden()
+                                    
+                                } else {
+                                    Button(action: {
+                                        if !menuLoader.billItems.contains(where: { $0.name == menuItem.name
+                                        }) {
+                                            var name = menuItem.name
+                                            if let subtext = menuItem.subtext {
+                                                name += " (\(subtext))"
+                                            }
+                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, quantity: 1, price: menuItem.price))
+                                        }
+#if os(iOS)
+                                        let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                                        impactMed.impactOccurred()
+#endif
+                                    }) {
+                                        VStack{}
+                                            .padding(4)
+                                    }
+                                }
+                            }
+                            .frame(width: 94)
+                            
+                            
+                            Text("\(menuItem.price)")
+                            
+                            
                         }
                     }
                 } header: {

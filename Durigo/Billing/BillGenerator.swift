@@ -114,6 +114,7 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "plus.circle.fill")
         }
+//        .popoverTip(AddNewItemToBill())
     }
 
     /// Button to show the menu list.
@@ -123,6 +124,7 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "book.pages.fill")
         }
+        .popoverTip(AddItemFromMenu())
     }
 
     /// Button to preview the bill.

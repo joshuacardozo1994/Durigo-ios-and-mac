@@ -18,7 +18,12 @@ struct MenuList: View {
         } else {
             let filteredCategories = categories.map { category in
                 Category(id: category.id, type: category.type, name: category.name, menus: category.menus.filter({ item in
-                    item.name.lowercased().contains(searchQuery.lowercased())
+                    var present = item.name.lowercased().contains(searchQuery.lowercased())
+                    
+                    if let subtext = item.subtext {
+                        present = present || subtext.lowercased().contains(searchQuery.lowercased())
+                    }
+                    return present
                 }))
                 
                 
@@ -34,8 +39,18 @@ struct MenuList: View {
     
     var body: some View {
         VStack {
-            TextField("Menu Item", text: $searchQuery)
-                .padding()
+            HStack {
+                TextField("Menu Item", text: $searchQuery)
+                    .autocorrectionDisabled()
+                    .padding()
+                Button(action: {
+                    searchQuery = ""
+                }) {
+                    Image(systemName: "x.circle")
+                        .padding()
+                }
+            }
+                
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
                 .padding()
             let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]

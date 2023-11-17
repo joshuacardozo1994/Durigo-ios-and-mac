@@ -51,7 +51,6 @@ struct Bill: View {
                             .bold()
                         Text("\(item.name)")
                         VStack{
-                            Spacer()
                             Line()
                                 .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [5]))
                                 .frame(height: 0.5)

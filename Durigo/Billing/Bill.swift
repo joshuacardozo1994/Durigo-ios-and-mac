@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+struct Line: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: rect.width, y: 0))
+        return path
+    }
+}
+
 struct Bill: View {
     let currentMenuItems: [MenuItem]
     var first = true
@@ -37,11 +46,19 @@ struct Bill: View {
             }
             VStack(spacing: 4) {
                 ForEach(currentMenuItems) { item in
-                    HStack {
+                    HStack(alignment: .bottom) {
                         Text("\(item.quantity)")
                             .bold()
                         Text("\(item.name)")
-                        Spacer()
+                        VStack{
+                            Spacer()
+                            Line()
+                                .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [5]))
+                                .frame(height: 0.5)
+                                .opacity(0.2)
+                                .padding(.bottom, 3)
+                            
+                        }
                         Text("₹\(item.price*item.quantity)")
                     }
                 }
@@ -49,7 +66,7 @@ struct Bill: View {
             }
             
             if let finalTotal {
-                Divider()
+//                Divider()
                 
                 //            Spacer()
                 VStack {
@@ -110,7 +127,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
-            ], first: false, finalTotal: nil)
+            ], first: true, finalTotal: 420)
                 .frame(width: 420, height: 595)
                 .background(Color.white)
             Spacer()

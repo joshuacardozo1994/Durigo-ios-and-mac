@@ -20,14 +20,7 @@ struct BillPreview: View {
             GroupedMenu(id: index, items: Array(billItems[index ..< min(index + 20, billItems.count)]))
         }
         VStack {
-            HStack {
-                Spacer()
-                ShareLink("Export PDF", item: render())
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(6)
-                    .padding()
-            }
+            
             TabView {
                 ForEach(groupedArray) { group in
                     Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
@@ -38,6 +31,14 @@ struct BillPreview: View {
             #if os(iOS)
             .tabViewStyle(.page)
             #endif
+            HStack {
+                Spacer()
+                ShareLink("Export PDF", item: render())
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(6)
+                    .padding()
+            }
         }
         .background(Color.gray.opacity(0.5))
     }

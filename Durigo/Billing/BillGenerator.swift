@@ -124,7 +124,6 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "book.pages.fill")
         }
-        .popoverTip(AddItemFromMenu())
     }
 
     /// Button to preview the bill.

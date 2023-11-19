@@ -13,11 +13,12 @@ struct GroupedMenu: Identifiable, Equatable {
 }
 
 struct BillPreview: View {
+    let maxItemCount = 18
     let billItems: [MenuItem]
     var body: some View {
-        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: 20).map { index in
+        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
             
-            GroupedMenu(id: index, items: Array(billItems[index ..< min(index + 20, billItems.count)]))
+            GroupedMenu(id: index, items: Array(billItems[index ..< min(index + maxItemCount, billItems.count)]))
         }
         VStack {
             
@@ -55,9 +56,9 @@ struct BillPreview: View {
             return url
         }
         
-        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: 20).map { index in
+        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
             
-            GroupedMenu(id: index, items: Array(billItems[index ..< min(index + 20, billItems.count)]))
+            GroupedMenu(id: index, items: Array(billItems[index ..< min(index + maxItemCount, billItems.count)]))
         }
         
         // 4: Render each page

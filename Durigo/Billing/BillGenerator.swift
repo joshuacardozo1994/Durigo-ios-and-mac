@@ -70,6 +70,17 @@ struct BillGenerator: View {
                     printButton
                 }
             }
+            #else
+            .toolbar {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    clearButton
+                    addItemButton
+                }
+                ToolbarItemGroup(placement: .secondaryAction) {
+                    menuButton
+                    printButton
+                }
+            }
             #endif
             .task {
                 await menuLoader.loadMenu()

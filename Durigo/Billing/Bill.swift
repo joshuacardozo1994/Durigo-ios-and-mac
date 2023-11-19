@@ -87,8 +87,8 @@ struct Bill: View {
                     
                 }
                 Spacer()
-                Text("Thank you for dining with us! 😀")
-                    .font(.custom("DancingScript-Regular", size: 20))
+                Text("Thanks for dining with us! Enjoy the Cricket World Cup Final 🏏🏆 - may your cheers and our flavors create a winning combo! 🎉")
+                    .font(.custom("DancingScript-Regular", size: 18))
                 
                 
             } else {
@@ -124,8 +124,8 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
+//                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
             ], first: true, finalTotal: 420)
                 .frame(width: 420, height: 595)
                 .background(Color.white)

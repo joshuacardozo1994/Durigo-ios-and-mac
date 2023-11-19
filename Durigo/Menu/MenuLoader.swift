@@ -8,12 +8,12 @@
 import SwiftUI
 
 
-class MenuLoader: ObservableObject {
+@Observable class MenuLoader: ObservableObject {
     private let session = URLSession.shared
     
-    @Published var menu: [Category]?
+    var menu: [Category]?
     
-    @Published private var _billItems: [MenuItem] = [MenuItem]()
+    private var _billItems: [MenuItem] = [MenuItem]()
     var billItems: [MenuItem] {
             get {
                 return _billItems
@@ -31,7 +31,7 @@ class MenuLoader: ObservableObject {
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu
         } catch {
-            print("error")
+            print("error", #file, #function, #line)
         }
         
     }
@@ -54,7 +54,7 @@ class MenuLoader: ObservableObject {
             let menu = try decoder.decode([Category].self, from: data)
             print("menu", menu)
         } catch {
-            print("error")
+            print("error", #file, #function, #line)
         }
         
     }
@@ -77,7 +77,7 @@ class MenuLoader: ObservableObject {
             let menu = try decoder.decode([Category].self, from: data)
             print("menu", menu)
         } catch {
-            print("error")
+            print("error", #file, #function, #line)
         }
         
     }

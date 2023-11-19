@@ -7,12 +7,14 @@
 
 import SwiftUI
 import TipKit
+import SwiftData
 
 @main
 struct DurigoApp: App {
     var body: some Scene {
         WindowGroup {
-            BillGenerator()
+            Home()
         }
+        .modelContainer(for: BillHistoryItem.self)
     }
 }

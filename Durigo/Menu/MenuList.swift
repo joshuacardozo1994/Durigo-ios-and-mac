@@ -28,7 +28,6 @@ struct MenuList: View {
                 
                 
             }
-            print(filteredCategories)
             return filteredCategories.filter { category in
                 !category.menus.isEmpty
             }

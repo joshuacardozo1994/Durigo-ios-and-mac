@@ -37,7 +37,7 @@ struct BillItem: View {
 
 /// Main view for generating bills.
 struct BillGenerator: View {
-    @StateObject private var menuLoader = MenuLoader()
+    @EnvironmentObject private var menuLoader: MenuLoader
     @State private var showingBillClearAlert = false
     @State private var isShowingMenuList = false
 
@@ -51,7 +51,7 @@ struct BillGenerator: View {
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
             }
-            .environmentObject(menuLoader)
+            
             .alert("Are you sure you want to clear the bill", isPresented: $showingBillClearAlert) {
                 Button("Clear", role: .destructive) {
                     menuLoader.billItems.removeAll()

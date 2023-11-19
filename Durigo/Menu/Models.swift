@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import SwiftData
 
-struct MenuItem: Identifiable, Equatable {
+struct MenuItem: Identifiable, Equatable, Hashable, Codable {
     var id: UUID
     var name: String
     var quantity: Int
@@ -46,5 +47,18 @@ struct Category: Decodable, Identifiable {
         let menus = (1...7).map { _ in Category.Menu(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil) }
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", menus: menus)
         return category
+    }
+}
+
+@Model
+class BillHistoryItem: Identifiable {
+    let id: UUID
+    let date: Date
+    let items: [MenuItem]
+    
+    init(items: [MenuItem]) {
+        self.id = UUID()
+        self.date = Date()
+        self.items = items
     }
 }

@@ -7,6 +7,25 @@
 
 import SwiftUI
 
+struct ThankYouMessages {
+    static let messages = [
+        "We're grateful for your visit and look forward to serving you again.",
+        "Thank you for choosing us for your meal today.",
+        "It was a pleasure to host you at our table.",
+        "We hope you enjoyed your dining experience with us.",
+        "Your patronage is appreciated. We can't wait to welcome you back!",
+        "Thank you for your support. We hope to delight you again soon.",
+        "We're thrilled you dined with us. Thank you!",
+        "Thank you for being our guest. We hope your experience was memorable.",
+        "Thank you for allowing us to serve you today.",
+        "We value your visit and hope to see you again very soon."
+    ]
+    
+    static func getRandomMessage() -> String {
+        messages.randomElement() ?? "Thank you for dining with us"
+    }
+}
+
 struct Line: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -65,9 +84,6 @@ struct Bill: View {
             }
             
             if let finalTotal {
-//                Divider()
-                
-                //            Spacer()
                 VStack {
                     HStack(alignment: .center) {
                         Text("Total: ₹\(finalTotal)")
@@ -87,9 +103,9 @@ struct Bill: View {
                     
                 }
                 Spacer()
-                Text("Thanks for dining with us! Enjoy the Cricket World Cup Final 🏏🏆 - may your cheers and our flavors create a winning combo! 🎉")
+                Text(ThankYouMessages.getRandomMessage())
                     .font(.custom("DancingScript-Regular", size: 18))
-                
+                    .padding(.bottom, 8)
                 
             } else {
                 Spacer()
@@ -124,7 +140,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
-//                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
+                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
             ], first: true, finalTotal: 420)
                 .frame(width: 420, height: 595)

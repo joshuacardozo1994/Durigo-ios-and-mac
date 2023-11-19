@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */; };
+		E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED322B0A7AB500132ABA /* ActivityView.swift */; };
+		E730ED352B0AA08800132ABA /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED342B0AA08800132ABA /* Home.swift */; };
+		E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED362B0AA45600132ABA /* BillHistory.swift */; };
+		E730ED392B0AA94900132ABA /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED382B0AA94900132ABA /* Navigation.swift */; };
 		E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */; };
 		E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */; };
 		E7ED3A162AEAE9AE00F2DDA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */; };
@@ -43,6 +48,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistoryList.swift; sourceTree = "<group>"; };
+		E730ED322B0A7AB500132ABA /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		E730ED342B0AA08800132ABA /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
+		E730ED362B0AA45600132ABA /* BillHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistory.swift; sourceTree = "<group>"; };
+		E730ED382B0AA94900132ABA /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
 		E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEditor.swift; sourceTree = "<group>"; };
 		E7ED3A0E2AEAE9AC00F2DDA8 /* Durigo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Durigo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurigoApp.swift; sourceTree = "<group>"; };
@@ -91,6 +101,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E730ED312B0A7A9F00132ABA /* Reusable Views */ = {
+			isa = PBXGroup;
+			children = (
+				E730ED322B0A7AB500132ABA /* ActivityView.swift */,
+			);
+			path = "Reusable Views";
+			sourceTree = "<group>";
+		};
 		E7ED3A052AEAE9AC00F2DDA8 = {
 			isa = PBXGroup;
 			children = (
@@ -118,6 +136,8 @@
 				E7ED3A572AEAEAEC00F2DDA8 /* Shared */,
 				E7ED3A462AEAEAB400F2DDA8 /* Menu */,
 				E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */,
+				E730ED382B0AA94900132ABA /* Navigation.swift */,
+				E730ED342B0AA08800132ABA /* Home.swift */,
 				E7ED3A3C2AEAE9ED00F2DDA8 /* Billing */,
 				E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */,
 				E7ED3A172AEAE9AE00F2DDA8 /* Durigo.entitlements */,
@@ -157,6 +177,8 @@
 				E7ED3A472AEAEAC400F2DDA8 /* BillPreview.swift */,
 				E7ED3A412AEAEA9C00F2DDA8 /* Bill.swift */,
 				E7ED3A3D2AEAE9FC00F2DDA8 /* BillGenerator.swift */,
+				E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */,
+				E730ED362B0AA45600132ABA /* BillHistory.swift */,
 			);
 			path = Billing;
 			sourceTree = "<group>";
@@ -175,6 +197,7 @@
 		E7ED3A572AEAEAEC00F2DDA8 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				E730ED312B0A7A9F00132ABA /* Reusable Views */,
 				E7ED3A612AEAEB5800F2DDA8 /* Fonts */,
 				E7ED3A582AEAEAF800F2DDA8 /* Extensions */,
 			);
@@ -333,10 +356,15 @@
 				E7ED3A5B2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
 				E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
 				E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */,
+				E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */,
+				E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */,
+				E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */,
+				E730ED352B0AA08800132ABA /* Home.swift in Sources */,
 				E7ED3A422AEAEA9C00F2DDA8 /* Bill.swift in Sources */,
 				E7ED3A5E2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */,
 				E7ED3A512AEAEADE00F2DDA8 /* Models.swift in Sources */,
 				E7ED3A4E2AEAEADE00F2DDA8 /* MenuLoader.swift in Sources */,
+				E730ED392B0AA94900132ABA /* Navigation.swift in Sources */,
 				E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */,
 				E7ED3A542AEAEADE00F2DDA8 /* MenuList.swift in Sources */,
 			);
@@ -497,7 +525,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -514,7 +542,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -538,7 +566,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -555,7 +583,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;

@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import SwiftData
+
+
 
 struct GroupedMenu: Identifiable, Equatable {
     let id: Int
@@ -13,20 +16,23 @@ struct GroupedMenu: Identifiable, Equatable {
 }
 
 struct BillPreview: View {
-    let maxItemCount = 18
+    @Query var billHistoryItems: [BillHistoryItem]
+    @Environment(\.modelContext) var modelContext
+    let maxItemCount = 19
     let billItems: [MenuItem]
+    @State private var isShareSheetShowing = false
     var body: some View {
         let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
             
             GroupedMenu(id: index, items: Array(billItems[index ..< min(index + maxItemCount, billItems.count)]))
         }
         VStack {
-            
             TabView {
                 ForEach(groupedArray) { group in
                     Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
                         .frame(width: 420, height: 595)
                         .background(Color.white)
+                        .scaleEffect(UIScreen.main.bounds.width < 420 ? (UIScreen.main.bounds.width/420)*0.9 : 1)
                 }
             }
             #if os(iOS)
@@ -39,9 +45,35 @@ struct BillPreview: View {
                     .background(Color.white)
                     .cornerRadius(6)
                     .padding()
+                
+//                Button(action: {
+//                    isShareSheetShowing = true
+//                    modelContext.insert(BillHistoryItem( items: billItems))
+//                }) {
+//                    
+//                    HStack {
+//                        Image(systemName: "square.and.arrow.up")
+//                        Text("Export PDF")
+//                    }
+//                    .padding()
+//                    .background(Color.white)
+//                    .clipShape(RoundedRectangle(cornerSize: CGSizeMake(6, 6)))
+//                }
+//                .padding()
+//                .popover(isPresented: $isShareSheetShowing) {
+//                    ActivityView(activityItems: [render()])
+//                }
             }
         }
         .background(Color.gray.opacity(0.5))
+        .onAppear {
+            if billHistoryItems.contains(where: { billHistoryItem in
+                billHistoryItem.items == billItems
+            }) {
+                return
+            }
+            modelContext.insert(BillHistoryItem( items: billItems))
+        }
     }
     
     @MainActor func render() -> URL {

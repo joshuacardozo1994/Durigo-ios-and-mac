@@ -497,7 +497,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -538,7 +538,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
 				ENABLE_HARDENED_RUNTIME = YES;

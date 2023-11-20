@@ -29,10 +29,9 @@ struct BillPreview: View {
         VStack {
             TabView {
                 ForEach(groupedArray) { group in
-                    Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
-                        .frame(width: 420, height: 595)
-                        .background(Color.white)
-                        .scaleEffect(UIScreen.main.bounds.width < 420 ? (UIScreen.main.bounds.width/420)*0.9 : 1)
+                        Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
+                            .frame(width: 420, height: 595)
+                            .background(Color.white)
                 }
             }
             #if os(iOS)

@@ -18,7 +18,15 @@ struct BillHistoryList: View {
                         NavigationLink {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
-                            Text(billHistoryItem.date.getTimeInFormat(dateStyle: .long, timeStyle: .short))
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    Text("\(billHistoryItem.items.count) items")
+                                    Text("Total: \(billHistoryItem.items.getTotal().asCurrencyString() ?? "")")
+                                }
+                                .bold()
+                                Text(billHistoryItem.date.getTimeInFormat(dateStyle: .long, timeStyle: .short))
+                                
+                            }
                         }
                         
                     }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DropdownSelector: View {
-    @Binding var selectedOption: Int
+    @Binding var selectedOption: Int?
     let options: [Int]
 
     var body: some View {
@@ -19,10 +19,17 @@ struct DropdownSelector: View {
                 }
             }
         } label: {
-            Text("Table \(selectedOption)")
-                .font(.title)
-                .bold()
-                .tint(Color.primary)
+            if let selectedOption {
+                Text("Table \(selectedOption)")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            } else {
+                Text("Please select a table")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            }
         }
     }
 }
@@ -80,7 +87,7 @@ struct BillGenerator: View {
             
             .alert("Are you sure you want to clear the bill", isPresented: $showingBillClearAlert) {
                 Button("Clear", role: .destructive) {
-                    menuLoader.billItems.removeAll()
+                    menuLoader.resetBill()
                 }
                 Button("Cancel", role: .cancel) {}
             }
@@ -166,11 +173,13 @@ struct BillGenerator: View {
     /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(tableNumber: menuLoader.tableNumber, billItems: menuLoader.billItems)
+            BillPreview(tableNumber: menuLoader.tableNumber, billID: menuLoader.billID, billItems: menuLoader.billItems)
         } label: {
             Image(systemName: "printer.fill")
         }
-        .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 })
+        .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
+                  menuLoader.tableNumber == nil
+        )
     }
 }
 

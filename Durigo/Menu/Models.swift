@@ -53,9 +53,9 @@ struct Category: Decodable, Identifiable {
 @Model
 class BillHistoryItem: Identifiable {
     let id: UUID
-    let date: Date
-    let tableNumber: Int = 0
-    let items: [MenuItem]
+    var date: Date
+    var tableNumber: Int?
+    var items: [MenuItem]
     
     init(items: [MenuItem], tableNumber: Int) {
         self.id = UUID()

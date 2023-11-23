@@ -37,7 +37,7 @@ struct Line: Shape {
 
 struct Bill: View {
     let currentMenuItems: [MenuItem]
-    let tableNumber: Int
+    let tableNumber: Int?
     var first = true
     var finalTotal: Int?
     var body: some View {
@@ -55,8 +55,10 @@ struct Bill: View {
                         .font(.system(size: 11))
                 }
                 .overlay(alignment: .topLeading) {
-                    Text("Table: \(tableNumber)")
-                        .font(.system(size: 11))
+                    if let tableNumber {
+                        Text("Table: \(tableNumber)")
+                            .font(.system(size: 11))
+                    }
                 }
                 
                 Text("+91 9545925489")

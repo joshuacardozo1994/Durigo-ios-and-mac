@@ -18,8 +18,9 @@ struct GroupedMenu: Identifiable, Equatable {
 struct BillPreview: View {
     @Query var billHistoryItems: [BillHistoryItem]
     @Environment(\.modelContext) var modelContext
-    let tableNumber: Int
+    let tableNumber: Int?
     let maxItemCount = 19
+    let billID: UUID
     let billItems: [MenuItem]
     @State private var isShareSheetShowing = false
     var body: some View {
@@ -45,34 +46,20 @@ struct BillPreview: View {
                     .background(Color.white)
                     .cornerRadius(6)
                     .padding()
-                
-//                Button(action: {
-//                    isShareSheetShowing = true
-//                    modelContext.insert(BillHistoryItem( items: billItems))
-//                }) {
-//                    
-//                    HStack {
-//                        Image(systemName: "square.and.arrow.up")
-//                        Text("Export PDF")
-//                    }
-//                    .padding()
-//                    .background(Color.white)
-//                    .clipShape(RoundedRectangle(cornerSize: CGSizeMake(6, 6)))
-//                }
-//                .padding()
-//                .popover(isPresented: $isShareSheetShowing) {
-//                    ActivityView(activityItems: [render()])
-//                }
             }
         }
         .background(Color.gray.opacity(0.5))
         .onAppear {
-            if billHistoryItems.contains(where: { billHistoryItem in
-                billHistoryItem.items == billItems
-            }) {
-                return
+            if var presentbillHistoryItem = billHistoryItems.first(where: { $0.id == billID }) {
+                presentbillHistoryItem.tableNumber = tableNumber
+                presentbillHistoryItem.items = billItems
+                presentbillHistoryItem.date = Date()
+            } else {
+                if let tableNumber {
+                    modelContext.insert(BillHistoryItem( items: billItems, tableNumber: tableNumber))
+                }
             }
-            modelContext.insert(BillHistoryItem( items: billItems, tableNumber: tableNumber))
+            
         }
     }
     
@@ -121,7 +108,7 @@ struct BillPreview: View {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: BillHistoryItem.self, configurations: config)
 
-        return BillPreview(tableNumber: 1, billItems: PreviewData.menuItems)
+        return BillPreview(tableNumber: 1, billID: UUID(), billItems: PreviewData.menuItems)
             .modelContainer(container)
     } catch {
         fatalError("Failed to create model container.")

@@ -18,6 +18,7 @@ struct GroupedMenu: Identifiable, Equatable {
 struct BillPreview: View {
     @Query var billHistoryItems: [BillHistoryItem]
     @Environment(\.modelContext) var modelContext
+    let tableNumber: Int
     let maxItemCount = 19
     let billItems: [MenuItem]
     @State private var isShareSheetShowing = false
@@ -29,7 +30,7 @@ struct BillPreview: View {
         VStack {
             TabView {
                 ForEach(groupedArray) { group in
-                        Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
+                    Bill(currentMenuItems: group.items, tableNumber: tableNumber, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil)
                             .frame(width: 420, height: 595)
                             .background(Color.white)
                 }
@@ -71,7 +72,7 @@ struct BillPreview: View {
             }) {
                 return
             }
-            modelContext.insert(BillHistoryItem( items: billItems))
+            modelContext.insert(BillHistoryItem( items: billItems, tableNumber: tableNumber))
         }
     }
     
@@ -98,7 +99,7 @@ struct BillPreview: View {
             pdf.beginPDFPage(nil)
             
             let renderer = ImageRenderer(content:
-                                            Bill(currentMenuItems: group.items, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil).frame(width: 420, height: 595)
+                                            Bill(currentMenuItems: group.items, tableNumber: tableNumber, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil).frame(width: 420, height: 595)
             )
             
             renderer.render { size, context in
@@ -115,30 +116,14 @@ struct BillPreview: View {
     }
 }
 
-struct BillPreview_Previews: PreviewProvider {
-    static var previews: some View {
-        BillPreview(billItems: [
-            MenuItem(id: UUID(), name: "Soda", quantity: 1, price: 20),
-            MenuItem(id: UUID(), name: "Fresh Lemon Soda", quantity: 2, price: 90),
-            MenuItem(id: UUID(), name: "Virgin Mojito", quantity: 1, price: 220),
-            MenuItem(id: UUID(), name: "Chonok", quantity: 1, price: 500),
-            MenuItem(id: UUID(), name: "Chilli Chicken", quantity: 2, price: 250),
-            MenuItem(id: UUID(), name: "Chicken Pulao", quantity: 1, price: 200),
-            MenuItem(id: UUID(), name: "Beef Soup", quantity: 1, price: 160),
-            MenuItem(id: UUID(), name: "Mackerel", quantity: 2, price: 180),
-            MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),
-            MenuItem(id: UUID(), name: "Item 12", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 13", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 14", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 15", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100),
-            MenuItem(id: UUID(), name: "Item 21", quantity: 1, price: 100)
-        ])
+#Preview {
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: BillHistoryItem.self, configurations: config)
+
+        return BillPreview(tableNumber: 1, billItems: PreviewData.menuItems)
+            .modelContainer(container)
+    } catch {
+        fatalError("Failed to create model container.")
     }
 }

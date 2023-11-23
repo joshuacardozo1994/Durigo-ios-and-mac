@@ -7,6 +7,26 @@
 
 import SwiftUI
 
+struct DropdownSelector: View {
+    @Binding var selectedOption: Int
+    let options: [Int]
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button("\(option)") {
+                    self.selectedOption = option
+                }
+            }
+        } label: {
+            Text("Table \(selectedOption)")
+                .font(.title)
+                .bold()
+                .tint(Color.primary)
+        }
+    }
+}
+
 /// Represents an individual item in the bill.
 struct BillItem: View {
     @Binding var name: String
@@ -44,10 +64,16 @@ struct BillGenerator: View {
     var body: some View {
         NavigationStack {
             VStack {
+                HStack {
+                    DropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
+                        .padding(.horizontal)
+                        .padding(.top)
+                    Spacer()
+                }
                 billItemsList
                 totalSection
             }
-            .navigationTitle("Bill")
+            .navigationTitle("")
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
             }
@@ -140,7 +166,7 @@ struct BillGenerator: View {
     /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(billItems: menuLoader.billItems)
+            BillPreview(tableNumber: menuLoader.tableNumber, billItems: menuLoader.billItems)
         } label: {
             Image(systemName: "printer.fill")
         }
@@ -151,5 +177,7 @@ struct BillGenerator: View {
 struct BillGenerator_Previews: PreviewProvider {
     static var previews: some View {
         BillGenerator()
+            .environmentObject(MenuLoader())
+            .environmentObject(Navigation())
     }
 }

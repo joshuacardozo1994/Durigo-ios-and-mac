@@ -62,5 +62,5 @@ struct BillHistory: View {
 }
 
 #Preview {
-    BillHistory(billHistoryItem: BillHistoryItem(items: [MenuItem]()))
+    BillHistory(billHistoryItem: BillHistoryItem(items: [MenuItem](), tableNumber: 1))
 }

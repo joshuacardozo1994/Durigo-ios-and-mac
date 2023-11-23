@@ -12,7 +12,7 @@ import SwiftUI
     private let session = URLSession.shared
     
     var menu: [Category]?
-    
+    var tableNumber = 0
     private var _billItems: [MenuItem] = [MenuItem]()
     var billItems: [MenuItem] {
             get {
@@ -31,7 +31,7 @@ import SwiftUI
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu
         } catch {
-            print("error", #file, #function, #line)
+            print("error", error, #file, #function, #line)
         }
         
     }

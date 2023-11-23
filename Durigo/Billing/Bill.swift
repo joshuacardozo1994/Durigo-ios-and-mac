@@ -37,6 +37,7 @@ struct Line: Shape {
 
 struct Bill: View {
     let currentMenuItems: [MenuItem]
+    let tableNumber: Int
     var first = true
     var finalTotal: Int?
     var body: some View {
@@ -51,6 +52,10 @@ struct Bill: View {
                 }
                 .overlay(alignment: .topTrailing) {
                     Text("Date: \(Date().getTimeInFormat(dateStyle: .short, timeStyle: .none))")
+                        .font(.system(size: 11))
+                }
+                .overlay(alignment: .topLeading) {
+                    Text("Table: \(tableNumber)")
                         .font(.system(size: 11))
                 }
                 
@@ -142,7 +147,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
                 MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
-            ], first: true, finalTotal: 420)
+            ], tableNumber: 9, first: true, finalTotal: 420)
                 .frame(width: 420, height: 595)
                 .background(Color.white)
             Spacer()

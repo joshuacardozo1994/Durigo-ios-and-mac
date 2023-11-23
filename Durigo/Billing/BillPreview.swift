@@ -102,7 +102,7 @@ struct BillPreview: View {
         return url
     }
 }
-
+#if DEBUG
 #Preview {
     do {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -114,3 +114,4 @@ struct BillPreview: View {
         fatalError("Failed to create model container.")
     }
 }
+#endif

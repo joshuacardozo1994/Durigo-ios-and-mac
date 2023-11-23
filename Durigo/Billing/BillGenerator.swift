@@ -7,6 +7,33 @@
 
 import SwiftUI
 
+struct DropdownSelector: View {
+    @Binding var selectedOption: Int?
+    let options: [Int]
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button("\(option)") {
+                    self.selectedOption = option
+                }
+            }
+        } label: {
+            if let selectedOption {
+                Text("Table \(selectedOption)")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            } else {
+                Text("Please select a table")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            }
+        }
+    }
+}
+
 /// Represents an individual item in the bill.
 struct BillItem: View {
     @Binding var name: String
@@ -44,17 +71,23 @@ struct BillGenerator: View {
     var body: some View {
         NavigationStack {
             VStack {
+                HStack {
+                    DropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
+                        .padding(.horizontal)
+                        .padding(.top)
+                    Spacer()
+                }
                 billItemsList
                 totalSection
             }
-            .navigationTitle("Bill")
+            .navigationTitle("")
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
             }
             
             .alert("Are you sure you want to clear the bill", isPresented: $showingBillClearAlert) {
                 Button("Clear", role: .destructive) {
-                    menuLoader.billItems.removeAll()
+                    menuLoader.resetBill()
                 }
                 Button("Cancel", role: .cancel) {}
             }
@@ -140,16 +173,20 @@ struct BillGenerator: View {
     /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(billItems: menuLoader.billItems)
+            BillPreview(tableNumber: menuLoader.tableNumber, billID: menuLoader.billID, billItems: menuLoader.billItems)
         } label: {
             Image(systemName: "printer.fill")
         }
-        .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 })
+        .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
+                  menuLoader.tableNumber == nil
+        )
     }
 }
 
 struct BillGenerator_Previews: PreviewProvider {
     static var previews: some View {
         BillGenerator()
+            .environmentObject(MenuLoader())
+            .environmentObject(Navigation())
     }
 }

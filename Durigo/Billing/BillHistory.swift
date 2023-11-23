@@ -31,6 +31,8 @@ struct BillHistory: View {
         .alert("Are you sure you want to regenerate the bill", isPresented: $showingBillRegenerateAlert) {
             Button("Regenerate", role: .destructive) {
                 menuLoader.billItems = billHistoryItem.items
+                menuLoader.tableNumber = billHistoryItem.tableNumber
+                menuLoader.billID = billHistoryItem.id
                 navigation.tabSelection = .billGenerator
             }
             Button("Cancel", role: .cancel) {}
@@ -62,5 +64,5 @@ struct BillHistory: View {
 }
 
 #Preview {
-    BillHistory(billHistoryItem: BillHistoryItem(items: [MenuItem]()))
+    BillHistory(billHistoryItem: BillHistoryItem(items: [MenuItem](), tableNumber: 1))
 }

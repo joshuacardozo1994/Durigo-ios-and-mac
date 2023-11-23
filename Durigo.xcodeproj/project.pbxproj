@@ -14,6 +14,8 @@
 		E730ED392B0AA94900132ABA /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED382B0AA94900132ABA /* Navigation.swift */; };
 		E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */; };
 		E7E0CB3E2B0E8D6A004514CC /* Number+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */; };
+		E7E0CB402B0F3187004514CC /* Preview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB3F2B0F3187004514CC /* Preview.swift */; };
+		E7E0CB422B0F4DA5004514CC /* Color.Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */; };
 		E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */; };
 		E7ED3A162AEAE9AE00F2DDA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */; };
 		E7ED3A1A2AEAE9AE00F2DDA8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A192AEAE9AE00F2DDA8 /* Preview Assets.xcassets */; };
@@ -56,6 +58,8 @@
 		E730ED382B0AA94900132ABA /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
 		E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEditor.swift; sourceTree = "<group>"; };
 		E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Number+Extensions.swift"; sourceTree = "<group>"; };
+		E7E0CB3F2B0F3187004514CC /* Preview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preview.swift; sourceTree = "<group>"; };
+		E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Color.Extensions.swift; sourceTree = "<group>"; };
 		E7ED3A0E2AEAE9AC00F2DDA8 /* Durigo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Durigo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurigoApp.swift; sourceTree = "<group>"; };
 		E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -152,6 +156,7 @@
 			isa = PBXGroup;
 			children = (
 				E7ED3A192AEAE9AE00F2DDA8 /* Preview Assets.xcassets */,
+				E7E0CB3F2B0F3187004514CC /* Preview.swift */,
 			);
 			path = "Preview Content";
 			sourceTree = "<group>";
@@ -212,6 +217,7 @@
 				E7ED3A592AEAEB1F00F2DDA8 /* Date+Extensions.swift */,
 				E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */,
 				E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */,
+				E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -357,11 +363,13 @@
 			files = (
 				E7ED3A3E2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */,
 				E7ED3A5B2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
+				E7E0CB422B0F4DA5004514CC /* Color.Extensions.swift in Sources */,
 				E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
 				E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */,
 				E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */,
 				E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */,
 				E7E0CB3E2B0E8D6A004514CC /* Number+Extensions.swift in Sources */,
+				E7E0CB402B0F3187004514CC /* Preview.swift in Sources */,
 				E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */,
 				E730ED352B0AA08800132ABA /* Home.swift in Sources */,
 				E7ED3A422AEAEA9C00F2DDA8 /* Bill.swift in Sources */,

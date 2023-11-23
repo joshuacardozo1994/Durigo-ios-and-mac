@@ -12,7 +12,8 @@ import SwiftUI
     private let session = URLSession.shared
     
     var menu: [Category]?
-    
+    var billID = UUID()
+    var tableNumber: Int?
     private var _billItems: [MenuItem] = [MenuItem]()
     var billItems: [MenuItem] {
             get {
@@ -22,6 +23,12 @@ import SwiftUI
                 _billItems = newValue.filter({ $0.quantity > 0 })
             }
         }
+    
+    func resetBill() {
+        billItems.removeAll()
+        tableNumber = 0
+        billID = UUID()
+    }
 
     @MainActor
     func loadMenu() async {
@@ -31,7 +38,7 @@ import SwiftUI
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu
         } catch {
-            print("error", #file, #function, #line)
+            print("error", error, #file, #function, #line)
         }
         
     }

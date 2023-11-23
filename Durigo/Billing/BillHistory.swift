@@ -37,7 +37,7 @@ struct BillHistory: View {
             }
             Button("Cancel", role: .cancel) {}
         }
-        .navigationTitle("Bill")
+        .navigationTitle("Table \(billHistoryItem.tableNumber ?? 0) Bill")
         .toolbar {
             printButton
         }

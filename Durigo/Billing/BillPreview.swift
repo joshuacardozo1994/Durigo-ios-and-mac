@@ -50,7 +50,7 @@ struct BillPreview: View {
         }
         .background(Color.gray.opacity(0.5))
         .onAppear {
-            if var presentbillHistoryItem = billHistoryItems.first(where: { $0.id == billID }) {
+            if let presentbillHistoryItem = billHistoryItems.first(where: { $0.id == billID }) {
                 presentbillHistoryItem.tableNumber = tableNumber
                 presentbillHistoryItem.items = billItems
                 presentbillHistoryItem.date = Date()

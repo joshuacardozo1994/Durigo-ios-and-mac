@@ -46,7 +46,7 @@ struct Bill: View {
                 HStack {
                     Spacer()
                     Text("Durigo's")
-                        .font(.custom("DancingScript-Bold", size: 45))
+                        .font(.dancingScriptBold(size: 45))
                     Spacer()
                     
                 }

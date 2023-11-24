@@ -5,6 +5,9 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>DancingScript-VariableFont_wght.ttf</string>
+		<string>Poppins-Medium.ttf</string>
+		<string>Poppins-Bold.ttf</string>
+		<string>CormorantGaramond-Bold.ttf</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

@@ -31,20 +31,23 @@ enum FoodType: String, Decodable {
 }
 
 struct Category: Decodable, Identifiable {
-    struct Menu: Decodable, Identifiable {
+    struct Item: Decodable, Identifiable {
         let id: UUID
         let name: String
         let price: Int
         let subtext: String?
+        let enabled: Bool
+        let description: String?
     }
     
     let id: UUID
+    
     let type: FoodType
     let name: String
-    let menus: [Menu]
+    let menus: [Item]
     
     static var placeholder: Category {
-        let menus = (1...7).map { _ in Category.Menu(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil) }
+        let menus = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil, enabled: true, description: nil) }
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", menus: menus)
         return category
     }

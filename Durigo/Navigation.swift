@@ -10,6 +10,7 @@ import SwiftUI
 enum TabItems {
     case billHistoryList
     case billGenerator
+    case menuGenerator
 }
 
 @Observable class Navigation: ObservableObject {

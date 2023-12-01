@@ -55,7 +55,7 @@ struct MenuList: View {
             let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
             List(items) { category in
                 Section {
-                    ForEach(category.items) { menuItem in
+                    ForEach(category.items.filter({ [Category.Item.VisibilityScope.bill, Category.Item.VisibilityScope.both].contains($0.visibilityScope)  })) { menuItem in
                         HStack {
                             HStack {
                                 if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {

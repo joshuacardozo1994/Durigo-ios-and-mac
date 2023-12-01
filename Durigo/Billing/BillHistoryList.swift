@@ -36,7 +36,7 @@ struct BillHistoryList: View {
                     VStack {
                         Spacer()
                         ContentUnavailableView(
-                            "No Bills available for\(showTodaysBills ? " today" : "") \(selectedTable != nil ? " this table" : "")",
+                            "No Bills available\(showTodaysBills ? " for today" : "") \(selectedTable != nil ? " for this table" : "")",
                             systemImage: "exclamationmark.triangle",
                             description: Text("Try a different filter, or clear your filters")
                         )

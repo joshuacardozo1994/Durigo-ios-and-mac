@@ -36,22 +36,23 @@ struct DropdownSelector: View {
 
 /// Represents an individual item in the bill.
 struct BillItem: View {
-    @Binding var name: String
-    @Binding var quantity: Int
-    @Binding var price: Int
+    @Binding var item: MenuItem
 
     var body: some View {
         HStack {
-            Text("\(quantity)")
+            Text("\(item.quantity)")
                 .bold()
                 .padding(.trailing, 8)
-            Stepper("Quantity", value: $quantity, in: 1...100)
+            Stepper("Quantity", value: $item.quantity, in: 1...100)
                 .labelsHidden()
-            TextField("Name", text: $name)
+            if let prefix = item.prefix {
+                Text("(\(prefix))")
+            }
+            TextField("Name", text: $item.name)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
-            TextField("Price", value: $price, format: .number)
+            TextField("Price", value: $item.price, format: .number)
                 .multilineTextAlignment(.trailing)
             #if os(iOS)
                 .keyboardType(.numberPad)
@@ -125,7 +126,7 @@ struct BillGenerator: View {
     /// View for the list of bill items.
     private var billItemsList: some View {
         List($menuLoader.billItems, editActions: [.delete, .move]) { $item in
-            BillItem(name: $item.name, quantity: $item.quantity, price: $item.price)
+            BillItem(item: $item)
         }
     }
 
@@ -154,7 +155,7 @@ struct BillGenerator: View {
     /// Button to add a new item.
     private var addItemButton: some View {
         Button(action: {
-            menuLoader.billItems.append(MenuItem(id: UUID(), name: "Item to be added", quantity: 1, price: 0))
+            menuLoader.billItems.append(MenuItem(id: UUID(), name: "", quantity: 1, price: 0))
         }) {
             Image(systemName: "plus.circle.fill")
         }

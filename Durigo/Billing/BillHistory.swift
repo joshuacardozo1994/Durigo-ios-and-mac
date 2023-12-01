@@ -17,8 +17,13 @@ struct BillHistory: View {
             List {
                 ForEach(billHistoryItem.items) { menuItem in
                     HStack {
-                        Text("\(menuItem.quantity)")
+                        Text("\(menuItem.quantity) ")
+                        +
+                        Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
+                        +
                         Text("\(menuItem.name)")
+                        +
+                        Text(menuItem.suffix != nil ? " (\(menuItem.suffix ?? ""))" : "")
                         Spacer()
                         Text("\(menuItem.price)")
                     }

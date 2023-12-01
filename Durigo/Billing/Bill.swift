@@ -75,6 +75,9 @@ struct Bill: View {
                     HStack(alignment: .bottom) {
                         Text("\(item.quantity)")
                             .bold()
+                        if let prefix = item.prefix {
+                            Text(prefix)
+                        }
                         Text("\(item.name)")
                         VStack{
                             Line()

@@ -17,8 +17,8 @@ extension MenuGenerator {
             VStack(alignment: .leading) {
                 HStack {
                     Text(item.name)
-                    if let subtext = item.subtext {
-                        Text("(\(subtext))")
+                    if let suffix = item.suffix {
+                        Text("(\(suffix))")
                     }
                     Spacer()
                     if item.price > 0 {
@@ -72,7 +72,7 @@ extension MenuGenerator {
                             
                             ForEach(left) { category in
                                 MenuGenerator.MenuCategory(name: category.name)
-                                ForEach(category.menus.filter({ $0.enabled })) { item in
+                                ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
                                     MenuGenerator.MenuItem(item: item)
                                 }
                             }
@@ -90,7 +90,7 @@ extension MenuGenerator {
                         VStack(spacing: 0) {
                             ForEach(right) { category in
                                 MenuGenerator.MenuCategory(name: category.name)
-                                ForEach(category.menus.filter({ $0.enabled })) { item in
+                                ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
                                     MenuGenerator.MenuItem(item: item)
                                 }
                             }

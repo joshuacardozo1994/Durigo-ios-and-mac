@@ -17,11 +17,11 @@ struct MenuList: View {
             return categories
         } else {
             let filteredCategories = categories.map { category in
-                Category(id: category.id, type: category.type, name: category.name, menus: category.menus.filter({ item in
+                Category(id: category.id, type: category.type, name: category.name, items: category.items.filter({ item in
                     var present = item.name.lowercased().contains(searchQuery.lowercased())
                     
-                    if let subtext = item.subtext {
-                        present = present || subtext.lowercased().contains(searchQuery.lowercased())
+                    if let suffix = item.suffix {
+                        present = present || suffix.lowercased().contains(searchQuery.lowercased())
                     }
                     return present
                 }))
@@ -29,7 +29,7 @@ struct MenuList: View {
                 
             }
             return filteredCategories.filter { category in
-                !category.menus.isEmpty
+                !category.items.isEmpty
             }
         }
     }
@@ -55,7 +55,7 @@ struct MenuList: View {
             let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
             List(items) { category in
                 Section {
-                    ForEach(category.menus) { menuItem in
+                    ForEach(category.items) { menuItem in
                         HStack {
                             HStack {
                                 if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
@@ -66,12 +66,15 @@ struct MenuList: View {
                                 }
                             }
                             .frame(width: 14)
+                            Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
+                                .italic()
+                            +
                             Text(menuItem.name)
                                 .bold()
-                            if let subtext = menuItem.subtext {
-                                Text("(\(subtext))")
-                                    .italic()
-                            }
+                            +
+                            Text(menuItem.suffix != nil ? " (\(menuItem.suffix ?? ""))" : "")
+                                .italic()
+                            
                             Spacer()
                             HStack {
                                 if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
@@ -81,13 +84,13 @@ struct MenuList: View {
                                     
                                 } else {
                                     Button(action: {
-                                        if !menuLoader.billItems.contains(where: { $0.name == menuItem.name
+                                        if !menuLoader.billItems.contains(where: { $0.id == menuItem.id
                                         }) {
                                             var name = menuItem.name
-                                            if let subtext = menuItem.subtext {
-                                                name += " (\(subtext))"
+                                            if let suffix = menuItem.suffix {
+                                                name += " (\(suffix))"
                                             }
-                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, quantity: 1, price: menuItem.price))
+                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: 1, price: menuItem.price))
                                         }
 #if os(iOS)
                                         let impactMed = UIImpactFeedbackGenerator(style: .medium)

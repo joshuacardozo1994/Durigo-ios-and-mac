@@ -26,14 +26,14 @@ import SwiftUI
     
     func resetBill() {
         billItems.removeAll()
-        tableNumber = 0
+        tableNumber = nil
         billID = UUID()
     }
 
     @MainActor
     func loadMenu() async {
         do {
-            let (data, _) = try await session.data(from: URL(string: "https://durigo.in/api/menu")!)
+            let (data, _) = try await session.data(from: URL(string: "https://dev.durigos.in/api/menu")!)
             let decoder = JSONDecoder()
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu

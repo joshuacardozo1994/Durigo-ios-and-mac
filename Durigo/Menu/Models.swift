@@ -11,6 +11,8 @@ import SwiftData
 struct MenuItem: Identifiable, Equatable, Hashable, Codable {
     var id: UUID
     var name: String
+    var prefix: String?
+    var suffix: String?
     var quantity: Int
     var price: Int
     
@@ -25,30 +27,37 @@ extension Array where Element == MenuItem {
     }
 }
 
-enum FoodType: String, Decodable {
+enum ItemType: String, Decodable {
     case drinks
     case food
 }
 
 struct Category: Decodable, Identifiable {
     struct Item: Decodable, Identifiable {
+        enum VisibilityScope: String, Codable {
+            case menu
+            case bill
+            case both
+        }
+        
         let id: UUID
         let name: String
         let price: Int
-        let subtext: String?
-        let enabled: Bool
+        let prefix: String?
+        let suffix: String?
+        let visibilityScope: VisibilityScope
         let description: String?
     }
     
     let id: UUID
     
-    let type: FoodType
+    let type: ItemType
     let name: String
-    let menus: [Item]
+    let items: [Item]
     
     static var placeholder: Category {
-        let menus = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), subtext: nil, enabled: true, description: nil) }
-        let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", menus: menus)
+        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil) }
+        let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", items: items)
         return category
     }
 }

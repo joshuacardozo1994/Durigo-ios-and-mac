@@ -116,7 +116,7 @@ extension MenuGenerator {
                 
             }
             .frame(width: 1748, height: 2480)
-            .background(Color.menuBackground)
+            
             .foregroundStyle(Color.menuText)
         }
     }
@@ -133,7 +133,6 @@ extension MenuGenerator {
                     }
             }
             .frame(width: 1748, height: 2480)
-            .background(Color.menuBackground)
             .foregroundStyle(Color.menuText)
         }
     }
@@ -215,7 +214,6 @@ extension MenuGenerator {
             }
             .padding(100)
             .frame(width: 1748, height: 2480)
-            .background(Color.menuBackground)
             .foregroundStyle(Color.menuText)
         }
     }
@@ -230,18 +228,31 @@ struct MenuGenerator: View {
                 if let menu = menuLoader.menu {
                     TabView {
                         FrontCover()
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                         Page(isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[2], menu[3]])
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                         Page(left: [menu[5], menu[6], menu[7]], right: [menu[8], menu[9], menu[10], menu[11]])
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                         Page(left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]])
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                         Page(left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                         BackCover()
+                            .background(Color.menuBackground)
                             .scaleEffect(finalScale)
+                            
                     }
+                    
                     #if os(iOS)
                     .tabViewStyle(.page)
                     #endif

@@ -96,17 +96,17 @@ extension MenuGenerator {
         let descriptionFontSize: CGFloat
         let topPadding: CGFloat
         var body: some View {
-            VStack(alignment: .leading) {
-                HStack {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
                     Text(item.name)
-                    if let suffix = item.suffix {
-                        Text("(\(suffix))")
-                    }
+                    +
+                    Text(item.suffix != nil ? "(\(item.suffix ?? ""))" : "")
+                    
                     Spacer()
                     if item.price > 0 {
                         Text(item.price.asCurrencyString() ?? "")
                     } else {
-                        Text("as per price")
+                        Text("market price")
                     }
                 }
                 .font(.poppinsBold(size: fontSize))
@@ -152,61 +152,63 @@ extension MenuGenerator {
         
         
         var body: some View {
-            GeometryReader { geometry in
-                VStack {
-                    HStack(alignment: .top, spacing: 0) {
-                        VStack(spacing: 0) {
-                            if isFirst {
-                                Text("MENU")
-                                    .font(.cormorantGaramondBold(size: menuTextFontSize))
-                                    .padding(.top, verticalPadding)
-                            }
+            VStack {
+                GeometryReader { geometry in
+                    VStack {
+                        HStack(alignment: .top, spacing: 0) {
+                            VStack(spacing: 0) {
+                                if isFirst {
+                                    Text("MENU")
+                                        .font(.cormorantGaramondBold(size: menuTextFontSize))
+                                        .padding(.top, verticalPadding)
+                                }
                                 
-                            
-                            ForEach(left) { category in
-                                MenuGenerator.MenuCategory(name: category.name, fontSize: categoryFontSize)
-                                ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
-                                    MenuGenerator.MenuItem(item: item, fontSize: itemFontSize, descriptionFontSize: itemDescriptionFontSize, topPadding: itemTopPadding)
+                                
+                                ForEach(left) { category in
+                                    MenuGenerator.MenuCategory(name: category.name, fontSize: categoryFontSize)
+                                    ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
+                                        MenuGenerator.MenuItem(item: item, fontSize: itemFontSize, descriptionFontSize: itemDescriptionFontSize, topPadding: itemTopPadding)
+                                    }
                                 }
+                                
+                                Spacer()
                             }
+                            .padding(.horizontal, horizontalPadding)
+                            .frame(width: geometry.size.width / 2)
                             
-                            Spacer()
-                        }
-                        .padding(.horizontal, horizontalPadding)
-                        .frame(width: geometry.size.width / 2)
-                        
-                        Rectangle()
-                            .fill(Color.black)
-                            .frame(width: 2)
-                            .padding(.vertical, verticalPadding)
-                        
-                        VStack(spacing: 0) {
-                            ForEach(right) { category in
-                                MenuGenerator.MenuCategory(name: category.name, fontSize: categoryFontSize)
-                                ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
-                                    MenuGenerator.MenuItem(item: item, fontSize: itemFontSize, descriptionFontSize: itemDescriptionFontSize, topPadding: itemTopPadding)
+                            Rectangle()
+                                .fill(Color.black)
+                                .frame(width: 2)
+                                .padding(.vertical, verticalPadding)
+                            
+                            VStack(spacing: 0) {
+                                ForEach(right) { category in
+                                    MenuGenerator.MenuCategory(name: category.name, fontSize: categoryFontSize)
+                                    ForEach(category.items.filter({ [Category.Item.VisibilityScope.menu, Category.Item.VisibilityScope.both].contains($0.visibilityScope)})) { item in
+                                        MenuGenerator.MenuItem(item: item, fontSize: itemFontSize, descriptionFontSize: itemDescriptionFontSize, topPadding: itemTopPadding)
+                                    }
                                 }
+                                
+                                Spacer()
                             }
-                            
-                            Spacer()
+                            .padding(.horizontal, horizontalPadding)
+                            .frame(width: geometry.size.width / 2)
                         }
-                        .padding(.horizontal, horizontalPadding)
-                        .frame(width: geometry.size.width / 2)
+                        HStack {
+                            Text("Durigo's")
+                                .font(.dancingScriptBold(size: categoryFontSize))
+                            Spacer()
+                            Text("Grande Vanelim, Colva, salcete, Goa")
+                                .font(.poppinsBold(size: itemDescriptionFontSize))
+                            Spacer()
+                            Text("durigos.in")
+                                .font(.poppinsBold(size: itemDescriptionFontSize))
+                        }
+                        .padding(.horizontal, 100)
+                        .padding(.bottom, verticalPadding)
                     }
-                    HStack {
-                        Text("Durigo's")
-                            .font(.dancingScriptBold(size: categoryFontSize))
-                        Spacer()
-                        Text("Grande Vanelim, Colva, salcete, Goa")
-                            .font(.poppinsBold(size: itemDescriptionFontSize))
-                        Spacer()
-                        Text("durigos.in")
-                            .font(.poppinsBold(size: itemDescriptionFontSize))
-                    }
-                    .padding(.horizontal, 100)
-                    .padding(.bottom, verticalPadding)
+                    
                 }
-                
             }
             .frame(width: a4Size.size.width, height: a4Size.size.height)
             .clipped()
@@ -324,10 +326,10 @@ struct MenuGenerator: View {
     @State private var subtitleFontSize: CGFloat = 50
     
     @State private var menuTextFontSize: CGFloat = 80
-    @State private var categoryFontSize: CGFloat = 15
-    @State private var itemFontSize: CGFloat = 13
-    @State private var itemDescriptionFontSize: CGFloat = 11
-    @State private var itemTopPadding: CGFloat = 8
+    @State private var categoryFontSize: CGFloat = 18
+    @State private var itemFontSize: CGFloat = 16
+    @State private var itemDescriptionFontSize: CGFloat = 12
+    @State private var itemTopPadding: CGFloat = 6
     @State private var itemPageHorizontalPadding: CGFloat = 40
     @State private var itemPageVerticalPadding: CGFloat = 20
     
@@ -345,27 +347,27 @@ struct MenuGenerator: View {
                 if let menu = menuLoader.menu {
                     TabView {
                         FrontCover(a4Size: a4Size, titleFontSize: titleFontSize, subtitleFontSize: subtitleFontSize)
-                            .background(Color.menuBackground)
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[2], menu[3]])
-                            .background(Color.menuBackground)
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]])
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[5], menu[6], menu[7]], right: [menu[8], menu[9], menu[10], menu[11]])
-                            .background(Color.menuBackground)
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]])
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
                         Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]])
-                            .background(Color.menuBackground)
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
                         Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
-                            .background(Color.menuBackground)
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
                         BackCover(a4Size: a4Size, backCoverTitleFontSize: backCoverTitleFontSize, textFontSize: categoryFontSize, padding: backCoverPadding)
-                            .background(Color.menuBackground)
+                            .background(Color.white)
                             .scaleEffect(finalScale)
                             
                     }
@@ -433,9 +435,12 @@ struct MenuGenerator: View {
         let pages =
         
         [
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[2], menu[3]]),
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[5], menu[6], menu[7]], right: [menu[8], menu[9], menu[10], menu[11]]),
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]]),
+                
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]]),
+                
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]]),
+                
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
         ]
             

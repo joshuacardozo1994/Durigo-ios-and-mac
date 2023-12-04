@@ -134,8 +134,10 @@ struct BillGenerator: View {
     private var totalSection: some View {
         HStack {
             Text("\(menuLoader.billItems.count) Items")
+                .accessibilityIdentifier("bill generator items count")
             Spacer()
             Text("Total: \(menuLoader.billItems.getTotal())")
+                .accessibilityIdentifier("bill generator items total")
         }
         .padding(.horizontal)
         .font(.title)
@@ -159,7 +161,7 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "plus.circle.fill")
         }
-//        .popoverTip(AddNewItemToBill())
+        .accessibilityIdentifier("addItemButton")
     }
 
     /// Button to show the menu list.

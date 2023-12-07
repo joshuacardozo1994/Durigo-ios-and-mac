@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 extension MenuGenerator {
     struct A4Size: Hashable, Identifiable {

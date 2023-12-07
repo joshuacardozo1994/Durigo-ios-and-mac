@@ -28,7 +28,6 @@ struct BillHistoryList: View {
     }
     
     var body: some View {
-        let _ = print("billHistoryItems", billHistoryItems)
         NavigationStack {
             VStack {
                 let items = filteredBillHistoryItems()
@@ -68,6 +67,7 @@ struct BillHistoryList: View {
                                     GroupBox {
                                         
                                         Text("\(billHistoryItem.items.getTotal().asCurrencyString() ?? "")")
+                                            .accessibilityIdentifier("BillHistoryList-Item-\(billHistoryItem.id.uuidString)")
                                         
                                     }
                                     .backgroundStyle(Color.billHistoryItemTotal)
@@ -118,7 +118,7 @@ struct BillHistoryList: View {
     let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
     
     Array(1...10).forEach { tableNumber in
-        container.mainContext.insert(BillHistoryItem(items: [
+        container.mainContext.insert(BillHistoryItem(id: UUID(), items: [
             MenuItem(id: UUID(), name: "Delicious dish", quantity: 2, price: 300)
         ], tableNumber: tableNumber))
     }

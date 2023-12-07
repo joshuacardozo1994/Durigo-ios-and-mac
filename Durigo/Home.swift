@@ -19,16 +19,19 @@ struct Home: View {
                     Label("History", systemImage: "doc.text")
                 }
                 .tag(TabItems.billHistoryList)
+                
             BillGenerator()
                 .tabItem {
                     Label("Bill Generator", systemImage: "gearshape.2")
                 }
                 .tag(TabItems.billGenerator)
+                
             MenuGenerator()
                 .tabItem {
                     Label("Menu Generator", systemImage: "doc.plaintext.fill")
                 }
                 .tag(TabItems.menuGenerator)
+                
         }
         .environmentObject(menuLoader)
         .environmentObject(navigation)

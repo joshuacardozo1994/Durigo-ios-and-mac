@@ -11,6 +11,12 @@ import SwiftData
 
 @main
 struct DurigoApp: App {
+    init() {
+        if CommandLine.arguments.contains("ui-testing") {
+            print("Testing UI")
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             Home()

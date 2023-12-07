@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 extension MenuGenerator {
     struct A4Size: Hashable, Identifiable {
@@ -341,7 +340,6 @@ struct MenuGenerator: View {
     
     var body: some View {
         VStack {
-            let _ = print("a4Size", a4Size)
             GeometryReader { geometry in
                 let finalScale = min(geometry.size.height / a4Size.size.height, geometry.size.width / a4Size.size.width)
                 if let menu = menuLoader.menu {

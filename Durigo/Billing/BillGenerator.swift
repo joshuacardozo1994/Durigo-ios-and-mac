@@ -17,6 +17,7 @@ struct DropdownSelector: View {
                 Button("\(option)") {
                     self.selectedOption = option
                 }
+                .accessibilityIdentifier("Table-Option-\(option)")
             }
         } label: {
             if let selectedOption {
@@ -29,8 +30,10 @@ struct DropdownSelector: View {
                     .font(.title)
                     .bold()
                     .tint(Color.primary)
+                    .accessibilityIdentifier("Table-Selector")
             }
         }
+        
     }
 }
 
@@ -39,21 +42,28 @@ struct BillItem: View {
     @Binding var item: MenuItem
 
     var body: some View {
+        let _ = print("item", item)
         HStack {
             Text("\(item.quantity)")
                 .bold()
                 .padding(.trailing, 8)
+                .accessibilityIdentifier("menu-item-quantity-Text-\(item.id.uuidString)")
             Stepper("Quantity", value: $item.quantity, in: 1...100)
                 .labelsHidden()
+                .accessibilityIdentifier("menu-item-quantity-Stepper-\(item.id.uuidString)")
             if let prefix = item.prefix {
                 Text("(\(prefix))")
+                    .accessibilityIdentifier("menu-item-prefix-Text-\(item.id.uuidString)")
             }
             TextField("Name", text: $item.name)
+                .accessibilityIdentifier("menu-item-name-TextField-\(item.id.uuidString)")
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+                
             Spacer()
             TextField("Price", value: $item.price, format: .number)
                 .multilineTextAlignment(.trailing)
+                .accessibilityIdentifier("menu-item-price-TextField-\(item.id.uuidString)")
             #if os(iOS)
                 .keyboardType(.numberPad)
             #endif
@@ -120,7 +130,6 @@ struct BillGenerator: View {
                 await menuLoader.loadMenu()
             }
         }
-        .accessibilityIdentifier("BillGenerator")
     }
 
     /// View for the list of bill items.
@@ -134,8 +143,10 @@ struct BillGenerator: View {
     private var totalSection: some View {
         HStack {
             Text("\(menuLoader.billItems.count) Items")
+                .accessibilityIdentifier("bill generator items count")
             Spacer()
             Text("Total: \(menuLoader.billItems.getTotal())")
+                .accessibilityIdentifier("bill generator items total")
         }
         .padding(.horizontal)
         .font(.title)
@@ -159,7 +170,7 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "plus.circle.fill")
         }
-//        .popoverTip(AddNewItemToBill())
+        .accessibilityIdentifier("addItemButton")
     }
 
     /// Button to show the menu list.
@@ -181,6 +192,7 @@ struct BillGenerator: View {
         .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
                   menuLoader.tableNumber == nil
         )
+        .accessibilityIdentifier("print-bill")
     }
 }
 

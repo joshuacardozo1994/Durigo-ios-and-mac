@@ -56,7 +56,7 @@ struct BillPreview: View {
                 presentbillHistoryItem.date = Date()
             } else {
                 if let tableNumber {
-                    modelContext.insert(BillHistoryItem( items: billItems, tableNumber: tableNumber))
+                    modelContext.insert(BillHistoryItem( id: billID, items: billItems, tableNumber: tableNumber))
                 }
             }
             

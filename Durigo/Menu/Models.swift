@@ -69,8 +69,8 @@ class BillHistoryItem: Identifiable {
     var tableNumber: Int?
     var items: [MenuItem]
     
-    init(items: [MenuItem], tableNumber: Int) {
-        self.id = UUID()
+    init(id: UUID, items: [MenuItem], tableNumber: Int) {
+        self.id = id
         self.date = Date()
         self.items = items
         self.tableNumber = tableNumber

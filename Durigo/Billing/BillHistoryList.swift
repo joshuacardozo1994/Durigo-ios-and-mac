@@ -67,6 +67,7 @@ struct BillHistoryList: View {
                                     GroupBox {
                                         
                                         Text("\(billHistoryItem.items.getTotal().asCurrencyString() ?? "")")
+                                            .accessibilityIdentifier("BillHistoryList-Item-\(billHistoryItem.id.uuidString)")
                                         
                                     }
                                     .backgroundStyle(Color.billHistoryItemTotal)

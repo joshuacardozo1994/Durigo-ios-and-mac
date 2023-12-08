@@ -9,7 +9,7 @@ import SwiftUI
 
 
 @Observable class MenuLoader: ObservableObject {
-    private let session = URLSession.shared
+    private let session = NetworkHelper.shared.currentSession
     
     var menu: [Category]?
     var billID = UUID()
@@ -59,7 +59,6 @@ import SwiftUI
             let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
             let decoder = JSONDecoder()
             let menu = try decoder.decode([Category].self, from: data)
-            print("menu", menu)
         } catch {
             print("error", #file, #function, #line)
         }
@@ -82,7 +81,6 @@ import SwiftUI
             let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
             let decoder = JSONDecoder()
             let menu = try decoder.decode([Category].self, from: data)
-            print("menu", menu)
         } catch {
             print("error", #file, #function, #line)
         }

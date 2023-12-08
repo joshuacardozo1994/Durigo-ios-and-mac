@@ -42,7 +42,6 @@ struct BillItem: View {
     @Binding var item: MenuItem
 
     var body: some View {
-        let _ = print("item", item)
         HStack {
             Text("\(item.quantity)")
                 .bold()
@@ -180,6 +179,7 @@ struct BillGenerator: View {
         }) {
             Image(systemName: "book.pages.fill")
         }
+        .accessibilityIdentifier("showMenuButton")
     }
 
     /// Button to preview the bill.

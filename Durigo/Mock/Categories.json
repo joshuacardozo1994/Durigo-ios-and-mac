@@ -1,0 +1,129 @@
+[
+    {
+        "items": [
+            {
+                "price": 20,
+                "id": "926E11D5-A2F8-4FCE-9252-C5E6D72F13BA",
+                "visibilityScope": "both",
+                "name": "Soda"
+            },
+            {
+                "id": "E997A2E4-A72F-4C7F-AAB7-BDF2F0C7C93D",
+                "name": "Soft Drinks",
+                "visibilityScope": "menu",
+                "price": 30,
+                "description": "Coca-cola, Limca, Sprite, Thums up, Maaza"
+            },
+            {
+                "name": "Coca-cola",
+                "visibilityScope": "bill",
+                "id": "035A0BBE-BB76-418B-8956-FE27E5091A3B",
+                "price": 30
+            },
+            {
+                "name": "Limca",
+                "price": 30,
+                "visibilityScope": "bill",
+                "id": "B37AF164-B885-41E6-B68C-FCF3531C0FBE"
+            },
+            {
+                "id": "FF94CFB2-388B-429C-BA09-08C0B4FDEEAB",
+                "price": 30,
+                "name": "Sprite",
+                "visibilityScope": "bill"
+            },
+            {
+                "price": 30,
+                "visibilityScope": "bill",
+                "id": "74F47FBB-D681-4474-B087-A22320B00080",
+                "name": "Thums up"
+            },
+            {
+                "id": "968B5D01-5695-4933-B5DC-F9B8433E448F",
+                "visibilityScope": "bill",
+                "name": "Maaza",
+                "price": 30
+            },
+            {
+                "price": 90,
+                "visibilityScope": "both",
+                "id": "CEC14A28-C80D-4EB5-8554-9A64991B1DBE",
+                "name": "Tonic Water"
+            },
+            {
+                "id": "3D0F509E-A45D-4F4D-BAC9-0C0B6B48E6C1",
+                "price": 90,
+                "name": "Fresh Lemon Soda",
+                "visibilityScope": "both"
+            },
+            {
+                "visibilityScope": "both",
+                "price": 70,
+                "id": "0D07F5E1-5A01-443E-82C9-7AE940E0D28D",
+                "name": "Fresh Lemon Water"
+            },
+            {
+                "price": 120,
+                "id": "B8929F68-7DEF-45AC-A39F-C424217C3B2D",
+                "visibilityScope": "both",
+                "name": "Fresh Ginger Lemon Soda"
+            },
+            {
+                "id": "E10846DA-B202-42AD-B390-1E26B8C22217",
+                "suffix": "canned",
+                "price": 120,
+                "visibilityScope": "menu",
+                "name": "Orange/Mango Juice"
+            },
+            {
+                "suffix": "canned",
+                "id": "9E7916B0-1554-4439-9ECD-05FFAC99DB3C",
+                "name": "Orange Juice",
+                "price": 120,
+                "visibilityScope": "bill"
+            },
+            {
+                "id": "229C4F69-B74C-4786-8002-BB4E7EE2751D",
+                "name": "Mango Juice",
+                "suffix": "canned",
+                "visibilityScope": "bill",
+                "price": 120
+            },
+            {
+                "suffix": "1L",
+                "id": "5AA02E33-0647-4B50-A51A-048A9935717E",
+                "price": 30,
+                "name": "Mineral Water",
+                "visibilityScope": "both"
+            },
+            {
+                "name": "Mineral Water",
+                "price": 20,
+                "id": "1B0A1F13-605B-4410-96D2-1026B46D0F02",
+                "suffix": "500 mL",
+                "visibilityScope": "both"
+            },
+            {
+                "id": "8FA4E479-4D52-4AE0-B2BE-5AA80CEB0428",
+                "name": "Fresh Juice",
+                "price": 160,
+                "visibilityScope": "both"
+            },
+            {
+                "name": "Diet Coke",
+                "id": "9F5DD14F-B017-4433-928C-699E1B33C3AE",
+                "price": 60,
+                "visibilityScope": "both"
+            },
+            {
+                "id": "12FCDA82-959C-44EC-8CF6-CEBD027B67BA",
+                "name": "Ginger Ale",
+                "price": 90,
+                "visibilityScope": "both"
+            }
+        ],
+        "name": "Beverages",
+        "type": "drinks",
+        "id": "CE88E5FD-6B35-463A-A748-7172903DDA7A"
+    }
+]

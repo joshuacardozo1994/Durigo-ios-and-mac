@@ -27,13 +27,13 @@ extension Array where Element == MenuItem {
     }
 }
 
-enum ItemType: String, Decodable {
+enum ItemType: String, Codable {
     case drinks
     case food
 }
 
-struct Category: Decodable, Identifiable {
-    struct Item: Decodable, Identifiable {
+struct Category: Codable, Identifiable {
+    struct Item: Codable, Identifiable {
         enum VisibilityScope: String, Codable {
             case menu
             case bill

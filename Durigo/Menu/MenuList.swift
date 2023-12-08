@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MenuList: View {
     @EnvironmentObject private var menuLoader: MenuLoader
+    @Environment(\.dismiss) var dismiss
     @State private var searchQuery = ""
     
     func getFilteredResults() -> [Category]? {
@@ -18,12 +19,7 @@ struct MenuList: View {
         } else {
             let filteredCategories = categories.map { category in
                 Category(id: category.id, type: category.type, name: category.name, items: category.items.filter({ item in
-                    var present = item.name.lowercased().contains(searchQuery.lowercased())
-                    
-                    if let suffix = item.suffix {
-                        present = present || suffix.lowercased().contains(searchQuery.lowercased())
-                    }
-                    return present
+                    Helper.shouldFilterMenuWithQuery(searchQuery: searchQuery, itemName: item.name, itemSuffix: item.suffix)
                 }))
                 
                 
@@ -34,7 +30,7 @@ struct MenuList: View {
         }
     }
     
-    @State private var quant = 0
+    
     
     var body: some View {
         VStack {
@@ -42,12 +38,14 @@ struct MenuList: View {
                 TextField("Menu Item", text: $searchQuery)
                     .autocorrectionDisabled()
                     .padding()
+                    .accessibilityIdentifier("menuItemSearchQueryTextField")
                 Button(action: {
                     searchQuery = ""
                 }) {
                     Image(systemName: "x.circle")
                         .padding()
                 }
+                .accessibilityIdentifier("clearSearchField")
             }
                 
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
@@ -66,15 +64,17 @@ struct MenuList: View {
                                 }
                             }
                             .frame(width: 14)
-                            Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
+                            let text = Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
                                 .italic()
                             +
                             Text(menuItem.name)
+                                
                                 .bold()
                             +
                             Text(menuItem.suffix != nil ? " (\(menuItem.suffix ?? ""))" : "")
                                 .italic()
-                            
+                            text
+                                .accessibilityIdentifier("menu-item-name-\(menuItem.id.uuidString)")
                             Spacer()
                             HStack {
                                 if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
@@ -90,7 +90,9 @@ struct MenuList: View {
                                             if let suffix = menuItem.suffix {
                                                 name += " (\(suffix))"
                                             }
-                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: 1, price: menuItem.price))
+                                            let (quantity, _) = Helper.extractNumberAndString(from: searchQuery.lowercased())
+                                            
+                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1, quantity ?? 1), price: menuItem.price))
                                         }
 #if os(iOS)
                                         let impactMed = UIImpactFeedbackGenerator(style: .medium)
@@ -115,7 +117,6 @@ struct MenuList: View {
                 }
             }
         }
-        
         .redacted(reason: menuLoader.menu == nil ? .placeholder : [])
         .task {
             await menuLoader.loadMenu()

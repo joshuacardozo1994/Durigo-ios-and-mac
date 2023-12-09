@@ -64,7 +64,7 @@ struct BillHistoryList: View {
                                     }
                                     
                                 } label: {
-                                    Label("Pending", systemImage: billHistoryItem.paymentStatus == .paid ? "checkmark.circle" : "hourglass")
+                                    Label(billHistoryItem.paymentStatus.rawValue.capitalized(with: .current), systemImage: billHistoryItem.paymentStatus == .paid ? "checkmark.circle" : "hourglass")
                                         .foregroundStyle(billHistoryItem.paymentStatus == .paid ? Color.green : Color.red)
                                         .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
                                 }

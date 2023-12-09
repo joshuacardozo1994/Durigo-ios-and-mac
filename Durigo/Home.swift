@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 
 
 struct Home: View {
     @StateObject private var menuLoader = MenuLoader()
     @StateObject private var navigation = Navigation()
+    @Query private var billHistoryItems: [BillHistoryItem]
     var body: some View {
         TabView(selection: $navigation.tabSelection) {
             BillHistoryList()
@@ -19,6 +21,7 @@ struct Home: View {
                     Label("History", systemImage: "doc.text")
                 }
                 .tag(TabItems.billHistoryList)
+                .badge(billHistoryItems.filter({ $0.paymentStatus == .pending }).count)
                 
             BillGenerator()
                 .tabItem {

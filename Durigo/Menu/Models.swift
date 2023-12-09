@@ -18,6 +18,13 @@ struct MenuItem: Identifiable, Equatable, Hashable, Codable {
     
 }
 
+extension BillHistoryItem {
+    enum Status: String, Codable {
+        case paid
+        case pending
+    }
+}
+
 extension Array where Element == MenuItem {
     func getTotal() -> Int {
       
@@ -68,11 +75,13 @@ class BillHistoryItem: Identifiable {
     var date: Date
     var tableNumber: Int?
     var items: [MenuItem]
+    var paymentStatus: Status
     
     init(id: UUID, items: [MenuItem], tableNumber: Int) {
         self.id = id
         self.date = Date()
         self.items = items
         self.tableNumber = tableNumber
+        self.paymentStatus = Status.pending
     }
 }

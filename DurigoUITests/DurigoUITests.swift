@@ -214,6 +214,64 @@ final class DurigoUITests: XCTestCase {
         
     }
     
+    func testNewlyPrintedBills() throws {
+        // Assert that the "Add custom item" button exists
+        app.buttons["addItemButton"].tap()
+        
+        let menuItemNameTextFieldPredicate = NSPredicate(format: "identifier BEGINSWITH 'menu-item-name-TextField'")
+        let menuItemNameTextFieldTextFields = app.textFields.matching(menuItemNameTextFieldPredicate)
+        
+        let menuItemNameTextField = menuItemNameTextFieldTextFields.firstMatch
+                
+        let menuItemPriceTextFieldPredicate = NSPredicate(format: "identifier BEGINSWITH 'menu-item-price-TextField'")
+        let menuItemPriceTextFieldTextFields = app.textFields.matching(menuItemPriceTextFieldPredicate)
+        
+        let menuItemPriceTextField = menuItemPriceTextFieldTextFields.firstMatch
+        
+        
+        menuItemNameTextField.tap()
+        menuItemNameTextField.typeText("Item 1")
+        
+        menuItemPriceTextField.tap()
+        let price = Int(Date().timeIntervalSince1970)
+        menuItemPriceTextField.typeText("\(price)")
+        
+        
+        // Tap the button to open the menu
+        let menuButton = app.staticTexts["Table-Selector"]
+        if menuButton.exists {
+            menuButton.tap()
+        }
+
+        // Now, select an option from the menu
+        let menuOption = app.buttons["Table-Option-1"]
+        if menuOption.waitForExistence(timeout: 5) {
+            menuOption.tap()
+        }
+        
+        
+        let printBillLink = app.buttons["print-bill"]
+        if printBillLink.exists {
+            printBillLink.tap()
+        }
+        
+        let backButton = app.navigationBars.buttons.element(boundBy: 0)
+        if backButton.exists {
+            backButton.tap()
+        }
+        
+        let historyTabBarItem = app.tabBars.buttons["History"]
+        if historyTabBarItem.exists {
+            historyTabBarItem.tap()
+        }
+        
+        let paymentStatusPredicate = NSPredicate(format: "identifier BEGINSWITH 'paymentStatus'")
+        let paymentStatusStaticText = app.staticTexts.matching(paymentStatusPredicate).firstMatch
+
+        
+        XCTAssert(paymentStatusStaticText.label == "Pending", "Payment status is not pending for new bills")
+    }
+    
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

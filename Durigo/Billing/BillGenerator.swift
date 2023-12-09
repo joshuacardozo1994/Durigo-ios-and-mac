@@ -155,11 +155,13 @@ struct BillGenerator: View {
     /// Button to clear all items.
     private var clearButton: some View {
         Button(action: {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             showingBillClearAlert.toggle()
         }) {
             Image(systemName: "trash.fill")
         }
         .disabled(menuLoader.billItems.isEmpty)
+        .accessibilityIdentifier("clearBill")
     }
 
     /// Button to add a new item.

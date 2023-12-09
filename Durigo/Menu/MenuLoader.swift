@@ -58,7 +58,7 @@ import SwiftUI
         do {
             let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
             let decoder = JSONDecoder()
-            let menu = try decoder.decode([Category].self, from: data)
+            let _ = try decoder.decode([Category].self, from: data)
         } catch {
             print("error", #file, #function, #line)
         }
@@ -80,7 +80,7 @@ import SwiftUI
         do {
             let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
             let decoder = JSONDecoder()
-            let menu = try decoder.decode([Category].self, from: data)
+            let _ = try decoder.decode([Category].self, from: data)
         } catch {
             print("error", #file, #function, #line)
         }

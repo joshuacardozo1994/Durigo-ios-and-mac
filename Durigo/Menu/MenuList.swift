@@ -19,7 +19,9 @@ struct MenuList: View {
         } else {
             let filteredCategories = categories.map { category in
                 Category(id: category.id, type: category.type, name: category.name, items: category.items.filter({ item in
-                    Helper.shouldFilterMenuWithQuery(searchQuery: searchQuery, itemName: item.name, itemSuffix: item.suffix)
+                    let matchedCurrentCategory = Helper.shouldFilterMenuWithQuery(searchQuery: searchQuery, itemName: category.name, itemSuffix: nil)
+                    let matchedItem = Helper.shouldFilterMenuWithQuery(searchQuery: searchQuery, itemName: item.name, itemSuffix: item.suffix)
+                    return matchedCurrentCategory || matchedItem
                 }))
                 
                 

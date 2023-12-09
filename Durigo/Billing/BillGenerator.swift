@@ -155,7 +155,9 @@ struct BillGenerator: View {
     /// Button to clear all items.
     private var clearButton: some View {
         Button(action: {
+        #if os(iOS)
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
             showingBillClearAlert.toggle()
         }) {
             Image(systemName: "trash.fill")

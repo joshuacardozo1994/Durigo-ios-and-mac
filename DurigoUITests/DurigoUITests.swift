@@ -200,6 +200,20 @@ final class DurigoUITests: XCTestCase {
         
     }
     
+    func testCategorySearch() throws {
+        app.buttons["showMenuButton"].tap()
+        let searchTextField = app.textFields["menuItemSearchQueryTextField"]
+        searchTextField.tap()
+        searchTextField.typeText("Beverages")
+        
+        let menuListItemsPredicate = NSPredicate(format: "identifier BEGINSWITH 'menu-item-name'")
+        
+        let menuListItems = app.staticTexts.matching(menuListItemsPredicate)
+        
+        XCTAssert(menuListItems.count > 0, "not all items are present")
+        
+    }
+    
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

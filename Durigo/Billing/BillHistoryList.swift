@@ -11,12 +11,13 @@ import SwiftData
 struct BillHistoryList: View {
     @State private var selectedTable: Int?
     @State private var showTodaysBills = false
-    @Query(sort: \BillHistoryItem.date, order: .reverse) var billHistoryItems: [BillHistoryItem]
+    @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
     func filteredBillHistoryItems() -> [BillHistoryItem] {
+        
         if showTodaysBills {
             return billHistoryItems.filter({ billHistoryItem in
-                billHistoryItem.date.timeIntervalSinceNow < 60*60*24
+                abs(billHistoryItem.date.timeIntervalSinceNow) < 60*60*24
             })
         }
         if let selectedTable {
@@ -49,6 +50,26 @@ struct BillHistoryList: View {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
                             VStack(alignment: .leading) {
+                                Menu {
+                                    Button(action: {
+                                        billHistoryItem.paymentStatus = .paid
+                                    }) {
+                                        Label("Paid", systemImage: "checkmark.circle")
+                                    }
+                                    
+                                    Button(action: {
+                                        billHistoryItem.paymentStatus = .pending
+                                    }) {
+                                        Label("Pending", systemImage: "hourglass")
+                                    }
+                                    
+                                } label: {
+                                    Label("Pending", systemImage: billHistoryItem.paymentStatus == .paid ? "checkmark.circle" : "hourglass")
+                                        .foregroundStyle(billHistoryItem.paymentStatus == .paid ? Color.green : Color.red)
+                                        .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                }
+                                .padding(.bottom)
+
                                 HStack {
                                     GroupBox {
                                         if let tableNumber = billHistoryItem.tableNumber {

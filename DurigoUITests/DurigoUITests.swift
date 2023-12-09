@@ -184,6 +184,22 @@ final class DurigoUITests: XCTestCase {
         
     }
     
+    func testClearBillClearsAllItems() throws {
+        app.buttons["addItemButton"].tap()
+        
+        let textFieldPredicate = NSPredicate(format: "identifier BEGINSWITH 'menu-item-name-TextField'")
+        let textField = app.textFields.matching(textFieldPredicate).firstMatch
+        textField.tap()
+        app.buttons["clearBill"].tap()
+        
+        let alert = app.alerts.firstMatch
+        
+        alert.buttons["Clear"].tap()
+        
+        XCTAssertFalse(textField.exists, "Bill is not cleared")
+        
+    }
+    
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

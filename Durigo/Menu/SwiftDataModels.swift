@@ -83,21 +83,24 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         [BillHistoryItemsSchemaV1.self, BillHistoryItemsSchemaV2.self]
     }
     
+    static var savedOldBillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
     
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: BillHistoryItemsSchemaV1.self,
         toVersion: BillHistoryItemsSchemaV2.self,
         willMigrate: { context in
-
-            
-        }, didMigrate: { context in
             let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
-
+            savedOldBillHistoryItems = oldBillHistoryItems
             oldBillHistoryItems.forEach { oldBillHistoryItem in
                 context.delete(oldBillHistoryItem)
             }
             try context.save()
-            context.insert(BillHistoryItem(id: UUID(), items: [MenuItem(id: UUID(), name: "Item name", prefix: nil, suffix: nil, quantity: 1, price: 100, servingSize: nil)], tableNumber: 1, paymentStatus: .pending, waiter: "unknown"))
+        }, didMigrate: { context in
+            print("savedOldBillHistoryItems", savedOldBillHistoryItems)
+            savedOldBillHistoryItems.forEach { oldBillHistoryItem in
+                context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paid(.cash), waiter: "unknown"))
+            }
+            
             try context.save()
         }
     )

@@ -19,6 +19,7 @@ struct BillPreview: View {
     @Query var billHistoryItems: [BillHistoryItem]
     @Environment(\.modelContext) var modelContext
     let tableNumber: Int?
+    let waiter: String?
     let maxItemCount = 19
     let billID: UUID
     let billItems: [MenuItem]
@@ -55,8 +56,8 @@ struct BillPreview: View {
                 presentbillHistoryItem.items = billItems
                 presentbillHistoryItem.date = Date()
             } else {
-                if let tableNumber {
-                    modelContext.insert(BillHistoryItem( id: billID, items: billItems, tableNumber: tableNumber))
+                if let tableNumber, let waiter {
+                    modelContext.insert(BillHistoryItem( id: billID, items: billItems, tableNumber: tableNumber, waiter: waiter))
                 }
             }
             
@@ -108,7 +109,7 @@ struct BillPreview: View {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: BillHistoryItem.self, configurations: config)
 
-        return BillPreview(tableNumber: 1, billID: UUID(), billItems: PreviewData.menuItems)
+        return BillPreview(tableNumber: 1, waiter: "Anthony", billID: UUID(), billItems: PreviewData.menuItems)
             .modelContainer(container)
     } catch {
         fatalError("Failed to create model container.")

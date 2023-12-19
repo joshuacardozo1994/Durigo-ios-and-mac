@@ -14,6 +14,7 @@ import SwiftUI
     var menu: [Category]?
     var billID = UUID()
     var tableNumber: Int?
+    var waiter: String?
     private var _billItems: [MenuItem] = [MenuItem]()
     var billItems: [MenuItem] {
             get {

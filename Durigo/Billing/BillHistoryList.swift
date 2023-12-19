@@ -51,9 +51,25 @@ struct BillHistoryList: View {
                         } label: {
                             VStack(alignment: .leading) {
                                 Menu {
-                                    Button(action: {
-                                        billHistoryItem.paymentStatus = .paid
-                                    }) {
+                                    Menu {
+                                        Button(action: {
+                                            billHistoryItem.paymentStatus = .paid(.cash)
+                                        }) {
+                                            Label("Cash", systemImage: "banknote")
+                                        }
+                                        
+                                        Button(action: {
+                                            billHistoryItem.paymentStatus = .paid(.upi)
+                                        }) {
+                                            Label("UPI", systemImage: "indianrupeesign")
+                                        }
+                                        
+                                        Button(action: {
+                                            billHistoryItem.paymentStatus = .paid(.card)
+                                        }) {
+                                            Label("Card", systemImage: "creditcard")
+                                        }
+                                    } label: {
                                         Label("Paid", systemImage: "checkmark.circle")
                                     }
                                     
@@ -64,9 +80,26 @@ struct BillHistoryList: View {
                                     }
                                     
                                 } label: {
-                                    Label(billHistoryItem.paymentStatus.rawValue.capitalized(with: .current), systemImage: billHistoryItem.paymentStatus == .paid ? "checkmark.circle" : "hourglass")
-                                        .foregroundStyle(billHistoryItem.paymentStatus == .paid ? Color.green : Color.red)
-                                        .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                    VStack {
+                                        switch billHistoryItem.paymentStatus {
+                                        case .pending:
+                                            Label("Pending", systemImage: "hourglass")
+                                                .foregroundStyle(Color.red)
+                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                        case .paid(.card):
+                                            Label("Paid by card", systemImage: "creditcard")
+                                                .foregroundStyle(Color.green)
+                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                        case .paid(.cash):
+                                            Label("Paid by cash", systemImage: "banknote")
+                                                .foregroundStyle(Color.green)
+                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                        case .paid(.upi):
+                                            Label("Paid by UPI", systemImage: "indianrupeesign")
+                                                .foregroundStyle(Color.green)
+                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                        }
+                                    }
                                 }
                                 .padding(.bottom)
 
@@ -141,7 +174,7 @@ struct BillHistoryList: View {
     Array(1...10).forEach { tableNumber in
         container.mainContext.insert(BillHistoryItem(id: UUID(), items: [
             MenuItem(id: UUID(), name: "Delicious dish", quantity: 2, price: 300)
-        ], tableNumber: tableNumber))
+        ], tableNumber: tableNumber, waiter: "Anthony"))
     }
     
     return BillHistoryList()

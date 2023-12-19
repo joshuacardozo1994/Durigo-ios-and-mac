@@ -71,5 +71,5 @@ struct BillHistory: View {
 }
 
 #Preview {
-    BillHistory(billHistoryItem: BillHistoryItem(id: UUID(), items: [MenuItem](), tableNumber: 1))
+    BillHistory(billHistoryItem: BillHistoryItem(id: UUID(), items: [MenuItem](), tableNumber: 1, waiter: "anthony"))
 }

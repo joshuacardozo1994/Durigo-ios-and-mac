@@ -15,6 +15,7 @@ struct MenuItem: Identifiable, Equatable, Hashable, Codable {
     var suffix: String?
     var quantity: Int
     var price: Int
+    var servingSize: Category.Item.ServingSize?
     
 }
 
@@ -47,6 +48,20 @@ struct Category: Codable, Identifiable {
             case both
         }
         
+        struct ServingSize: Codable, Identifiable, Equatable, Hashable {
+            let id: UUID
+            let name: String
+            let expression: String
+            let description: String
+            let shouldDisplay: Bool
+            var isSelected = false
+            
+            
+            enum CodingKeys: String, CodingKey {
+                case id, name, expression, description, shouldDisplay
+            }
+        }
+        
         let id: UUID
         let name: String
         let price: Int
@@ -54,6 +69,7 @@ struct Category: Codable, Identifiable {
         let suffix: String?
         let visibilityScope: VisibilityScope
         let description: String?
+        let servingSizes: [ServingSize]?
     }
     
     let id: UUID
@@ -63,7 +79,7 @@ struct Category: Codable, Identifiable {
     let items: [Item]
     
     static var placeholder: Category {
-        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil) }
+        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil, servingSizes: nil) }
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", items: items)
         return category
     }

@@ -75,6 +75,10 @@ struct Bill: View {
                     HStack(alignment: .bottom) {
                         Text("\(item.quantity)")
                             .bold()
+                        if let servingSize = item.servingSize, servingSize.shouldDisplay {
+                            Text(servingSize.name)
+                                .bold()
+                        }
                         if let prefix = item.prefix {
                             Text(prefix)
                         }
@@ -83,7 +87,7 @@ struct Bill: View {
                             Line()
                                 .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [5]))
                                 .frame(height: 0.5)
-                                .opacity(0.2)
+                                .opacity(0.4)
                                 .padding(.bottom, 3)
                             
                         }

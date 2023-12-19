@@ -77,4 +77,10 @@ struct Helper {
             return false
         }
     }
+    
+    static func evaluateExpression(expression: String, withValue value: Double) -> Double? {
+        let expressionWithVariable = expression.replacingOccurrences(of: "x", with: "\(value)")
+        let expr = NSExpression(format: expressionWithVariable)
+        return expr.expressionValue(with: nil, context: nil) as? Double
+    }
 }

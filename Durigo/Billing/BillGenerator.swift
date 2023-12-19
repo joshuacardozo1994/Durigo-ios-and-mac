@@ -26,7 +26,7 @@ struct DropdownSelector: View {
                     .bold()
                     .tint(Color.primary)
             } else {
-                Text("Please select a table")
+                Text("Table")
                     .font(.title)
                     .bold()
                     .tint(Color.primary)
@@ -53,6 +53,9 @@ struct BillItem: View {
             if let prefix = item.prefix {
                 Text("(\(prefix))")
                     .accessibilityIdentifier("menu-item-prefix-Text-\(item.id.uuidString)")
+            }
+            if let servingSize = item.servingSize, servingSize.shouldDisplay {
+                Text(servingSize.name)
             }
             TextField("Name", text: $item.name)
                 .accessibilityIdentifier("menu-item-name-TextField-\(item.id.uuidString)")

@@ -3,4 +3,54 @@
    uuid = "D8E9BE04-4E98-4A9D-9C78-C99DF866419B"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "F6379708-3B7A-448D-B4FE-E6D42A824BE7"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Durigo/Menu/SwiftDataModels.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "99"
+            endingLineNumber = "99"
+            landmarkName = "migrateV1toV2"
+            landmarkType = "24">
+            <Locations>
+               <Location
+                  uuid = "F6379708-3B7A-448D-B4FE-E6D42A824BE7 - 28048623667d3ebb"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (SwiftData.ModelContext) throws -&gt; () in variable initialization expression of static Durigo.BillHistoryItemsMigrationPlan.migrateV1toV2 : SwiftData.MigrationStage"
+                  moduleName = "Durigo"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/joshuacardozo/Developer/Multiplatform/Durigo/Durigo/Menu/SwiftDataModels.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "108"
+                  endingLineNumber = "108"
+                  offsetFromSymbolStart = "820">
+               </Location>
+               <Location
+                  uuid = "F6379708-3B7A-448D-B4FE-E6D42A824BE7 - 28048623667d3ebb"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "closure #1 (SwiftData.ModelContext) throws -&gt; () in variable initialization expression of static Durigo.BillHistoryItemsMigrationPlan.migrateV1toV2 : SwiftData.MigrationStage"
+                  moduleName = "Durigo"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/joshuacardozo/Developer/Multiplatform/Durigo/Durigo/Menu/SwiftDataModels.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "108"
+                  endingLineNumber = "108"
+                  offsetFromSymbolStart = "432">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

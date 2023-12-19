@@ -105,11 +105,11 @@ struct BillHistoryList: View {
 
                                 HStack {
                                     GroupBox {
-                                        if let tableNumber = billHistoryItem.tableNumber {
+                                        let tableNumber = billHistoryItem.tableNumber
                                             Text("Table: \(tableNumber)")
-                                        } else {
-                                            Text("Table: unknown")
-                                        }
+//                                        } else {
+//                                            Text("Table: unknown")
+//                                        }
                                     }
                                     .backgroundStyle(Color.tableColor(tableNumber: billHistoryItem.tableNumber))
                                     Spacer()

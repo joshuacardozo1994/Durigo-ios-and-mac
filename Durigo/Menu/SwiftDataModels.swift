@@ -60,17 +60,17 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
     class BillHistoryItem: Identifiable {
         let id: UUID
         var date: Date
-        var tableNumber: Int?
+        var tableNumber: Int
         var items: [MenuItem]
         var paymentStatus: Status
         var waiter: String
         
-        init(id: UUID, items: [MenuItem], tableNumber: Int, waiter: String) {
+        init(id: UUID, items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
             self.id = id
             self.date = Date()
             self.items = items
             self.tableNumber = tableNumber
-            self.paymentStatus = Status.pending
+            self.paymentStatus = paymentStatus
             self.waiter = waiter
         }
     }
@@ -88,16 +88,32 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         fromVersion: BillHistoryItemsSchemaV1.self,
         toVersion: BillHistoryItemsSchemaV2.self,
         willMigrate: { context in
+            let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
+            
+            oldBillHistoryItems.forEach { oldBillHistoryItem in
+                
+                context.delete(oldBillHistoryItem)
+                context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .paid ? .paid(.cash) : .pending, waiter: "unknown"))
+                
+            }
+            
+//            let newBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV2.BillHistoryItem>())
+//            
+//            newBillHistoryItems.forEach { newBillHistoryItem in
+//                print("newBillHistoryItem id", newBillHistoryItem.id)
+//                print("newBillHistoryItem tableNumber", newBillHistoryItem.tableNumber)
+//            }
+            
             
         }, didMigrate: { context in
-            let billHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV2.BillHistoryItem>())
-            
-            billHistoryItems.forEach { billHistoryItem in
-                billHistoryItem.waiter = "unknown"
-                billHistoryItem.paymentStatus = .paid(.card)
-            }
-
-            try context.save()
+//            let billHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV2.BillHistoryItem>())
+//            print("billHistoryItems", billHistoryItems)
+//            billHistoryItems.forEach { billHistoryItem in
+//                billHistoryItem.waiter = "unknown"
+//                billHistoryItem.paymentStatus = .pending
+//            }
+//
+//            try context.save()
         }
     )
     

@@ -88,14 +88,15 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         fromVersion: BillHistoryItemsSchemaV1.self,
         toVersion: BillHistoryItemsSchemaV2.self,
         willMigrate: { context in
-            let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
+
             
+        }, didMigrate: { context in
+            let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
+
             oldBillHistoryItems.forEach { oldBillHistoryItem in
                 context.delete(oldBillHistoryItem)
             }
             try context.save()
-            
-        }, didMigrate: { context in
             context.insert(BillHistoryItem(id: UUID(), items: [MenuItem(id: UUID(), name: "Item name", prefix: nil, suffix: nil, quantity: 1, price: 100, servingSize: nil)], tableNumber: 1, paymentStatus: .pending, waiter: "unknown"))
             try context.save()
         }

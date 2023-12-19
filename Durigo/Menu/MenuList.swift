@@ -32,25 +32,59 @@ struct MenuList: View {
         }
     }
     
+    func addToMenu(menuItem: Category.Item) {
+        if !menuLoader.billItems.contains(where: { $0.id == menuItem.id
+        }) {
+            var name = menuItem.name
+            if let suffix = menuItem.suffix {
+                name += " (\(suffix))"
+            }
+            let (quantity, _) = Helper.extractNumberAndString(from: searchQuery.lowercased())
+            
+            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1, quantity ?? 1), price: menuItem.price))
+        }
+        #if os(iOS)
+                let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                impactMed.impactOccurred()
+        #endif
+    }
+    
+    func randomiseServingSizeUUIDs() {
+        menuLoader.billItems = menuLoader.billItems.map { billItem in
+            var newBillItem = billItem
+            if newBillItem.servingSize != nil {
+                newBillItem.id = UUID()
+            }
+            return newBillItem
+        }
+    }
+    
     
     
     var body: some View {
         VStack {
             HStack {
-                TextField("Menu Item", text: $searchQuery)
-                    .autocorrectionDisabled()
-                    .padding()
-                    .accessibilityIdentifier("menuItemSearchQueryTextField")
-                Button(action: {
-                    searchQuery = ""
-                }) {
-                    Image(systemName: "x.circle")
+                HStack {
+                    TextField("Menu Item", text: $searchQuery)
+                        .autocorrectionDisabled()
                         .padding()
+                        .accessibilityIdentifier("menuItemSearchQueryTextField")
+                    Button(action: {
+                        searchQuery = ""
+                    }) {
+                        Image(systemName: "x.circle")
+                            .padding()
+                    }
+                    .accessibilityIdentifier("clearSearchField")
+                    
                 }
-                .accessibilityIdentifier("clearSearchField")
-            }
-                
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
+                Button(action: { randomiseServingSizeUUIDs() }) {
+                    Image(systemName: "arrow.2.circlepath")
+                        .padding(.vertical)
+                        .padding(.leading)
+                }
+            }
                 .padding()
             let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
             List(items) { category in
@@ -58,14 +92,45 @@ struct MenuList: View {
                     ForEach(category.items.filter({ [Category.Item.VisibilityScope.bill, Category.Item.VisibilityScope.both].contains($0.visibilityScope)  })) { menuItem in
                         HStack {
                             HStack {
-                                if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
-                                    Text("\(quantity.wrappedValue)")
+                                if let quantity = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
+                                    Text("\(quantity)")
                                         .bold()
                                 } else {
                                     Text("0").hidden()
                                 }
                             }
                             .frame(width: 14)
+                            if let servingSizes = menuItem.servingSizes {
+                                Menu {
+                                    ForEach(servingSizes) { servingSize in
+                                        Button(action: {
+                                            addToMenu(menuItem: menuItem)
+                                            menuLoader.billItems = menuLoader.billItems.map { billItem in
+                                                guard billItem.id == menuItem.id  else { return billItem }
+                                                var newbillItem = billItem
+                                                newbillItem.servingSize = servingSize
+                                                newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                                return newbillItem
+                                            }
+                                        }) {
+                                            Text(servingSize.name)
+                                                
+                                        }
+                                    }
+                                    
+                                    
+                                } label: {
+                                    Text(menuLoader.billItems.first(where: { $0.id == menuItem.id })?.servingSize?.name ?? servingSizes.first?.name ?? "")
+                                        .foregroundStyle(Color.black)
+                                        .bold()
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .overlay(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .stroke(.black, lineWidth: 1)
+                                            )
+                                }
+                            }
                             let text = Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
                                 .italic()
                             +
@@ -86,20 +151,16 @@ struct MenuList: View {
                                     
                                 } else {
                                     Button(action: {
-                                        if !menuLoader.billItems.contains(where: { $0.id == menuItem.id
-                                        }) {
-                                            var name = menuItem.name
-                                            if let suffix = menuItem.suffix {
-                                                name += " (\(suffix))"
-                                            }
-                                            let (quantity, _) = Helper.extractNumberAndString(from: searchQuery.lowercased())
-                                            
-                                            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1, quantity ?? 1), price: menuItem.price))
+                                        addToMenu(menuItem: menuItem)
+                                        menuLoader.billItems = menuLoader.billItems.map { billItem in
+                                            guard billItem.id == menuItem.id else { return billItem }
+                                            guard let servingSizes = menuItem.servingSizes else { return billItem }
+                                            guard let servingSize = servingSizes.first else { return billItem }
+                                            var newbillItem = billItem
+                                            newbillItem.servingSize = servingSize
+                                            newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                            return newbillItem
                                         }
-#if os(iOS)
-                                        let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                                        impactMed.impactOccurred()
-#endif
                                     }) {
                                         VStack{}
                                             .padding(4)
@@ -108,8 +169,11 @@ struct MenuList: View {
                             }
                             .frame(width: 94)
                             
-                            
-                            Text("\(menuItem.price)")
+                            if let billItemPrice = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.price {
+                                Text("\(billItemPrice)")
+                            } else {
+                                Text("\(menuItem.price)")
+                            }
                             
                             
                         }

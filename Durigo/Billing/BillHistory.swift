@@ -19,6 +19,8 @@ struct BillHistory: View {
                     HStack {
                         Text("\(menuItem.quantity) ")
                         +
+                        Text(menuItem.servingSize?.shouldDisplay == true ? "\(menuItem.servingSize?.name ?? "") " : "")
+                        +
                         Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
                         +
                         Text("\(menuItem.name)")

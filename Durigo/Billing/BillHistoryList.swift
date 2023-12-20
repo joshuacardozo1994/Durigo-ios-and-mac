@@ -116,10 +116,11 @@ struct BillHistoryList: View {
                                 HStack {
                                     GroupBox {
                                         let tableNumber = billHistoryItem.tableNumber
+                                        if tableNumber == 0 {
+                                            Text("Parcel")
+                                        } else {
                                             Text("Table: \(tableNumber)")
-//                                        } else {
-//                                            Text("Table: unknown")
-//                                        }
+                                        }
                                     }
                                     .backgroundStyle(Color.tableColor(tableNumber: billHistoryItem.tableNumber))
                                     Spacer()
@@ -159,10 +160,11 @@ struct BillHistoryList: View {
                         Label("\(showTodaysBills ? "●" : "") Show todays bills", systemImage: "calendar")
                     }
                     TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...12))
-                    WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone"])
+                    WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                     Button(action: {
                         showTodaysBills = false
                         selectedTable = nil
+                        selectedWaiter = nil
                     }) {
                         Label("Clear filters", systemImage: "xmark.circle")
                     }

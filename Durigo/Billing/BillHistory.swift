@@ -39,12 +39,13 @@ struct BillHistory: View {
             Button("Regenerate", role: .destructive) {
                 menuLoader.billItems = billHistoryItem.items
                 menuLoader.tableNumber = billHistoryItem.tableNumber
+                menuLoader.waiter = billHistoryItem.waiter
                 menuLoader.billID = billHistoryItem.id
                 navigation.tabSelection = .billGenerator
             }
             Button("Cancel", role: .cancel) {}
         }
-        .navigationTitle("Table \(billHistoryItem.tableNumber ?? 0) Bill")
+        .navigationTitle("\(billHistoryItem.tableNumber == 0 ? "Parcel Bill" : "Table \(billHistoryItem.tableNumber ) Bill")")
         .toolbar {
             printButton
         }

@@ -14,6 +14,9 @@ struct TableDropdownSelector: View {
 
     var body: some View {
         Menu {
+            Button("Parcel") {
+                self.selectedOption = 0
+            }
             ForEach(options, id: \.self) { option in
                 Button("\(option)") {
                     self.selectedOption = option
@@ -22,10 +25,16 @@ struct TableDropdownSelector: View {
             }
         } label: {
             if let selectedOption {
-                Text("\(showIfSelected ? "●" : "") Table \(selectedOption)")
-                    .font(.title)
-                    .bold()
-                    .tint(Color.primary)
+                VStack {
+                    if selectedOption == 0 {
+                        Text("Parcel")
+                    } else {
+                        Text("\(showIfSelected ? "●" : "") Table \(selectedOption)")
+                    }
+                }
+                .font(.title)
+                .bold()
+                .tint(Color.primary)
             } else {
                 Text("Table")
                     .font(.title)
@@ -45,11 +54,26 @@ struct WaiterDropdownSelector: View {
 
     var body: some View {
         Menu {
-            ForEach(options, id: \.self) { option in
-                Button("\(option)") {
-                    self.selectedOption = option
+            Section {
+                ForEach(Array(options.prefix(3)), id: \.self) { option in
+                    Button("\(option)") {
+                        self.selectedOption = option
+                    }
+                    .accessibilityIdentifier("Waiter-Option-\(option)")
                 }
-                .accessibilityIdentifier("Waiter-Option-\(option)")
+            } header: {
+                Text("Waiters")
+            }
+
+            Section {
+                ForEach(Array(options.suffix(3)), id: \.self) { option in
+                    Button("\(option)") {
+                        self.selectedOption = option
+                    }
+                    .accessibilityIdentifier("Waiter-Option-\(option)")
+                }
+            } header: {
+                Text("Admins")
             }
         } label: {
             if let selectedOption {
@@ -119,7 +143,7 @@ struct BillGenerator: View {
                 HStack {
                     TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
                     Spacer()
-                    WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone"])
+                    WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                 }
                 .padding(.horizontal)
                 .padding(.top)

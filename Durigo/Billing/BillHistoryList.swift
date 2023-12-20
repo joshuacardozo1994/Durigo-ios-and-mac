@@ -7,9 +7,11 @@
 
 import SwiftUI
 import SwiftData
+import LocalAuthentication
 
-struct BillHistoryList: View {
+struct BillHistoryListUnlocked: View {
     @State private var selectedTable: Int?
+    @State private var selectedWaiter: String?
     @State private var showTodaysBills = false
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
@@ -23,6 +25,11 @@ struct BillHistoryList: View {
         if let selectedTable {
             return billHistoryItems.filter({ billHistoryItem in
                 billHistoryItem.tableNumber == selectedTable
+            })
+        }
+        if let selectedWaiter {
+            return billHistoryItems.filter({ billHistoryItem in
+                billHistoryItem.waiter == selectedWaiter
             })
         }
         return billHistoryItems
@@ -50,32 +57,70 @@ struct BillHistoryList: View {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
                             VStack(alignment: .leading) {
-                                Menu {
-                                    Button(action: {
-                                        billHistoryItem.paymentStatus = .paid
-                                    }) {
-                                        Label("Paid", systemImage: "checkmark.circle")
+                                HStack {
+                                    Menu {
+                                        Menu {
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByCash
+                                            }) {
+                                                Label("Cash", systemImage: "banknote")
+                                            }
+                                            
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByUPI
+                                            }) {
+                                                Label("UPI", systemImage: "indianrupeesign")
+                                            }
+                                            
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByCard
+                                            }) {
+                                                Label("Card", systemImage: "creditcard")
+                                            }
+                                        } label: {
+                                            Label("Paid", systemImage: "checkmark.circle")
+                                        }
+                                        
+                                        Button(action: {
+                                            billHistoryItem.paymentStatus = .pending
+                                        }) {
+                                            Label("Pending", systemImage: "hourglass")
+                                        }
+                                        
+                                    } label: {
+                                        VStack {
+                                            switch billHistoryItem.paymentStatus {
+                                            case .pending:
+                                                Label("Pending", systemImage: "hourglass")
+                                                    .foregroundStyle(Color.red)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByCard:
+                                                Label("Paid by card", systemImage: "creditcard")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByCash:
+                                                Label("Paid by cash", systemImage: "banknote")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByUPI:
+                                                Label("Paid by UPI", systemImage: "indianrupeesign")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            }
+                                        }
                                     }
-                                    
-                                    Button(action: {
-                                        billHistoryItem.paymentStatus = .pending
-                                    }) {
-                                        Label("Pending", systemImage: "hourglass")
-                                    }
-                                    
-                                } label: {
-                                    Label(billHistoryItem.paymentStatus.rawValue.capitalized(with: .current), systemImage: billHistoryItem.paymentStatus == .paid ? "checkmark.circle" : "hourglass")
-                                        .foregroundStyle(billHistoryItem.paymentStatus == .paid ? Color.green : Color.red)
-                                        .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                    Spacer()
+                                    Label(billHistoryItem.waiter, systemImage: "person.circle")
                                 }
                                 .padding(.bottom)
 
                                 HStack {
                                     GroupBox {
-                                        if let tableNumber = billHistoryItem.tableNumber {
-                                            Text("Table: \(tableNumber)")
+                                        let tableNumber = billHistoryItem.tableNumber
+                                        if tableNumber == 0 {
+                                            Text("Parcel")
                                         } else {
-                                            Text("Table: unknown")
+                                            Text("Table: \(tableNumber)")
                                         }
                                     }
                                     .backgroundStyle(Color.tableColor(tableNumber: billHistoryItem.tableNumber))
@@ -111,13 +156,16 @@ struct BillHistoryList: View {
                     Button(action: {
                         showTodaysBills = true
                         selectedTable = nil
+                        selectedWaiter = nil
                     }) {
-                        Label("Show todays bills", systemImage: "calendar")
+                        Label("\(showTodaysBills ? "●" : "") Show todays bills", systemImage: "calendar")
                     }
-                    DropdownSelector(selectedOption: $selectedTable, options: Array(1...12))
+                    TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...12))
+                    WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                     Button(action: {
                         showTodaysBills = false
                         selectedTable = nil
+                        selectedWaiter = nil
                     }) {
                         Label("Clear filters", systemImage: "xmark.circle")
                     }
@@ -128,9 +176,71 @@ struct BillHistoryList: View {
             }
             .onChange(of: selectedTable) { _, _ in
                 showTodaysBills = false
+                selectedWaiter = nil
+            }
+            .onChange(of: selectedWaiter) { _, _ in
+                showTodaysBills = false
+                selectedTable = nil
             }
         }
         
+    }
+}
+
+struct BillHistoryList: View {
+    @State private var isUnlocked = false
+    private func authenticateWithBiometrics() {
+            let context = LAContext()
+
+            var error: NSError?
+
+            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                let reason = "Authenticate to unlock the app"
+                
+                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                    DispatchQueue.main.async {
+                        if success {
+                            isUnlocked = true
+                        } else {
+                            // Handle authentication failure
+                            if let error = authenticationError as? LAError {
+                                switch error.code {
+                                case .userFallback:
+                                    // User tapped "Enter Password"
+                                    // You can provide an alternative method for authentication here.
+                                    break
+                                default:
+                                    // Handle other authentication errors
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Device doesn't support biometric authentication or has no enrolled biometrics.
+                // Handle accordingly.
+            }
+        }
+    var body: some View {
+        VStack {
+            if isUnlocked {
+                BillHistoryListUnlocked()
+            } else {
+                VStack {
+                    ContentUnavailableView("You do not have access to this screen", systemImage: "exclamationmark.triangle", description: Text("Please click unlock, to unlock the screen"))
+                    Button(action: { authenticateWithBiometrics() }) {
+                        Label("Unlock", systemImage: "lock.open.fill")
+                    }
+                    .padding(.bottom, 60)
+                }
+            }
+        }
+        .task {
+            if !isUnlocked {
+                authenticateWithBiometrics()
+            }
+        }
     }
 }
 
@@ -141,7 +251,7 @@ struct BillHistoryList: View {
     Array(1...10).forEach { tableNumber in
         container.mainContext.insert(BillHistoryItem(id: UUID(), items: [
             MenuItem(id: UUID(), name: "Delicious dish", quantity: 2, price: 300)
-        ], tableNumber: tableNumber))
+        ], tableNumber: tableNumber, waiter: "Anthony"))
     }
     
     return BillHistoryList()

@@ -24,5 +24,7 @@
 	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.business</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>$(PRODUCT_NAME) Authentication with TouchId or FaceID</string>
 </dict>
 </plist>

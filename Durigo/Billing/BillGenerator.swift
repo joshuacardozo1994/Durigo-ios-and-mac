@@ -7,12 +7,17 @@
 
 import SwiftUI
 
-struct DropdownSelector: View {
+
+struct TableDropdownSelector: View {
+    var showIfSelected = false
     @Binding var selectedOption: Int?
     let options: [Int]
 
     var body: some View {
         Menu {
+            Button("Parcel") {
+                self.selectedOption = 0
+            }
             ForEach(options, id: \.self) { option in
                 Button("\(option)") {
                     self.selectedOption = option
@@ -21,16 +26,68 @@ struct DropdownSelector: View {
             }
         } label: {
             if let selectedOption {
-                Text("Table \(selectedOption)")
-                    .font(.title)
-                    .bold()
-                    .tint(Color.primary)
+                VStack {
+                    if selectedOption == 0 {
+                        Text("Parcel")
+                    } else {
+                        Text("\(showIfSelected ? "●" : "") Table \(selectedOption)")
+                    }
+                }
+                .font(.title)
+                .bold()
+                .tint(Color.primary)
             } else {
                 Text("Table")
                     .font(.title)
                     .bold()
                     .tint(Color.primary)
                     .accessibilityIdentifier("Table-Selector")
+            }
+        }
+        
+    }
+}
+
+struct WaiterDropdownSelector: View {
+    var showIfSelected = false
+    @Binding var selectedOption: String?
+    let options: [String]
+
+    var body: some View {
+        Menu {
+            Section {
+                ForEach(Array(options.prefix(3)), id: \.self) { option in
+                    Button("\(option)") {
+                        self.selectedOption = option
+                    }
+                    .accessibilityIdentifier("Waiter-Option-\(option)")
+                }
+            } header: {
+                Text("Waiters")
+            }
+
+            Section {
+                ForEach(Array(options.suffix(3)), id: \.self) { option in
+                    Button("\(option)") {
+                        self.selectedOption = option
+                    }
+                    .accessibilityIdentifier("Waiter-Option-\(option)")
+                }
+            } header: {
+                Text("Admins")
+            }
+        } label: {
+            if let selectedOption {
+                Text("\(showIfSelected ? "●" : "")  \(selectedOption)")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            } else {
+                Text("Waiter")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+                    .accessibilityIdentifier("Waiter-Selector")
             }
         }
         
@@ -85,11 +142,12 @@ struct BillGenerator: View {
         NavigationStack {
             VStack {
                 HStack {
-                    DropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
-                        .padding(.horizontal)
-                        .padding(.top)
+                    TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
                     Spacer()
+                    WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                 }
+                .padding(.horizontal)
+                .padding(.top)
                 billItemsList
                 totalSection
             }
@@ -192,16 +250,18 @@ struct BillGenerator: View {
     /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(tableNumber: menuLoader.tableNumber, billID: menuLoader.billID, billItems: menuLoader.billItems)
+            BillPreview(tableNumber: menuLoader.tableNumber, waiter: menuLoader.waiter, billID: menuLoader.billID, billItems: menuLoader.billItems)
         } label: {
             Image(systemName: "printer.fill")
         }
         .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
-                  menuLoader.tableNumber == nil
+                  menuLoader.tableNumber == nil || menuLoader.waiter == nil
         )
         .accessibilityIdentifier("print-bill")
     }
 }
+
+
 
 struct BillGenerator_Previews: PreviewProvider {
     static var previews: some View {

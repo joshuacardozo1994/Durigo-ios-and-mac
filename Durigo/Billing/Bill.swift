@@ -56,8 +56,14 @@ struct Bill: View {
                 }
                 .overlay(alignment: .topLeading) {
                     if let tableNumber {
-                        Text("Table: \(tableNumber)")
-                            .font(.system(size: 11))
+                        if tableNumber == 0 {
+                            Text("Parcel")
+                                .font(.system(size: 11))
+                        } else {
+                            Text("Table: \(tableNumber)")
+                                .font(.system(size: 11))
+                        }
+                        
                     }
                 }
                 

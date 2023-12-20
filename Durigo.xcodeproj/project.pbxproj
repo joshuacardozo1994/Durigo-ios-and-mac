@@ -13,6 +13,7 @@
 		E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED362B0AA45600132ABA /* BillHistory.swift */; };
 		E730ED392B0AA94900132ABA /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED382B0AA94900132ABA /* Navigation.swift */; };
 		E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */; };
+		E798C5EC2B322E6400935DCE /* SwiftDataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */; };
 		E7BD04092B22181800615B17 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BD04082B22181800615B17 /* Helper.swift */; };
 		E7D092EF2B10A8C80047F8A6 /* MenuGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D092EE2B10A8C80047F8A6 /* MenuGenerator.swift */; };
 		E7D092F12B10AB010047F8A6 /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D092F02B10AB010047F8A6 /* Font+Extensions.swift */; };
@@ -69,6 +70,7 @@
 		E730ED362B0AA45600132ABA /* BillHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistory.swift; sourceTree = "<group>"; };
 		E730ED382B0AA94900132ABA /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
 		E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEditor.swift; sourceTree = "<group>"; };
+		E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataModels.swift; sourceTree = "<group>"; };
 		E7BD04082B22181800615B17 /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
 		E7D092EE2B10A8C80047F8A6 /* MenuGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuGenerator.swift; sourceTree = "<group>"; };
 		E7D092F02B10AB010047F8A6 /* Font+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Extensions.swift"; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				E7ED3A4C2AEAEADE00F2DDA8 /* Models.swift */,
 				E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */,
 				E7D092EE2B10A8C80047F8A6 /* MenuGenerator.swift */,
+				E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */,
 			);
 			path = Menu;
 			sourceTree = "<group>";
@@ -432,6 +435,7 @@
 				E7E0CB402B0F3187004514CC /* Preview.swift in Sources */,
 				E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */,
 				E730ED352B0AA08800132ABA /* Home.swift in Sources */,
+				E798C5EC2B322E6400935DCE /* SwiftDataModels.swift in Sources */,
 				E7D369B22B23001900446811 /* NetworkHelper.swift in Sources */,
 				E7ED3A422AEAEA9C00F2DDA8 /* Bill.swift in Sources */,
 				E7ED3A5E2AEAEB1F00F2DDA8 /* String+Extensions.swift in Sources */,

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 struct TableDropdownSelector: View {
     var showIfSelected = false
     @Binding var selectedOption: Int?
@@ -259,6 +260,8 @@ struct BillGenerator: View {
         .accessibilityIdentifier("print-bill")
     }
 }
+
+
 
 struct BillGenerator_Previews: PreviewProvider {
     static var previews: some View {

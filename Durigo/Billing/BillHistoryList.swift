@@ -7,8 +7,9 @@
 
 import SwiftUI
 import SwiftData
+import LocalAuthentication
 
-struct BillHistoryList: View {
+struct BillHistoryListUnlocked: View {
     @State private var selectedTable: Int?
     @State private var selectedWaiter: String?
     @State private var showTodaysBills = false
@@ -183,6 +184,61 @@ struct BillHistoryList: View {
             }
         }
         
+    }
+}
+
+struct BillHistoryList: View {
+    @State private var isUnlocked = false
+    private func authenticateWithBiometrics() {
+            let context = LAContext()
+
+            var error: NSError?
+
+            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                let reason = "Authenticate to unlock the app"
+                
+                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                    DispatchQueue.main.async {
+                        if success {
+                            isUnlocked = true
+                        } else {
+                            // Handle authentication failure
+                            if let error = authenticationError as? LAError {
+                                switch error.code {
+                                case .userFallback:
+                                    // User tapped "Enter Password"
+                                    // You can provide an alternative method for authentication here.
+                                    break
+                                default:
+                                    // Handle other authentication errors
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Device doesn't support biometric authentication or has no enrolled biometrics.
+                // Handle accordingly.
+            }
+        }
+    var body: some View {
+        VStack {
+            if isUnlocked {
+                BillHistoryListUnlocked()
+            } else {
+                VStack {
+                    ContentUnavailableView("You do not have access to this screen", systemImage: "exclamationmark.triangle", description: Text("Please click unlock, to unlock the screen"))
+                    Button(action: { authenticateWithBiometrics() }) {
+                        Label("Unlock", systemImage: "lock.open.fill")
+                    }
+                    .padding(.bottom, 60)
+                }
+            }
+        }
+        .task {
+            authenticateWithBiometrics()
+        }
     }
 }
 

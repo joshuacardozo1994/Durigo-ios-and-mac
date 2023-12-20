@@ -121,13 +121,13 @@ struct MenuList: View {
                                     
                                 } label: {
                                     Text(menuLoader.billItems.first(where: { $0.id == menuItem.id })?.servingSize?.name ?? servingSizes.first?.name ?? "")
-                                        .foregroundStyle(Color.black)
+                                        .foregroundStyle(Color.primary)
                                         .bold()
                                         .padding(.horizontal, 4)
                                         .padding(.vertical, 2)
                                         .overlay(
                                                 RoundedRectangle(cornerRadius: 4)
-                                                    .stroke(.black, lineWidth: 1)
+                                                    .stroke(Color.primary, lineWidth: 1)
                                             )
                                 }
                             }

@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-struct DropdownSelector: View {
+struct TableDropdownSelector: View {
+    var showIfSelected = false
     @Binding var selectedOption: Int?
     let options: [Int]
 
@@ -21,7 +22,7 @@ struct DropdownSelector: View {
             }
         } label: {
             if let selectedOption {
-                Text("Table \(selectedOption)")
+                Text("\(showIfSelected ? "●" : "") Table \(selectedOption)")
                     .font(.title)
                     .bold()
                     .tint(Color.primary)
@@ -31,6 +32,37 @@ struct DropdownSelector: View {
                     .bold()
                     .tint(Color.primary)
                     .accessibilityIdentifier("Table-Selector")
+            }
+        }
+        
+    }
+}
+
+struct WaiterDropdownSelector: View {
+    var showIfSelected = false
+    @Binding var selectedOption: String?
+    let options: [String]
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button("\(option)") {
+                    self.selectedOption = option
+                }
+                .accessibilityIdentifier("Waiter-Option-\(option)")
+            }
+        } label: {
+            if let selectedOption {
+                Text("\(showIfSelected ? "●" : "")  \(selectedOption)")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+            } else {
+                Text("Waiter")
+                    .font(.title)
+                    .bold()
+                    .tint(Color.primary)
+                    .accessibilityIdentifier("Waiter-Selector")
             }
         }
         
@@ -85,11 +117,12 @@ struct BillGenerator: View {
         NavigationStack {
             VStack {
                 HStack {
-                    DropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
-                        .padding(.horizontal)
-                        .padding(.top)
+                    TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
                     Spacer()
+                    WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone"])
                 }
+                .padding(.horizontal)
+                .padding(.top)
                 billItemsList
                 totalSection
             }
@@ -197,7 +230,7 @@ struct BillGenerator: View {
             Image(systemName: "printer.fill")
         }
         .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
-                  menuLoader.tableNumber == nil
+                  menuLoader.tableNumber == nil || menuLoader.waiter == nil
         )
         .accessibilityIdentifier("print-bill")
     }

@@ -45,14 +45,10 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
         [BillHistoryItem.self]
     }
     
-    enum PaymentType: Codable {
-        case cash
-        case upi
-        case card
-    }
-    
-    enum Status: Codable, Equatable {
-        case paid(PaymentType)
+    enum Status: String, Codable, Equatable {
+        case paidByCash
+        case paidByUPI
+        case paidByCard
         case pending
     }
 
@@ -98,7 +94,7 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         }, didMigrate: { context in
             print("savedOldBillHistoryItems", savedOldBillHistoryItems)
             savedOldBillHistoryItems.forEach { oldBillHistoryItem in
-                context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paid(.cash), waiter: "unknown"))
+                context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paidByCash, waiter: "unknown"))
             }
             
             try context.save()

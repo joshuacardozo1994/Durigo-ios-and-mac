@@ -28,6 +28,7 @@ import SwiftUI
     func resetBill() {
         billItems.removeAll()
         tableNumber = nil
+        waiter = nil
         billID = UUID()
     }
 

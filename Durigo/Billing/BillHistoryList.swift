@@ -10,6 +10,7 @@ import SwiftData
 
 struct BillHistoryList: View {
     @State private var selectedTable: Int?
+    @State private var selectedWaiter: String?
     @State private var showTodaysBills = false
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
@@ -23,6 +24,11 @@ struct BillHistoryList: View {
         if let selectedTable {
             return billHistoryItems.filter({ billHistoryItem in
                 billHistoryItem.tableNumber == selectedTable
+            })
+        }
+        if let selectedWaiter {
+            return billHistoryItems.filter({ billHistoryItem in
+                billHistoryItem.waiter == selectedWaiter
             })
         }
         return billHistoryItems
@@ -50,56 +56,60 @@ struct BillHistoryList: View {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
                             VStack(alignment: .leading) {
-                                Menu {
+                                HStack {
                                     Menu {
-                                        Button(action: {
-                                            billHistoryItem.paymentStatus = .paid(.cash)
-                                        }) {
-                                            Label("Cash", systemImage: "banknote")
+                                        Menu {
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByCash
+                                            }) {
+                                                Label("Cash", systemImage: "banknote")
+                                            }
+                                            
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByUPI
+                                            }) {
+                                                Label("UPI", systemImage: "indianrupeesign")
+                                            }
+                                            
+                                            Button(action: {
+                                                billHistoryItem.paymentStatus = .paidByCard
+                                            }) {
+                                                Label("Card", systemImage: "creditcard")
+                                            }
+                                        } label: {
+                                            Label("Paid", systemImage: "checkmark.circle")
                                         }
                                         
                                         Button(action: {
-                                            billHistoryItem.paymentStatus = .paid(.upi)
+                                            billHistoryItem.paymentStatus = .pending
                                         }) {
-                                            Label("UPI", systemImage: "indianrupeesign")
-                                        }
-                                        
-                                        Button(action: {
-                                            billHistoryItem.paymentStatus = .paid(.card)
-                                        }) {
-                                            Label("Card", systemImage: "creditcard")
-                                        }
-                                    } label: {
-                                        Label("Paid", systemImage: "checkmark.circle")
-                                    }
-                                    
-                                    Button(action: {
-                                        billHistoryItem.paymentStatus = .pending
-                                    }) {
-                                        Label("Pending", systemImage: "hourglass")
-                                    }
-                                    
-                                } label: {
-                                    VStack {
-                                        switch billHistoryItem.paymentStatus {
-                                        case .pending:
                                             Label("Pending", systemImage: "hourglass")
-                                                .foregroundStyle(Color.red)
-                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
-                                        case .paid(.card):
-                                            Label("Paid by card", systemImage: "creditcard")
-                                                .foregroundStyle(Color.green)
-                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
-                                        case .paid(.cash):
-                                            Label("Paid by cash", systemImage: "banknote")
-                                                .foregroundStyle(Color.green)
-                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
-                                        case .paid(.upi):
-                                            Label("Paid by UPI", systemImage: "indianrupeesign")
-                                                .foregroundStyle(Color.green)
-                                                .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                        }
+                                        
+                                    } label: {
+                                        VStack {
+                                            switch billHistoryItem.paymentStatus {
+                                            case .pending:
+                                                Label("Pending", systemImage: "hourglass")
+                                                    .foregroundStyle(Color.red)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByCard:
+                                                Label("Paid by card", systemImage: "creditcard")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByCash:
+                                                Label("Paid by cash", systemImage: "banknote")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            case .paidByUPI:
+                                                Label("Paid by UPI", systemImage: "indianrupeesign")
+                                                    .foregroundStyle(Color.green)
+                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                            }
                                         }
                                     }
+                                    Spacer()
+                                    Label(billHistoryItem.waiter, systemImage: "person.circle")
                                 }
                                 .padding(.bottom)
 
@@ -144,10 +154,12 @@ struct BillHistoryList: View {
                     Button(action: {
                         showTodaysBills = true
                         selectedTable = nil
+                        selectedWaiter = nil
                     }) {
-                        Label("Show todays bills", systemImage: "calendar")
+                        Label("\(showTodaysBills ? "●" : "") Show todays bills", systemImage: "calendar")
                     }
-                    DropdownSelector(selectedOption: $selectedTable, options: Array(1...12))
+                    TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...12))
+                    WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone"])
                     Button(action: {
                         showTodaysBills = false
                         selectedTable = nil
@@ -161,6 +173,11 @@ struct BillHistoryList: View {
             }
             .onChange(of: selectedTable) { _, _ in
                 showTodaysBills = false
+                selectedWaiter = nil
+            }
+            .onChange(of: selectedWaiter) { _, _ in
+                showTodaysBills = false
+                selectedTable = nil
             }
         }
         

@@ -237,7 +237,9 @@ struct BillHistoryList: View {
             }
         }
         .task {
-            authenticateWithBiometrics()
+            if !isUnlocked {
+                authenticateWithBiometrics()
+            }
         }
     }
 }

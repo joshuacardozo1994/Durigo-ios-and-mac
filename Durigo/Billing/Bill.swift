@@ -176,14 +176,14 @@ struct Bill: View {
             .padding()
             .foregroundColor(.black)
             VStack(spacing: 40) {
-                SnowFlake()
-                    .offset(x: CGFloat(Int.random(in: -100...100)))
-                SnowFlake()
-                    .offset(x: CGFloat(Int.random(in: -100...100)))
-                SnowFlake()
-                    .offset(x: CGFloat(Int.random(in: -100...100)))
-                SnowFlake()
-                    .offset(x: CGFloat(Int.random(in: -100...100)))
+                Spacer()
+                    .frame(height: 70)
+                ForEach(0...currentMenuItems.count/6, id: \.self) { _ in
+                    
+                    SnowFlake()
+                        .offset(x: CGFloat(Int.random(in: -100...100)))
+                }
+                Spacer()
             }
         }
     }
@@ -203,17 +203,17 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Chicken Pulao", quantity: 1, price: 200),
                 MenuItem(id: UUID(), name: "Beef Soup", quantity: 1, price: 160),
                 MenuItem(id: UUID(), name: "Mackerel", quantity: 2, price: 180),
-                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),
-                MenuItem(id: UUID(), name: "Item 12", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 13", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 14", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 15", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
-                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),
+//                MenuItem(id: UUID(), name: "Item 12", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 13", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 14", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 15", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 16", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 17", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
+//                MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100)
             ], tableNumber: 9, first: true, finalTotal: 420)
                 .frame(width: 420, height: 595)

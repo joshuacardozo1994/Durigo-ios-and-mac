@@ -29,7 +29,7 @@ struct Home: View {
                 }
                 .tag(TabItems.billGenerator)
                 
-            MenuGenerator()
+            ChristmasMenuGenerator()
                 .tabItem {
                     Label("Menu Generator", systemImage: "doc.plaintext.fill")
                 }

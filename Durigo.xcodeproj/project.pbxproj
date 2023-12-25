@@ -12,6 +12,9 @@
 		E730ED352B0AA08800132ABA /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED342B0AA08800132ABA /* Home.swift */; };
 		E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED362B0AA45600132ABA /* BillHistory.swift */; };
 		E730ED392B0AA94900132ABA /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED382B0AA94900132ABA /* Navigation.swift */; };
+		E7377F472B382CD20011A3F7 /* ChristmasMenuGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7377F462B382CD20011A3F7 /* ChristmasMenuGenerator.swift */; };
+		E7377F492B38364E0011A3F7 /* Belleza-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7377F482B38364E0011A3F7 /* Belleza-Regular.ttf */; };
+		E7377F4B2B38365B0011A3F7 /* BrittanySignature.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E7377F4A2B38365B0011A3F7 /* BrittanySignature.ttf */; };
 		E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */; };
 		E798C5EC2B322E6400935DCE /* SwiftDataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */; };
 		E7BD04092B22181800615B17 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BD04082B22181800615B17 /* Helper.swift */; };
@@ -28,7 +31,7 @@
 		E7D369B22B23001900446811 /* NetworkHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D369B12B23001900446811 /* NetworkHelper.swift */; };
 		E7E0CB3E2B0E8D6A004514CC /* Number+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */; };
 		E7E0CB402B0F3187004514CC /* Preview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB3F2B0F3187004514CC /* Preview.swift */; };
-		E7E0CB422B0F4DA5004514CC /* Color.Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */; };
+		E7E0CB422B0F4DA5004514CC /* Color+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E0CB412B0F4DA5004514CC /* Color+Extensions.swift */; };
 		E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */; };
 		E7ED3A162AEAE9AE00F2DDA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */; };
 		E7ED3A1A2AEAE9AE00F2DDA8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7ED3A192AEAE9AE00F2DDA8 /* Preview Assets.xcassets */; };
@@ -69,6 +72,9 @@
 		E730ED342B0AA08800132ABA /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		E730ED362B0AA45600132ABA /* BillHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistory.swift; sourceTree = "<group>"; };
 		E730ED382B0AA94900132ABA /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
+		E7377F462B382CD20011A3F7 /* ChristmasMenuGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChristmasMenuGenerator.swift; sourceTree = "<group>"; };
+		E7377F482B38364E0011A3F7 /* Belleza-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Belleza-Regular.ttf"; sourceTree = "<group>"; };
+		E7377F4A2B38365B0011A3F7 /* BrittanySignature.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BrittanySignature.ttf; sourceTree = "<group>"; };
 		E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuEditor.swift; sourceTree = "<group>"; };
 		E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataModels.swift; sourceTree = "<group>"; };
 		E7BD04082B22181800615B17 /* Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
@@ -84,7 +90,7 @@
 		E7D369B12B23001900446811 /* NetworkHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelper.swift; sourceTree = "<group>"; };
 		E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Number+Extensions.swift"; sourceTree = "<group>"; };
 		E7E0CB3F2B0F3187004514CC /* Preview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preview.swift; sourceTree = "<group>"; };
-		E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Color.Extensions.swift; sourceTree = "<group>"; };
+		E7E0CB412B0F4DA5004514CC /* Color+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Extensions.swift"; sourceTree = "<group>"; };
 		E7ED3A0E2AEAE9AC00F2DDA8 /* Durigo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Durigo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7ED3A112AEAE9AC00F2DDA8 /* DurigoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurigoApp.swift; sourceTree = "<group>"; };
 		E7ED3A152AEAE9AE00F2DDA8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -245,6 +251,7 @@
 				E73D4E132AEE98BA00EA7459 /* MenuEditor.swift */,
 				E7D092EE2B10A8C80047F8A6 /* MenuGenerator.swift */,
 				E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */,
+				E7377F462B382CD20011A3F7 /* ChristmasMenuGenerator.swift */,
 			);
 			path = Menu;
 			sourceTree = "<group>";
@@ -266,7 +273,7 @@
 				E7ED3A592AEAEB1F00F2DDA8 /* Date+Extensions.swift */,
 				E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */,
 				E7E0CB3D2B0E8D6A004514CC /* Number+Extensions.swift */,
-				E7E0CB412B0F4DA5004514CC /* Color.Extensions.swift */,
+				E7E0CB412B0F4DA5004514CC /* Color+Extensions.swift */,
 				E7D092F02B10AB010047F8A6 /* Font+Extensions.swift */,
 			);
 			path = Extensions;
@@ -279,6 +286,8 @@
 				E7D092F32B10ADED0047F8A6 /* Poppins-Bold.ttf */,
 				E7D092F22B10ADC20047F8A6 /* Poppins-Medium.ttf */,
 				E7ED3A622AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf */,
+				E7377F482B38364E0011A3F7 /* Belleza-Regular.ttf */,
+				E7377F4A2B38365B0011A3F7 /* BrittanySignature.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -392,7 +401,9 @@
 				E7ED3A162AEAE9AE00F2DDA8 /* Assets.xcassets in Resources */,
 				E7D092F42B10ADED0047F8A6 /* Poppins-Bold.ttf in Resources */,
 				E7D092F72B10AE220047F8A6 /* CormorantGaramond-Bold.ttf in Resources */,
+				E7377F492B38364E0011A3F7 /* Belleza-Regular.ttf in Resources */,
 				E7D092F52B10ADF30047F8A6 /* Poppins-Medium.ttf in Resources */,
+				E7377F4B2B38365B0011A3F7 /* BrittanySignature.ttf in Resources */,
 				E7D369AC2B22FBFB00446811 /* Categories.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -422,7 +433,7 @@
 				E7ED3A3E2AEAE9FC00F2DDA8 /* BillGenerator.swift in Sources */,
 				E7ED3A5B2AEAEB1F00F2DDA8 /* Date+Extensions.swift in Sources */,
 				E7D092F12B10AB010047F8A6 /* Font+Extensions.swift in Sources */,
-				E7E0CB422B0F4DA5004514CC /* Color.Extensions.swift in Sources */,
+				E7E0CB422B0F4DA5004514CC /* Color+Extensions.swift in Sources */,
 				E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
 				E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */,
 				E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */,
@@ -432,6 +443,7 @@
 				E7D369AA2B22FB2F00446811 /* MockURLProtocol.swift in Sources */,
 				E7D092EF2B10A8C80047F8A6 /* MenuGenerator.swift in Sources */,
 				E7E0CB3E2B0E8D6A004514CC /* Number+Extensions.swift in Sources */,
+				E7377F472B382CD20011A3F7 /* ChristmasMenuGenerator.swift in Sources */,
 				E7E0CB402B0F3187004514CC /* Preview.swift in Sources */,
 				E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */,
 				E730ED352B0AA08800132ABA /* Home.swift in Sources */,

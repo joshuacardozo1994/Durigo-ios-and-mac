@@ -23,4 +23,12 @@ extension Font {
     static func cormorantGaramondBold(size: CGFloat) -> Font {
         self.custom("CormorantGaramond-Bold", size: size)
     }
+    
+    static func bellezaRegular(size: CGFloat) -> Font {
+        self.custom("Belleza-Regular", size: size)
+    }
+    
+    static func brittanySignature(size: CGFloat) -> Font {
+        self.custom("BrittanySignatureRegular", size: size)
+    }
 }

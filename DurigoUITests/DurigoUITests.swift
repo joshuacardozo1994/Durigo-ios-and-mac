@@ -82,15 +82,25 @@ final class DurigoUITests: XCTestCase {
         
         
         // Tap the button to open the menu
-        let menuButton = app.staticTexts["Table-Selector"]
-        if menuButton.exists {
-            menuButton.tap()
+        let tableMenuButton = app.staticTexts["Table-Selector"]
+        if tableMenuButton.exists {
+            tableMenuButton.tap()
         }
 
         // Now, select an option from the menu
-        let menuOption = app.buttons["Table-Option-1"]
-        if menuOption.waitForExistence(timeout: 5) {
-            menuOption.tap()
+        let tableMenuOption = app.buttons["Table-Option-1"]
+        if tableMenuOption.waitForExistence(timeout: 5) {
+            tableMenuOption.tap()
+        }
+        
+        let waiterMenuButton = app.staticTexts["Waiter-Selector"]
+        if waiterMenuButton.exists {
+            waiterMenuButton.tap()
+        }
+        
+        let waiterMenuOption = app.buttons["Waiter-Option-Joshua"]
+        if waiterMenuOption.waitForExistence(timeout: 5) {
+            waiterMenuOption.tap()
         }
         
         
@@ -247,6 +257,16 @@ final class DurigoUITests: XCTestCase {
         let menuOption = app.buttons["Table-Option-1"]
         if menuOption.waitForExistence(timeout: 5) {
             menuOption.tap()
+        }
+        
+        let waiterMenuButton = app.staticTexts["Waiter-Selector"]
+        if waiterMenuButton.exists {
+            waiterMenuButton.tap()
+        }
+        
+        let waiterMenuOption = app.buttons["Waiter-Option-Joshua"]
+        if waiterMenuOption.waitForExistence(timeout: 5) {
+            waiterMenuOption.tap()
         }
         
         

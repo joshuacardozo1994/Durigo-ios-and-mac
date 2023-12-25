@@ -110,7 +110,7 @@ extension ChristmasMenuGenerator {
                             .foregroundStyle(Color(hex: "#546752"))
                     }
                 }
-                .foregroundStyle(Color(hex: "#d44c62"))
+                .foregroundStyle(Color(hex: "#942436"))
                 .font(.poppinsBold(size: fontSize))
                 if let description = item.description {
                     Text(description)
@@ -137,7 +137,7 @@ extension ChristmasMenuGenerator {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 30, height: 30)
-                            .offset(x: 10, y: -15)
+                            .offset(x: 12, y: -15)
                     }
                 Rectangle()
                     .fill(Color(hex: "#546752"))
@@ -266,7 +266,7 @@ extension ChristmasMenuGenerator {
                 VStack {
                     Text("Christmas")
                         .font(.brittanySignature(size: 100))
-                        .foregroundStyle(Color(hex: "#d44c62"))
+                        .foregroundStyle(Color(hex: "#942436"))
                     Text("Menu")
                         .font(.bellezaRegular(size: 100))
                         .foregroundStyle(Color(hex: "#546752"))
@@ -367,10 +367,10 @@ struct ChristmasMenuGenerator: View {
     @State private var subtitleFontSize: CGFloat = 50
     
     @State private var menuTextFontSize: CGFloat = 80
-    @State private var categoryFontSize: CGFloat = 18
-    @State private var itemFontSize: CGFloat = 16
+    @State private var categoryFontSize: CGFloat = 17
+    @State private var itemFontSize: CGFloat = 15
     @State private var itemDescriptionFontSize: CGFloat = 12
-    @State private var itemTopPadding: CGFloat = 6
+    @State private var itemTopPadding: CGFloat = 5
     @State private var itemPageHorizontalPadding: CGFloat = 40
     @State private var itemPageVerticalPadding: CGFloat = 20
     

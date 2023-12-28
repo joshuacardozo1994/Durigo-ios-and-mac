@@ -208,7 +208,8 @@ struct BillHistoryListUnlocked: View {
 }
 
 struct BillHistoryList: View {
-    @State private var isUnlocked = true
+    @Environment(\.scenePhase) var scenePhase
+    @State private var isUnlocked = false
     private func authenticateWithBiometrics() {
             let context = LAContext()
 
@@ -254,6 +255,13 @@ struct BillHistoryList: View {
                     }
                     .padding(.bottom, 60)
                 }
+            }
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .inactive {
+                isUnlocked = false
+            } else if newPhase == .background {
+                isUnlocked = false
             }
         }
         .task {

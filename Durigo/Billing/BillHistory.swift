@@ -19,15 +19,11 @@ struct BillHistory: View {
                     HStack {
                         Text("\(menuItem.quantity) ")
                         +
-                        Text(menuItem.servingSize?.shouldDisplay == true ? "\(menuItem.servingSize?.name ?? "") " : "")
-                        +
-                        Text(menuItem.prefix != nil ? "(\(menuItem.prefix ?? "")) " : "")
+                        Text(menuItem.servingSize?.shouldDisplay == true ? "\(menuItem.servingSize?.name ?? "") " : "").bold()
                         +
                         Text("\(menuItem.name)")
-                        +
-                        Text(menuItem.suffix != nil ? " (\(menuItem.suffix ?? ""))" : "")
                         Spacer()
-                        Text("\(menuItem.price)")
+                        Text("\(menuItem.price * menuItem.quantity)")
                     }
                     
                 }

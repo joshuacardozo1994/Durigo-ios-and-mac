@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import UniformTypeIdentifiers
+import CoreTransferable
 
 struct MenuItem: Identifiable, Equatable, Hashable, Codable {
     var id: UUID
@@ -75,6 +77,57 @@ struct Category: Codable, Identifiable {
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", items: items)
         return category
     }
+}
+
+extension UTType {
+    static var durigobills: UTType = UTType(exportedAs: "com.durigo.bills")
+}
+
+struct BillHistoryItemCopy: Identifiable, Codable {
+    
+    enum Status: String, Codable, Equatable {
+        case paidByCash
+        case paidByUPI
+        case paidByCard
+        case pending
+    }
+    
+    let id: UUID
+    var date: Date
+    var tableNumber: Int
+    var items: [MenuItem]
+    var paymentStatus: Status
+    var waiter: String
+    
+    init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
+        self.id = id
+        self.date = date
+        self.items = items
+        self.tableNumber = tableNumber
+        self.paymentStatus = paymentStatus
+        self.waiter = waiter
+    }
+    
+    init(billHistoryItem: BillHistoryItem) {
+        self.id = billHistoryItem.id
+        self.date = billHistoryItem.date
+        self.items = billHistoryItem.items
+        self.tableNumber = billHistoryItem.tableNumber
+        self.paymentStatus = Status(rawValue: billHistoryItem.paymentStatus.rawValue) ?? .pending
+        self.waiter = billHistoryItem.waiter
+    }
+    
+    func convertToBillHistoryItem() -> BillHistoryItem {
+        BillHistoryItem(id: self.id, date: self.date, items: self.items, tableNumber: self.tableNumber, paymentStatus: BillHistoryItemsSchemaV2.Status(rawValue: self.paymentStatus.rawValue) ?? .pending, waiter: self.waiter)
+    }
+}
+
+struct DurigoBills: Codable, Transferable {
+    
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .durigobills)
+    }
+    let items: [BillHistoryItemCopy]
 }
 
 

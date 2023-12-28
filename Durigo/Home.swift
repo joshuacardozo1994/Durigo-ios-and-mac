@@ -14,6 +14,7 @@ struct Home: View {
     @StateObject private var menuLoader = MenuLoader()
     @StateObject private var navigation = Navigation()
     @Query private var billHistoryItems: [BillHistoryItem]
+    @Environment(\.modelContext) var modelContext
     var body: some View {
         TabView(selection: $navigation.tabSelection) {
             BillHistoryList()
@@ -36,6 +37,20 @@ struct Home: View {
                 .tag(TabItems.menuGenerator)
                 
         }
+        .onOpenURL(perform: { url in
+            do {
+                let data = try Data(contentsOf: url)
+                let durigoBills = try JSONDecoder().decode(DurigoBills.self, from: data)
+                durigoBills.items.forEach { receivedBillHistoryItemCopy in
+                    let receivedBillHistoryItem = receivedBillHistoryItemCopy.convertToBillHistoryItem()
+                    if (!billHistoryItems.contains { $0.id == receivedBillHistoryItem.id }) {
+                        modelContext.insert(receivedBillHistoryItem)
+                    }
+                }
+            } catch {
+                print("Error decoding object: \(error)")
+            }
+        })
         .environmentObject(menuLoader)
         .environmentObject(navigation)
     }

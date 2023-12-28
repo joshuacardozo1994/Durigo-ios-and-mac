@@ -2,15 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIAppFonts</key>
+	<key>CFBundleDocumentTypes</key>
 	<array>
-		<string>BrittanySignature.ttf</string>
-		<string>Belleza-Regular.ttf</string>
-		<string>DancingScript-VariableFont_wght.ttf</string>
-		<string>Poppins-Medium.ttf</string>
-		<string>Poppins-Bold.ttf</string>
-		<string>CormorantGaramond-Bold.ttf</string>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>DurigoBills</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.durigo.bills</string>
+			</array>
+		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -22,11 +30,58 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.business</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>$(PRODUCT_NAME) Authentication with TouchId or FaceID</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>BrittanySignature.ttf</string>
+		<string>Belleza-Regular.ttf</string>
+		<string>DancingScript-VariableFont_wght.ttf</string>
+		<string>Poppins-Medium.ttf</string>
+		<string>Poppins-Bold.ttf</string>
+		<string>CormorantGaramond-Bold.ttf</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>com.public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>DurigoBills</string>
+			<key>UTTypeIcons</key>
+			<dict/>
+			<key>UTTypeIdentifier</key>
+			<string>com.durigo.bills</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+                <array>
+					<string>durigobills</string>
+                </array>
+			</dict>
+		</dict>
+	</array>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeIconFiles</key>
+            <array>
+                <string>Icon-22x29.png</string>
+                <string>Icon-44x58.png</string>
+                <string>Icon-64x64.png</string>
+                <string>Icon-320x320.png</string>
+            </array>
+            <key>CFBundleTypeName</key>
+            <string>Durigo</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.data</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>

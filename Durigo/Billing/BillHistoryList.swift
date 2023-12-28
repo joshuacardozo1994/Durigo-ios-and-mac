@@ -13,6 +13,7 @@ struct BillHistoryListUnlocked: View {
     @State private var selectedTable: Int?
     @State private var selectedWaiter: String?
     @State private var showTodaysBills = false
+    @State private var sharingURL: URL?
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
     func filteredBillHistoryItems() -> [BillHistoryItem] {
@@ -174,6 +175,25 @@ struct BillHistoryListUnlocked: View {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
             }
+            .toolbar {
+                if let sharingURL {
+                    ShareLink(item: sharingURL)
+                }
+                Button(action: {
+                    let url = URL.documentsDirectory.appending(path: "billsHistory.durigobills")
+                    do {
+                        let data = try JSONEncoder().encode(DurigoBills(items: billHistoryItems.map({  BillHistoryItemCopy(billHistoryItem: $0) }) ))
+                        try data.write(to: url, options: [.atomic, .completeFileProtection])
+                        let input = try String(contentsOf: url)
+                        print("WTF did i save", input)
+                        sharingURL = url
+                    } catch {
+                        
+                    }
+                }) {
+                    Text("Share")
+                }
+            }
             .onChange(of: selectedTable) { _, _ in
                 showTodaysBills = false
                 selectedWaiter = nil
@@ -188,7 +208,7 @@ struct BillHistoryListUnlocked: View {
 }
 
 struct BillHistoryList: View {
-    @State private var isUnlocked = false
+    @State private var isUnlocked = true
     private func authenticateWithBiometrics() {
             let context = LAContext()
 

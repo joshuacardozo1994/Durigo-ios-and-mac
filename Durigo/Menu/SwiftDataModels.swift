@@ -61,9 +61,9 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
         var paymentStatus: Status
         var waiter: String
         
-        init(id: UUID, items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
+        init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
             self.id = id
-            self.date = Date()
+            self.date = date
             self.items = items
             self.tableNumber = tableNumber
             self.paymentStatus = paymentStatus

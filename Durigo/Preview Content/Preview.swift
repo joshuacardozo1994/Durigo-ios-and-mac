@@ -32,4 +32,16 @@ struct PreviewData {
         MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100),
         MenuItem(id: UUID(), name: "Item 21", quantity: 1, price: 100)
     ]
+    
+    static var billHistoryItems: [BillHistoryItem] {
+        guard let path = Bundle.main.path(forResource: "billItems", ofType: "json") else { return [BillHistoryItem]() }
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
+            let durigoBills = try JSONDecoder().decode(DurigoBills.self, from: data)
+            return durigoBills.items.map { $0.convertToBillHistoryItem() }
+        } catch {
+            return [BillHistoryItem]()
+        }
+        
+    }
 }

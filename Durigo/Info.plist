@@ -5,15 +5,22 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>Icon-22x29.png</string>
+				<string>Icon-44x58.png</string>
+				<string>Icon-64x64.png</string>
+				<string>Icon-320x320.png</string>
+			</array>
 			<key>CFBundleTypeName</key>
-			<string>DurigoBills</string>
+			<string>Durigo</string>
 			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
+			<string>Viewer</string>
 			<key>LSHandlerRank</key>
-			<string>Owner</string>
+			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>com.durigo.bills</string>
+				<string>public.data</string>
 			</array>
 		</dict>
 	</array>
@@ -55,33 +62,13 @@
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
-                <array>
+				<array>
 					<string>durigobills</string>
-                </array>
+				</array>
 			</dict>
 		</dict>
 	</array>
-    <key>CFBundleDocumentTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeIconFiles</key>
-            <array>
-                <string>Icon-22x29.png</string>
-                <string>Icon-44x58.png</string>
-                <string>Icon-64x64.png</string>
-                <string>Icon-320x320.png</string>
-            </array>
-            <key>CFBundleTypeName</key>
-            <string>Durigo</string>
-            <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
-            <key>LSHandlerRank</key>
-            <string>Alternate</string>
-            <key>LSItemContentTypes</key>
-            <array>
-                <string>public.data</string>
-            </array>
-        </dict>
-    </array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

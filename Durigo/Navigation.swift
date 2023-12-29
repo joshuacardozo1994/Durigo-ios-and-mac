@@ -11,6 +11,7 @@ enum TabItems {
     case billHistoryList
     case billGenerator
     case menuGenerator
+    case stats
 }
 
 @Observable class Navigation: ObservableObject {

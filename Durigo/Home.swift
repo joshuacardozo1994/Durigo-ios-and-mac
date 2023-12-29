@@ -29,12 +29,17 @@ struct Home: View {
                     Label("Bill Generator", systemImage: "gearshape.2")
                 }
                 .tag(TabItems.billGenerator)
-                
+            Stats()
+                .tabItem {
+                    Label("Stats", systemImage: "chart.bar.fill")
+                }
+                .tag(TabItems.stats)
             ChristmasMenuGenerator()
                 .tabItem {
                     Label("Menu Generator", systemImage: "doc.plaintext.fill")
                 }
                 .tag(TabItems.menuGenerator)
+            
                 
         }
         .onOpenURL(perform: { url in
@@ -57,5 +62,12 @@ struct Home: View {
 }
 
 #Preview {
-    Home()
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
+    
+    PreviewData.billHistoryItems.forEach { billHistoryItem in
+        container.mainContext.insert(billHistoryItem)
+    }
+    return Home()
+        .modelContainer(container)
 }

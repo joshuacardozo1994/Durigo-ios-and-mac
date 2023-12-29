@@ -170,12 +170,16 @@ struct Stats: View {
 }
 
 #Preview {
+    #if DEBUG
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
     
     PreviewData.billHistoryItems.forEach { billHistoryItem in
         container.mainContext.insert(billHistoryItem)
     }
+    #endif
     return Stats()
+#if DEBUG
         .modelContainer(container)
+#endif
 }

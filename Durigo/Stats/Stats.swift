@@ -95,7 +95,7 @@ struct Stats: View {
                             partialResult + item.items.reduce(0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
-                        }) / billHistoryItems.count
+                        }) / max(billHistoryItems.count, 1)
                         Text("\(average.asCurrencyString() ?? "")")
                     }
                 } header: {

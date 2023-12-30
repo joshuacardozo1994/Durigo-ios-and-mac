@@ -21,12 +21,11 @@ extension Date {
 
 extension Date {
     
-    private func isTimeBetween12AMAnd6AM(date: Date) -> Bool {
-        // Get the current calendar
+    private func isTimeBetween12AMAnd6AM() -> Bool {
         let calendar = Calendar.current
         
         // Extract the hour component from the date
-        let hour = calendar.component(.hour, from: date)
+        let hour = calendar.component(.hour, from: Date())
         
         // Check if the hour is between 0 and 3 (0 is 12 AM, and 3 is 3 AM)
         return hour >= 0 && hour < 6
@@ -53,6 +52,6 @@ extension Date {
     }
     
     func isBetweenOperatingHoursToday() -> Bool {
-        return isDateBetween11AMAndNow(date: self, yesterday: isTimeBetween12AMAnd6AM(date: self))
+        return isDateBetween11AMAndNow(date: self, yesterday: isTimeBetween12AMAnd6AM())
     }
 }

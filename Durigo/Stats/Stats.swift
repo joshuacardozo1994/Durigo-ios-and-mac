@@ -19,8 +19,9 @@ extension Stats {
 
 struct Stats: View {
     @Query private var billHistoryItems: [BillHistoryItem]
+    @State private var statType = 0
     
-    func getPopularItems() -> Stats.Container {
+    func getPopularItems(billHistoryItems: [BillHistoryItem]) -> Stats.Container {
         // Define dictionaries to store the total sales amount and total quantity for each MenuItem
         var totalSalesAmounts: [String: Int] = [:]
         var totalQuantities: [String: Int] = [:]
@@ -55,6 +56,12 @@ struct Stats: View {
     var body: some View {
         NavigationStack {
             Form {
+                let billHistoryItems = statType == 0 ? billHistoryItems : billHistoryItems.filter { $0.date.isBetweenOperatingHoursToday() }
+                Picker("What kind of stats do you want to see?", selection: $statType) {
+                                Text("Overall").tag(0)
+                                Text("Today").tag(1)
+                            }
+                            .pickerStyle(.segmented)
                 Section {
                     HStack {
                         Text("Total number of bills")
@@ -91,13 +98,12 @@ struct Stats: View {
                         }) / billHistoryItems.count
                         Text("\(average.asCurrencyString() ?? "")")
                     }
-                    let _ = getPopularItems()
                 } header: {
                     Text("Overview")
                 }
                 
                 Section{
-                    let container = getPopularItems()
+                    let container = getPopularItems(billHistoryItems: billHistoryItems)
                     HStack {
                         Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0) \(container.sortedMenuItemsForQuantity.first ?? "") sold")
                     }

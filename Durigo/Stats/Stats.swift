@@ -127,7 +127,7 @@ struct Stats: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Label("\(Int(Double(cashPayments.count)/Double(billHistoryItems.count)*100))% paid by cash", systemImage: "banknote")
+                            Label("\(Int(Double(cashPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by cash", systemImage: "banknote")
                             Spacer()
                             Text("\(cashPayments.count)")
                         }
@@ -140,7 +140,7 @@ struct Stats: View {
                     }
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Label("\(Int(Double(cardPayments.count)/Double(billHistoryItems.count)*100))% paid by card", systemImage: "creditcard")
+                            Label("\(Int(Double(cardPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by card", systemImage: "creditcard")
                             Spacer()
                             Text("\(cardPayments.count)")
                         }
@@ -153,7 +153,7 @@ struct Stats: View {
                     }
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Label("\(Int(Double(upiPayments.count)/Double(billHistoryItems.count)*100))% paid by UPI", systemImage: "indianrupeesign")
+                            Label("\(Int(Double(upiPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by UPI", systemImage: "indianrupeesign")
                             Spacer()
                             Text("\(upiPayments.count)")
                         }

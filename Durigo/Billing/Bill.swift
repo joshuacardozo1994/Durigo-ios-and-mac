@@ -33,10 +33,23 @@ struct ThankYouMessages {
         "Thanks for choosing us to celebrate this Christmas. Merry Christmas! 🎄",
         "Your visit is a gift to us this holiday season. Merry Christmas! 🎄"
     ]
+    
+    static let newYearMessages = [
+        "Thank you for ringing in the New Year with us! Cheers to a wonderful year ahead. 🎉",
+        "Happy New Year! Your presence made our celebration even more special. 🎊",
+        "We're delighted to have hosted you as we welcomed the New Year. Cheers to new beginnings! 🎉",
+        "May your New Year be filled with joy and prosperity. Thank you for celebrating with us! 🎊",
+        "Your visit added sparkle to our New Year's celebration. Wishing you a year of happiness! 🎉",
+        "We're grateful for your support and company as we step into the New Year. Happy New Year! 🎊",
+        "Celebrating the New Year was more memorable with you. Wishing you all the best in the year to come! 🎉",
+        "Happy New Year! We hope your time with us was the perfect start to a fantastic year. 🎊",
+        "Thank you for choosing to welcome the New Year with us. May it bring you endless joy and success! 🎉",
+        "Your presence was the highlight of our New Year's celebration. Wishing you a prosperous year ahead! 🎊"
+    ]
 
     
     static func getRandomMessage() -> String {
-        christmasMessages.randomElement() ?? "Thank you for dining with us"
+        newYearMessages.randomElement() ?? "Thank you for dining with us"
     }
 }
 

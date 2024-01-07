@@ -34,7 +34,7 @@ struct Home: View {
                     Label("Stats", systemImage: "chart.bar.fill")
                 }
                 .tag(TabItems.stats)
-            ChristmasMenuGenerator()
+            MenuGenerator()
                 .tabItem {
                     Label("Menu Generator", systemImage: "doc.plaintext.fill")
                 }

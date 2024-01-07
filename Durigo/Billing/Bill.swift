@@ -49,7 +49,7 @@ struct ThankYouMessages {
 
     
     static func getRandomMessage() -> String {
-        newYearMessages.randomElement() ?? "Thank you for dining with us"
+        messages.randomElement() ?? "Thank you for dining with us"
     }
 }
 
@@ -79,25 +79,24 @@ struct Bill: View {
     var first = true
     var finalTotal: Int?
     var body: some View {
-        ZStack {
             VStack() {
                 if first {
                     HStack {
                         Spacer()
                         Text("Durigo's")
                             .font(.dancingScriptBold(size: 45))
-                            .overlay {
-                                Image(.christmasBells)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .offset(x: -100)
-                            }
-                            .overlay {
-                                Image(.christmasBells)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .offset(x: 100)
-                            }
+//                            .overlay {
+//                                Image(.christmasBells)
+//                                    .resizable()
+//                                    .aspectRatio(contentMode: .fit)
+//                                    .offset(x: -100)
+//                            }
+//                            .overlay {
+//                                Image(.christmasBells)
+//                                    .resizable()
+//                                    .aspectRatio(contentMode: .fit)
+//                                    .offset(x: 100)
+//                            }
                         Spacer()
                         
                     }
@@ -168,17 +167,17 @@ struct Bill: View {
 #endif
                                 
                             }
-                            Image(.snowman)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 50, height: 50)
+//                            Image(.snowman)
+//                                .resizable()
+//                                .aspectRatio(contentMode: .fit)
+//                                .frame(width: 50, height: 50)
                         }
                         
                         
                     
                     Spacer()
                     Text(ThankYouMessages.getRandomMessage())
-                        .font(.custom("DancingScript-Regular", size: 18))
+                        .font(.dancingScriptRegular(size: 18))
                         .padding(.bottom, 8)
                     
                 } else {
@@ -188,17 +187,17 @@ struct Bill: View {
             }
             .padding()
             .foregroundColor(.black)
-            VStack(spacing: 40) {
-                Spacer()
-                    .frame(height: 70)
-                ForEach(0...currentMenuItems.count/6, id: \.self) { _ in
-                    
-                    SnowFlake()
-                        .offset(x: CGFloat(Int.random(in: -100...100)))
-                }
-                Spacer()
-            }
-        }
+//            VStack(spacing: 40) {
+//                Spacer()
+//                    .frame(height: 70)
+//                ForEach(0...currentMenuItems.count/6, id: \.self) { _ in
+//                    
+//                    SnowFlake()
+//                        .offset(x: CGFloat(Int.random(in: -100...100)))
+//                }
+//                Spacer()
+//            }
+        
     }
 }
 

@@ -12,6 +12,10 @@ extension Font {
         self.custom("DancingScript-Bold", size: size)
     }
     
+    static func dancingScriptRegular(size: CGFloat) -> Font {
+        self.custom("DancingScript-Regular", size: size)
+    }
+    
     static func poppinsMedium(size: CGFloat) -> Font {
         self.custom("Poppins-Medium", size: size)
     }

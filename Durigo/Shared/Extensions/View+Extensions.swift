@@ -19,7 +19,7 @@ struct BiometricLock: ViewModifier {
             if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
                 let reason = "Authenticate to unlock the screen"
                 
-                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
                     DispatchQueue.main.async {
                         if success {
                             isUnlocked = true

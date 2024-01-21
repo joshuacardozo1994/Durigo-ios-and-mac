@@ -136,12 +136,12 @@ extension StatsChart {
                         total += (billItem.price * billItem.quantity)
                     }
                 }
-                let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
+//                let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
 
-                if let currentTotal = totalsByDate[date] {
-                    totalsByDate[date] = currentTotal + total
+                if let currentTotal = totalsByDate[bill.date] {
+                    totalsByDate[bill.date] = currentTotal + total
                 } else {
-                    totalsByDate[date] = total
+                    totalsByDate[bill.date] = total
                 }
             }
 

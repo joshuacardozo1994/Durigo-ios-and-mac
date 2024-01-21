@@ -142,7 +142,7 @@ struct BillGenerator: View {
         NavigationStack {
             VStack {
                 HStack {
-                    TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...12))
+                    TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...20))
                     Spacer()
                     WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                 }

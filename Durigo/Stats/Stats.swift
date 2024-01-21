@@ -19,7 +19,17 @@ extension Stats {
 
 struct Stats: View {
     @Query private var billHistoryItems: [BillHistoryItem]
-    @State private var statType = 0
+    @State private var isShowingStatsFilter = false
+    @State private var startDate = Date()
+    @State private var endDate = Date()
+    
+    
+    func getFilteredBillHistoryItems() -> [BillHistoryItem] {
+        if startDate > endDate {
+            return billHistoryItems
+        }
+        return billHistoryItems.filter { (startDate...endDate).contains($0.date) }
+    }
     
     func getPopularItems(billHistoryItems: [BillHistoryItem]) -> Stats.Container {
         // Define dictionaries to store the total sales amount and total quantity for each MenuItem
@@ -54,14 +64,9 @@ struct Stats: View {
     }
     
     var body: some View {
+        let billHistoryItems = getFilteredBillHistoryItems()
         NavigationStack {
             Form {
-                let billHistoryItems = statType == 0 ? billHistoryItems : billHistoryItems.filter { $0.date.isBetweenOperatingHoursToday() }
-                Picker("What kind of stats do you want to see?", selection: $statType) {
-                                Text("Overall").tag(0)
-                                Text("Today").tag(1)
-                            }
-                            .pickerStyle(.segmented)
                 Section {
                     HStack {
                         Text("Total number of bills")
@@ -104,9 +109,15 @@ struct Stats: View {
                 
                 Section{
                     let container = getPopularItems(billHistoryItems: billHistoryItems)
-                    HStack {
-                        Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0) \(container.sortedMenuItemsForQuantity.first ?? "") sold")
+                    let _ = print("container", container)
+                    NavigationLink {
+                        StatsPopularQuantities(statsContainer: container)
+                    } label: {
+                        HStack {
+                            Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0) \(container.sortedMenuItemsForQuantity.first ?? "") sold")
+                        }
                     }
+                    
                     HStack {
                         Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
                     }
@@ -169,7 +180,18 @@ struct Stats: View {
                     Text("Payment Distribution")
                 }
             }
+            .onAppear {
+                startDate = billHistoryItems.map({ $0.date }).min() ?? Date()
+            }
             .navigationTitle("Stats")
+            .toolbar {
+                Button(action: { isShowingStatsFilter.toggle() }) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                }
+            }
+            .sheet(isPresented: $isShowingStatsFilter) {
+                StatsFilter(startDate: $startDate, endDate: $endDate)
+            }
         }
         .lockWithBiometric()
     }

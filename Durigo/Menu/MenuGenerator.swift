@@ -420,7 +420,7 @@ struct MenuGenerator: View {
         pdf.beginPDFPage(nil)
         
         let fontCoverRenderer = ImageRenderer(content:
-                                                FrontCover(a4Size: a4Size, titleFontSize: titleFontSize, subtitleFontSize: subtitleFontSize)
+                                                col2Grid()
             .frame(width: a4Size.size.width, height: a4Size.size.height)
         )
         
@@ -429,50 +429,50 @@ struct MenuGenerator: View {
         }
         
         pdf.endPDFPage()
-        
-        let pages =
-        
-        [
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]]),
-                
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]]),
-                
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]]),
-                
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
-        ]
-            
-        
-        // 4: Render each page
-        for page in pages {
-            
-            pdf.beginPDFPage(nil)
-            
-            let renderer = ImageRenderer(content:
-                                            page
-                .frame(width: a4Size.size.width, height: a4Size.size.height)
-            )
-            
-            renderer.render { size, context in
-                context(pdf)
-            }
-            
-            pdf.endPDFPage()
-            
-        }
-        
-        pdf.beginPDFPage(nil)
-        
-        let backCoverRenderer = ImageRenderer(content:
-                                                BackCover(a4Size: a4Size, backCoverTitleFontSize: backCoverTitleFontSize, textFontSize: categoryFontSize, padding: backCoverPadding)
-            .frame(width: a4Size.size.width, height: a4Size.size.height)
-        )
-        
-        backCoverRenderer.render { size, context in
-            context(pdf)
-        }
-        
-        pdf.endPDFPage()
+//        
+//        let pages =
+//        
+//        [
+//            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]]),
+//                
+//            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]]),
+//                
+//            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]]),
+//                
+//            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
+//        ]
+//            
+//        
+//        // 4: Render each page
+//        for page in pages {
+//            
+//            pdf.beginPDFPage(nil)
+//            
+//            let renderer = ImageRenderer(content:
+//                                            page
+//                .frame(width: a4Size.size.width, height: a4Size.size.height)
+//            )
+//            
+//            renderer.render { size, context in
+//                context(pdf)
+//            }
+//            
+//            pdf.endPDFPage()
+//            
+//        }
+//        
+//        pdf.beginPDFPage(nil)
+//        
+//        let backCoverRenderer = ImageRenderer(content:
+//                                                BackCover(a4Size: a4Size, backCoverTitleFontSize: backCoverTitleFontSize, textFontSize: categoryFontSize, padding: backCoverPadding)
+//            .frame(width: a4Size.size.width, height: a4Size.size.height)
+//        )
+//        
+//        backCoverRenderer.render { size, context in
+//            context(pdf)
+//        }
+//        
+//        pdf.endPDFPage()
         
         
         

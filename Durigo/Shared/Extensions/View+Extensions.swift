@@ -10,7 +10,11 @@ import LocalAuthentication
 
 struct BiometricLock: ViewModifier {
     @Environment(\.scenePhase) var scenePhase
+    #if DEBUG
+    @State private var isUnlocked = true
+    #else
     @State private var isUnlocked = false
+    #endif
     private func authenticateWithBiometrics() {
             let context = LAContext()
 

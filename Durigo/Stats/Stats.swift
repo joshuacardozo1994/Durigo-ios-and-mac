@@ -31,38 +31,6 @@ struct Stats: View {
         return billHistoryItems.filter { (startDate...endDate).contains($0.date) }
     }
     
-    func getPopularItems(billHistoryItems: [BillHistoryItem]) -> Stats.Container {
-        // Define dictionaries to store the total sales amount and total quantity for each MenuItem
-        var totalSalesAmounts: [String: Int] = [:]
-        var totalQuantities: [String: Int] = [:]
-
-        // Calculate the total sales amount and total quantity for each MenuItem
-        for billHistoryItem in billHistoryItems {
-            for item in billHistoryItem.items {
-                if let salesAmount = totalSalesAmounts[item.name], let quantity = totalQuantities[item.name] {
-                    totalSalesAmounts[item.name] = salesAmount + (item.quantity * item.price)
-                    totalQuantities[item.name] = quantity + item.quantity
-                } else {
-                    totalSalesAmounts[item.name] = item.quantity * item.price
-                    totalQuantities[item.name] = item.quantity
-                }
-            }
-        }
-
-        // Create an array of unique MenuItem names
-        let uniqueMenuItemNames = Set(billHistoryItems.flatMap { $0.items.map { $0.name } })
-
-        // Create an array of MenuItems sorted in descending order by total sales amount
-        let sortedMenuItemsForSale = uniqueMenuItemNames.sorted {
-            totalSalesAmounts[$0]! > totalSalesAmounts[$1]!
-        }
-        
-        let sortedMenuItemsForQuantity = uniqueMenuItemNames.sorted {
-            totalQuantities[$0]! > totalQuantities[$1]!
-        }
-        return Container(totalSalesAmounts: totalSalesAmounts, totalQuantities: totalQuantities, sortedMenuItemsForSale: sortedMenuItemsForSale, sortedMenuItemsForQuantity: sortedMenuItemsForQuantity)
-    }
-    
     var body: some View {
         let billHistoryItems = getFilteredBillHistoryItems()
         NavigationStack {
@@ -108,8 +76,7 @@ struct Stats: View {
                 }
                 
                 Section{
-                    let container = getPopularItems(billHistoryItems: billHistoryItems)
-                    let _ = print("container", container)
+                    let container = billHistoryItems.getStatsContainer()
                     NavigationLink {
                         StatsPopularQuantities(statsContainer: container)
                     } label: {
@@ -117,9 +84,12 @@ struct Stats: View {
                             Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0) \(container.sortedMenuItemsForQuantity.first ?? "") sold")
                         }
                     }
-                    
-                    HStack {
-                        Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
+                    NavigationLink {
+                        StatsPopularSales(statsContainer: container)
+                    } label: {
+                        HStack {
+                            Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
+                        }
                     }
                 } header: {
                     Text("Popular")
@@ -188,6 +158,12 @@ struct Stats: View {
                 Button(action: { isShowingStatsFilter.toggle() }) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
+                NavigationLink {
+                    StatsChart(billHistoryItems: billHistoryItems)
+                } label: {
+                    Image(systemName: "chart.xyaxis.line")
+                }
+
             }
             .sheet(isPresented: $isShowingStatsFilter) {
                 StatsFilter(startDate: $startDate, endDate: $endDate)

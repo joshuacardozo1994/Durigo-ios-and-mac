@@ -274,15 +274,14 @@ struct BillHistoryList: View {
 //}
 
 #Preview {
+    #if DEBUG
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
     
-    Array(1...10).forEach { tableNumber in
-        container.mainContext.insert(BillHistoryItem(id: UUID(), items: [
-            MenuItem(id: UUID(), name: "Delicious dish", quantity: 2, price: 300)
-        ], tableNumber: tableNumber, waiter: "Anthony"))
+    PreviewData.billHistoryItems.forEach { billHistoryItem in
+        container.mainContext.insert(billHistoryItem)
     }
-    
     return BillHistoryList()
         .modelContainer(container)
+#endif
 }

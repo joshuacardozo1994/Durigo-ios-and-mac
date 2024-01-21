@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import Charts
 
 struct DateTotal: Identifiable {
@@ -194,34 +193,49 @@ struct StatsChart: View {
     
     func getSortedTotalsByDate() -> [DateTotal] {
         var totalsByDate = [Date: Int]()
+
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
         for bill in billHistoryItems {
             let total = bill.totalAmount
-            let date = Calendar.current.startOfDay(for: bill.date) // Using start of day for grouping by date
 
-            if let currentTotal = totalsByDate[date] {
-                totalsByDate[date] = currentTotal + total
+            // Convert UTC date to local date
+            let localDate = utcCalendar.date(byAdding: .second, value: TimeZone.current.secondsFromGMT(), to: bill.date)!
+            
+            print("localDate", localDate)
+
+            // Get start of the day for local date
+            let localStartOfDay = utcCalendar.startOfDay(for: localDate)
+
+            if let currentTotal = totalsByDate[localStartOfDay] {
+                totalsByDate[localStartOfDay] = currentTotal + total
             } else {
-                totalsByDate[date] = total
+                totalsByDate[localStartOfDay] = total
             }
+            print("Bill Date (UTC): \(bill.date), Local Start of Day: \(localStartOfDay)")
         }
 
         // Convert to array of DateTotal
         let dateTotals = totalsByDate.map { DateTotal(date: $0.key, totalAmount: $0.value) }
-
-        // Sorting by date if needed
+        
+        // Sorting by date
         return dateTotals.sorted { $0.date < $1.date }
     }
+
+
+
     
     func getAggregatedTotalsByDate() -> [DateTotal] {
         var totalsByDate = [Date: Int]()
         for bill in billHistoryItems {
             let total = bill.totalAmount
-            let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
+//            let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
 
-            if let currentTotal = totalsByDate[date] {
-                totalsByDate[date] = currentTotal + total
+            if let currentTotal = totalsByDate[bill.date] {
+                totalsByDate[bill.date] = currentTotal + total
             } else {
-                totalsByDate[date] = total
+                totalsByDate[bill.date] = total
             }
         }
 
@@ -244,7 +258,7 @@ struct StatsChart: View {
         Form {
             Section {
                 Chart(getSortedTotalsByDate()) { dateTotal in
-                    LineMark(
+                    BarMark(
                         x: .value("Date", dateTotal.date),
                         y: .value("Sales", dateTotal.totalAmount)
                     )
@@ -284,15 +298,7 @@ struct StatsChart: View {
 }
 #if DEBUG
 #Preview {
-
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
-    
-    PreviewData.billHistoryItems.forEach { billHistoryItem in
-        container.mainContext.insert(billHistoryItem)
-    }
     return StatsChart(billHistoryItems: PreviewData.billHistoryItems)
-        .modelContainer(container)
 
 }
 #endif

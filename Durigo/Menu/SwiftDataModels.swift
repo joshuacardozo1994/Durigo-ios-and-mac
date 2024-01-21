@@ -96,7 +96,6 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
             }
             try context.save()
         }, didMigrate: { context in
-            print("savedOldBillHistoryItems", savedOldBillHistoryItems)
             savedOldBillHistoryItems.forEach { oldBillHistoryItem in
                 context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paidByCash, waiter: "unknown"))
             }

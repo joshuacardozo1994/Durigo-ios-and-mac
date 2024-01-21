@@ -272,9 +272,8 @@ struct BillHistoryList: View {
 //        }
 //    }
 //}
-
+#if DEBUG
 #Preview {
-    #if DEBUG
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
     
@@ -283,5 +282,6 @@ struct BillHistoryList: View {
     }
     return BillHistoryList()
         .modelContainer(container)
-#endif
+
 }
+#endif

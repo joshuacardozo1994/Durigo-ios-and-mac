@@ -69,6 +69,10 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
             self.paymentStatus = paymentStatus
             self.waiter = waiter
         }
+        
+        var totalAmount: Int {
+            return items.reduce(0) { $0 + $1.price * $1.quantity }
+        }
     }
 }
 

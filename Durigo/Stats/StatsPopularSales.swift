@@ -45,9 +45,10 @@ struct StatsPopularSales: View {
         }
     }
 }
-
+#if DEBUG
 #Preview {
-    #if DEBUG
+    
     return StatsPopularSales(statsContainer: PreviewData.billHistoryItems.getStatsContainer())
-    #endif
+   
 }
+#endif

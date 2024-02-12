@@ -17,6 +17,11 @@ struct BillHistoryList: View {
     @State private var selectedPaymentStatus: BillHistoryItemStatus?
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
+    func setAppBadgeCount() {
+        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
+        UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
+    }
+    
     func filteredBillHistoryItems() -> [BillHistoryItem] {
         var filteredBillHistoryItems = billHistoryItems
         if showTodaysBills {
@@ -69,18 +74,21 @@ struct BillHistoryList: View {
                                         Menu {
                                             Button(action: {
                                                 billHistoryItem.paymentStatus = .paidByCash
+                                                setAppBadgeCount()
                                             }) {
                                                 Label("Cash", systemImage: "banknote")
                                             }
                                             
                                             Button(action: {
                                                 billHistoryItem.paymentStatus = .paidByUPI
+                                                setAppBadgeCount()
                                             }) {
                                                 Label("UPI", systemImage: "indianrupeesign")
                                             }
                                             
                                             Button(action: {
                                                 billHistoryItem.paymentStatus = .paidByCard
+                                                setAppBadgeCount()
                                             }) {
                                                 Label("Card", systemImage: "creditcard")
                                             }
@@ -90,6 +98,7 @@ struct BillHistoryList: View {
                                         
                                         Button(action: {
                                             billHistoryItem.paymentStatus = .pending
+                                            setAppBadgeCount()
                                         }) {
                                             Label("Pending", systemImage: "hourglass")
                                         }

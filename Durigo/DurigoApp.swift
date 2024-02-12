@@ -22,6 +22,11 @@ struct DurigoApp: App {
         } catch {
             fatalError("Failed to initialize model container.")
         }
+        UNUserNotificationCenter.current().requestAuthorization(options: .badge) { (granted, error) in
+            if error != nil {
+                // success!
+            }
+        }
     }
     
     var body: some Scene {

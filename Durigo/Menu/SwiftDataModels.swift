@@ -77,6 +77,7 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
 }
 
 typealias BillHistoryItem = BillHistoryItemsSchemaV2.BillHistoryItem
+typealias BillHistoryItemStatus = BillHistoryItemsSchemaV2.Status
 
 enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {

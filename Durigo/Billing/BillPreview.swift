@@ -18,8 +18,9 @@ struct GroupedMenu: Identifiable, Equatable {
 struct BillPreview: View {
     @Query var billHistoryItems: [BillHistoryItem]
     @Environment(\.modelContext) var modelContext
+    @EnvironmentObject private var menuLoader: MenuLoader
     let tableNumber: Int?
-    let waiter: String?
+    let waiter: String
     let maxItemCount = 19
     let billID: UUID
     let billItems: [MenuItem]
@@ -56,13 +57,12 @@ struct BillPreview: View {
                     presentbillHistoryItem.tableNumber = tableNumber
                 }
                 presentbillHistoryItem.items = billItems
-                presentbillHistoryItem.date = Date()
+                presentbillHistoryItem.waiter = waiter
             } else {
-                if let tableNumber, let waiter {
+                if let tableNumber {
                     modelContext.insert(BillHistoryItem( id: billID, items: billItems, tableNumber: tableNumber, waiter: waiter))
                 }
             }
-            
         }
     }
     

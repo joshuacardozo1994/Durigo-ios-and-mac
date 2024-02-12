@@ -250,7 +250,7 @@ struct BillGenerator: View {
     /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(tableNumber: menuLoader.tableNumber, waiter: menuLoader.waiter, billID: menuLoader.billID, billItems: menuLoader.billItems)
+            BillPreview(tableNumber: menuLoader.tableNumber, waiter: menuLoader.waiter ?? "Unknown", billID: menuLoader.billID, billItems: menuLoader.billItems)
         } label: {
             Image(systemName: "printer.fill")
         }

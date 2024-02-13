@@ -64,6 +64,10 @@ struct BillPreview: View {
                 }
             }
         }
+        .onChange(of: billHistoryItems, { oldValue, newValue in
+            let pendingBillsCount = (newValue.filter { $0.paymentStatus == .pending }).count
+            UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
+        })
     }
     
     @MainActor func render() -> URL {

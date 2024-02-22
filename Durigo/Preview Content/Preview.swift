@@ -30,7 +30,7 @@ struct PreviewData {
         MenuItem(id: UUID(), name: "Item 18", quantity: 1, price: 100),
         MenuItem(id: UUID(), name: "Item 19", quantity: 1, price: 100),
         MenuItem(id: UUID(), name: "Item 20", quantity: 1, price: 100),
-        MenuItem(id: UUID(), name: "Item 21", quantity: 1, price: 100)
+        MenuItem(id: UUID(), name: "Chocolate Brownie (With ice-cream)", quantity: 1, price: 100)
     ]
     
     static var billHistoryItems: [BillHistoryItem] {

@@ -78,6 +78,19 @@ struct Bill: View {
     let tableNumber: Int?
     var first = true
     var finalTotal: Int?
+    
+    @ViewBuilder func itemText(item: MenuItem) -> Text {
+        Text("\(item.quantity)")
+            .bold()
+        +
+        
+        Text(" \(item.servingSize?.shouldDisplay ?? false ? item.servingSize?.name ?? "" : "")")
+                .bold()
+        +
+        Text(" \(item.prefix ?? "")") +
+        Text(" \(item.name)")
+    }
+    
     var body: some View {
             VStack() {
                 if first {
@@ -129,16 +142,8 @@ struct Bill: View {
                 VStack(spacing: 4) {
                     ForEach(currentMenuItems) { item in
                         HStack(alignment: .bottom) {
-                            Text("\(item.quantity)")
-                                .bold()
-                            if let servingSize = item.servingSize, servingSize.shouldDisplay {
-                                Text(servingSize.name)
-                                    .bold()
-                            }
-                            if let prefix = item.prefix {
-                                Text(prefix)
-                            }
-                            Text("\(item.name)")
+                            itemText(item: item)
+                                .layoutPriority(1)
                             VStack{
                                 Line()
                                     .stroke(style: StrokeStyle(lineWidth: 0.5, dash: [5]))
@@ -213,8 +218,9 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Chonok", quantity: 1, price: 500),
                 MenuItem(id: UUID(), name: "Chilli Chicken", quantity: 2, price: 250),
                 MenuItem(id: UUID(), name: "Chicken Pulao", quantity: 1, price: 200),
-                MenuItem(id: UUID(), name: "Beef Soup", quantity: 1, price: 160),
-                MenuItem(id: UUID(), name: "Mackerel", quantity: 2, price: 180),
+                MenuItem(id: UUID(), name: "Ice Cream (Single scoop)", quantity: 1, price: 160),
+                MenuItem(id: UUID(), name: "Chocolate Brownie (With ice-cream)", quantity: 2, price: 180),
+                MenuItem(id: UUID(), name: "Chicken Soup", prefix: "1 by 2", quantity: 2, price: 180),
 //                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),

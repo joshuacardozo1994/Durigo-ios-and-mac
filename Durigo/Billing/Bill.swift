@@ -79,16 +79,20 @@ struct Bill: View {
     var first = true
     var finalTotal: Int?
     
-    @ViewBuilder func itemText(item: MenuItem) -> Text {
-        Text("\(item.quantity)")
-            .bold()
-        +
+    func itemText(item: MenuItem) -> Text {
+        var textArr = [Text("\(item.quantity)  ").bold()]
         
-        Text(" \(item.servingSize?.shouldDisplay ?? false ? item.servingSize?.name ?? "" : "")")
-                .bold()
-        +
-        Text(" \(item.prefix ?? "")") +
-        Text(" \(item.name)")
+        if item.servingSize?.shouldDisplay == true {
+            textArr.append(Text(" \(item.servingSize?.name ?? "")").bold())
+        }
+        
+        if let prefix = item.prefix {
+            textArr.append(Text(" \(prefix)").bold())
+        }
+        
+        textArr.append(Text(" \(item.name)"))
+        
+        return textArr.reduce(Text("")) { $0 + $1 }
     }
     
     var body: some View {
@@ -221,6 +225,7 @@ struct Bill_Previews: PreviewProvider {
                 MenuItem(id: UUID(), name: "Ice Cream (Single scoop)", quantity: 1, price: 160),
                 MenuItem(id: UUID(), name: "Chocolate Brownie (With ice-cream)", quantity: 2, price: 180),
                 MenuItem(id: UUID(), name: "Chicken Soup", prefix: "1 by 2", quantity: 2, price: 180),
+                MenuItem(id: UUID(), name: "Some drink", prefix: nil, suffix: nil, quantity: 2, price: 40, servingSize: Category.Item.ServingSize(id: UUID(), name: "peg", expression: "x", description: "something", shouldDisplay: true))
 //                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),

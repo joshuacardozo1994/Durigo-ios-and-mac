@@ -34,8 +34,13 @@ import SwiftUI
 
     @MainActor
     func loadMenu() async {
+        guard let serverURL = ProcessInfo.processInfo.environment["SERVER_URL"] else { return }
+        guard var components = URLComponents(string: serverURL) else { return }
+        components.path = "/categories"
+        guard let url = components.url else { return }
+        print("url", url)
         do {
-            let (data, _) = try await session.data(from: URL(string: "https://durigos.in/api/menu")!)
+            let (data, _) = try await session.data(from: url)
             let decoder = JSONDecoder()
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu

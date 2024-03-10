@@ -41,7 +41,7 @@ struct MenuList: View {
             }
             let (quantity, _) = Helper.extractNumberAndString(from: searchQuery.lowercased())
             
-            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1, quantity ?? 1), price: menuItem.price))
+            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1.0, Double(quantity ?? 1) ), price: menuItem.price, allowPartialOrder: menuItem.allowPartialOrder))
         }
         #if os(iOS)
                 let impactMed = UIImpactFeedbackGenerator(style: .medium)
@@ -93,7 +93,7 @@ struct MenuList: View {
                         HStack {
                             HStack {
                                 if let quantity = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
-                                    Text("\(quantity)")
+                                    Text("\(quantity.formatNumberWithFraction())")
                                         .bold()
                                 } else {
                                     Text("0").hidden()
@@ -109,7 +109,7 @@ struct MenuList: View {
                                                 guard billItem.id == menuItem.id  else { return billItem }
                                                 var newbillItem = billItem
                                                 newbillItem.servingSize = servingSize
-                                                newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                                newbillItem.price = Double(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
                                                 return newbillItem
                                             }
                                         }) {
@@ -158,7 +158,7 @@ struct MenuList: View {
                                             guard let servingSize = servingSizes.first else { return billItem }
                                             var newbillItem = billItem
                                             newbillItem.servingSize = servingSize
-                                            newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                            newbillItem.price = Double(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
                                             return newbillItem
                                         }
                                     }) {
@@ -170,9 +170,9 @@ struct MenuList: View {
                             .frame(width: 94)
                             
                             if let billItemPrice = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.price {
-                                Text("\(billItemPrice)")
+                                Text("\(Int(billItemPrice))")
                             } else {
-                                Text("\(menuItem.price)")
+                                Text("\(Int(menuItem.price))")
                             }
                             
                             

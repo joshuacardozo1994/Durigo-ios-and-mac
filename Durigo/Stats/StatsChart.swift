@@ -10,7 +10,7 @@ import Charts
 
 struct DateTotal: Identifiable {
     var date: Date
-    var totalAmount: Int
+    var totalAmount: Double
     var id: Date {
         date
     }
@@ -36,18 +36,18 @@ extension StatsChart {
                     Text("Amount").tag(1)
                 }
                 .pickerStyle(SegmentedPickerStyle())
-                let cashValue = type == 0 ? cashPayments.count : cashPayments.reduce(0, { partialResult, item in
-                    partialResult + item.items.reduce(0, { partialResult, menuitem in
+                let cashValue = type == 0 ? Double(cashPayments.count) : cashPayments.reduce(0.0, { partialResult, item in
+                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                         partialResult + (menuitem.quantity * menuitem.price)
                     })
                 })
-                let upiValue = type == 0 ? upiPayments.count : upiPayments.reduce(0, { partialResult, item in
-                    partialResult + item.items.reduce(0, { partialResult, menuitem in
+                let upiValue = type == 0 ? Double(upiPayments.count) : upiPayments.reduce(0.0, { partialResult, item in
+                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                         partialResult + (menuitem.quantity * menuitem.price)
                     })
                 })
-                let cardValue = type == 0 ? cardPayments.count : cardPayments.reduce(0, { partialResult, item in
-                    partialResult + item.items.reduce(0, { partialResult, menuitem in
+                let cardValue = type == 0 ? Double(cardPayments.count) : cardPayments.reduce(0.0, { partialResult, item in
+                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                         partialResult + (menuitem.quantity * menuitem.price)
                     })
                 })
@@ -128,9 +128,9 @@ extension StatsChart {
         
         
         func getAggregatedTotalsOfItemByDate(item: String) -> [DateTotal] {
-            var totalsByDate = [Date: Int]()
+            var totalsByDate = [Date: Double]()
             for bill in billHistoryItems {
-                var total = 0
+                var total: Double = 0
                 bill.items.forEach { billItem in
                     if billItem.name == item {
                         total += (billItem.price * billItem.quantity)
@@ -150,7 +150,7 @@ extension StatsChart {
             dateTotals.sort { $0.date < $1.date }
 
             // Calculate cumulative sum
-            var cumulativeSum = 0
+            var cumulativeSum: Double = 0
             for i in 0..<dateTotals.count {
                 cumulativeSum += dateTotals[i].totalAmount
                 dateTotals[i].totalAmount = cumulativeSum
@@ -192,7 +192,7 @@ struct StatsChart: View {
     let billHistoryItems: [BillHistoryItem]
     
     func getSortedTotalsByDate() -> [DateTotal] {
-        var totalsByDate = [Date: Int]()
+        var totalsByDate = [Date: Double]()
 
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -227,7 +227,7 @@ struct StatsChart: View {
 
     
     func getAggregatedTotalsByDate() -> [DateTotal] {
-        var totalsByDate = [Date: Int]()
+        var totalsByDate = [Date: Double]()
         for bill in billHistoryItems {
             let total = bill.totalAmount
 //            let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
@@ -244,7 +244,7 @@ struct StatsChart: View {
         dateTotals.sort { $0.date < $1.date }
 
         // Calculate cumulative sum
-        var cumulativeSum = 0
+        var cumulativeSum: Double = 0
         for i in 0..<dateTotals.count {
             cumulativeSum += dateTotals[i].totalAmount
             dateTotals[i].totalAmount = cumulativeSum

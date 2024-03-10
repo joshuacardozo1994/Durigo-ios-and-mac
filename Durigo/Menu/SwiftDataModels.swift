@@ -19,6 +19,17 @@ enum BillHistoryItemsSchemaV1: VersionedSchema {
         case paid
         case pending
     }
+    
+    struct MenuItem: Identifiable, Equatable, Hashable, Codable {
+        var id: UUID
+        var name: String
+        var prefix: String?
+        var suffix: String?
+        var quantity: Double
+        var price: Double
+        var servingSize: Category.Item.ServingSize?
+        var allowPartialOrder: Bool
+    }
 
     @Model
     class BillHistoryItem: Identifiable {
@@ -51,6 +62,16 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
         case paidByCard
         case pending
     }
+    
+    struct MenuItem: Identifiable, Equatable, Hashable, Codable {
+        var id: UUID
+        var name: String
+        var prefix: String?
+        var suffix: String?
+        var quantity: Int
+        var price: Int
+        var servingSize: Category.Item.ServingSize?
+    }
 
     @Model
     class BillHistoryItem: Identifiable {
@@ -76,36 +97,112 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
     }
 }
 
-typealias BillHistoryItem = BillHistoryItemsSchemaV2.BillHistoryItem
-typealias BillHistoryItemStatus = BillHistoryItemsSchemaV2.Status
+enum BillHistoryItemsSchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 1, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [BillHistoryItem.self]
+    }
+    
+    enum Status: String, Codable, Equatable {
+        case paidByCash
+        case paidByUPI
+        case paidByCard
+        case pending
+    }
+    
+    struct MenuItem: Identifiable, Equatable, Hashable, Codable {
+        var id: UUID
+        var name: String
+        var prefix: String?
+        var suffix: String?
+        var quantity: Double
+        var price: Double
+        var servingSize: Category.Item.ServingSize?
+        var allowPartialOrder: Bool
+    }
+
+    @Model
+    class BillHistoryItem: Identifiable {
+        let id: UUID
+        var date: Date
+        var tableNumber: Int
+        var items: [MenuItem]
+        var paymentStatus: Status
+        var waiter: String
+        
+        init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
+            self.id = id
+            self.date = date
+            self.items = items
+            self.tableNumber = tableNumber
+            self.paymentStatus = paymentStatus
+            self.waiter = waiter
+        }
+        
+        var totalAmount: Double {
+            return items.reduce(0) { $0 + $1.price * $1.quantity }
+        }
+    }
+}
+
+typealias MenuItem = BillHistoryItemsSchemaV3.MenuItem
+typealias BillHistoryItem = BillHistoryItemsSchemaV3.BillHistoryItem
+typealias BillHistoryItemStatus = BillHistoryItemsSchemaV3.Status
 
 enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [BillHistoryItemsSchemaV1.self, BillHistoryItemsSchemaV2.self]
+        [BillHistoryItemsSchemaV1.self, BillHistoryItemsSchemaV2.self, BillHistoryItemsSchemaV3.self]
     }
     
-    static var savedOldBillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
+    static var savedV1BillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
+    static var savedV2BillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
     
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: BillHistoryItemsSchemaV1.self,
         toVersion: BillHistoryItemsSchemaV2.self,
         willMigrate: { context in
             let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
-            savedOldBillHistoryItems = oldBillHistoryItems
+            savedV1BillHistoryItems = oldBillHistoryItems
             oldBillHistoryItems.forEach { oldBillHistoryItem in
                 context.delete(oldBillHistoryItem)
             }
             try context.save()
         }, didMigrate: { context in
-            savedOldBillHistoryItems.forEach { oldBillHistoryItem in
-                context.insert(BillHistoryItem(id: oldBillHistoryItem.id, items: oldBillHistoryItem.items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paidByCash, waiter: "unknown"))
+            savedV1BillHistoryItems.forEach { oldBillHistoryItem in
+                let items = oldBillHistoryItem.items.map { oldMenuItem in
+                    BillHistoryItemsSchemaV2.MenuItem(id: oldMenuItem.id, name: oldMenuItem.name, prefix: oldMenuItem.prefix, suffix: oldMenuItem.suffix, quantity: Int(oldMenuItem.quantity), price: Int(oldMenuItem.price), servingSize: oldMenuItem.servingSize)
+                }
+                context.insert(BillHistoryItemsSchemaV2.BillHistoryItem(id: oldBillHistoryItem.id, items: items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paidByCash, waiter: "unknown"))
             }
             
             try context.save()
         }
     )
     
+    static let migrateV2toV3 = MigrationStage.custom(
+        fromVersion: BillHistoryItemsSchemaV2.self,
+        toVersion: BillHistoryItemsSchemaV3.self,
+        willMigrate: { context in
+//            let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV1.BillHistoryItem>())
+//            savedV1BillHistoryItems = oldBillHistoryItems
+//            oldBillHistoryItems.forEach { oldBillHistoryItem in
+//                context.delete(oldBillHistoryItem)
+//            }
+//            try context.save()
+        }, didMigrate: { context in
+//            savedV1BillHistoryItems.forEach { oldBillHistoryItem in
+//                let items = oldBillHistoryItem.items.map { oldMenuItem in
+//                    BillHistoryItemsSchemaV2.MenuItem(id: oldMenuItem.id, name: oldMenuItem.name, prefix: oldMenuItem.prefix, suffix: oldMenuItem.suffix, quantity: Int(oldMenuItem.quantity), price: Int(oldMenuItem.price), servingSize: oldMenuItem.servingSize)
+//                }
+//                context.insert(BillHistoryItemsSchemaV2.BillHistoryItem(id: oldBillHistoryItem.id, items: items, tableNumber: oldBillHistoryItem.tableNumber ?? 0, paymentStatus: oldBillHistoryItem.paymentStatus == .pending ? .pending : .paidByCash, waiter: "unknown"))
+//            }
+//            
+//            try context.save()
+        }
+    )
+    
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
 }

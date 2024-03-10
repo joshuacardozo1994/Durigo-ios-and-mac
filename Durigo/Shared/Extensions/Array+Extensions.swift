@@ -11,8 +11,8 @@ import Foundation
 extension Array where Element == BillHistoryItem {
     func getStatsContainer() -> Stats.Container {
         // Define dictionaries to store the total sales amount and total quantity for each MenuItem
-        var totalSalesAmounts: [String: Int] = [:]
-        var totalQuantities: [String: Int] = [:]
+        var totalSalesAmounts: [String: Double] = [:]
+        var totalQuantities: [String: Double] = [:]
 
         // Calculate the total sales amount and total quantity for each MenuItem
         for billHistoryItem in self {

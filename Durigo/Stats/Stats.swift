@@ -10,8 +10,8 @@ import SwiftData
 
 extension Stats {
     struct Container {
-        let totalSalesAmounts: [String: Int]
-        let totalQuantities: [String: Int]
+        let totalSalesAmounts: [String: Double]
+        let totalQuantities: [String: Double]
         let sortedMenuItemsForSale: [String]
         let sortedMenuItemsForQuantity: [String]
     }
@@ -44,8 +44,8 @@ struct Stats: View {
                     HStack {
                         Text("Total number of items sold")
                         Spacer()
-                        let totalQuantity = billHistoryItems.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let totalQuantity = billHistoryItems.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + menuitem.quantity
                             })
                         })
@@ -54,8 +54,8 @@ struct Stats: View {
                     HStack {
                         Text("Total sales")
                         Spacer()
-                        let sales = billHistoryItems.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let sales = billHistoryItems.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
                         })
@@ -64,11 +64,11 @@ struct Stats: View {
                     HStack {
                         Text("Average Bill amount")
                         Spacer()
-                        let average = billHistoryItems.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let average = billHistoryItems.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
-                        }) / max(billHistoryItems.count, 1)
+                        }) / max(Double(billHistoryItems.count), 1.0)
                         Text("\(average.asCurrencyString() ?? "")")
                     }
                 } header: {
@@ -112,8 +112,8 @@ struct Stats: View {
                             Spacer()
                             Text("\(cashPayments.count)")
                         }
-                        let salesInCash = cashPayments.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let salesInCash = cashPayments.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
                         })
@@ -125,8 +125,8 @@ struct Stats: View {
                             Spacer()
                             Text("\(cardPayments.count)")
                         }
-                        let salesInCard = cardPayments.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let salesInCard = cardPayments.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
                         })
@@ -138,8 +138,8 @@ struct Stats: View {
                             Spacer()
                             Text("\(upiPayments.count)")
                         }
-                        let salesInupi = upiPayments.reduce(0, { partialResult, item in
-                            partialResult + item.items.reduce(0, { partialResult, menuitem in
+                        let salesInupi = upiPayments.reduce(0.0, { partialResult, item in
+                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
                                 partialResult + (menuitem.quantity * menuitem.price)
                             })
                         })

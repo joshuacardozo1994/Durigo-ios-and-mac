@@ -17,13 +17,13 @@ struct BillHistory: View {
             List {
                 ForEach(billHistoryItem.items) { menuItem in
                     HStack {
-                        Text("\(menuItem.quantity) ")
+                        Text(String(format: "%.1f ", menuItem.quantity))
                         +
                         Text(menuItem.servingSize?.shouldDisplay == true ? "\(menuItem.servingSize?.name ?? "") " : "").bold()
                         +
                         Text("\(menuItem.name)")
                         Spacer()
-                        Text("\(menuItem.price * menuItem.quantity)")
+                        Text("\(Int(menuItem.price * menuItem.quantity))")
                     }
                     
                 }

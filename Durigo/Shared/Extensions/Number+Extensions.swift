@@ -20,7 +20,7 @@ extension Double {
         let fractionalPart = self - Double(integerPart)
 
         if fractionalPart == 0.5 {
-            return integerPart == 0 ? "½" : "\(integerPart)½"
+            return integerPart == 0 ? "½" : "\(integerPart) ½"
         } else {
             return "\(integerPart)"
         }

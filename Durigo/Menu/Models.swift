@@ -52,7 +52,6 @@ struct Category: Codable, Identifiable {
         let visibilityScope: VisibilityScope
         let description: String?
         let servingSizes: [ServingSize]?
-        let allowPartialOrder: Bool
     }
     
     let id: UUID
@@ -62,7 +61,7 @@ struct Category: Codable, Identifiable {
     let items: [Item]
     
     static var placeholder: Category {
-        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Double.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil, servingSizes: nil, allowPartialOrder: false) }
+        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Double.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil, servingSizes: nil) }
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", items: items)
         return category
     }

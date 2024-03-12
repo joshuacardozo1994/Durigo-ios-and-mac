@@ -36,7 +36,7 @@ import SwiftUI
     func loadMenu() async {
         guard let serverURL = ProcessInfo.processInfo.environment["SERVER_URL"] else { return }
         guard var components = URLComponents(string: serverURL) else { return }
-        components.path = "/categories"
+        components.path = "/api/categories"
         guard let url = components.url else { return }
         print("url", url)
         do {

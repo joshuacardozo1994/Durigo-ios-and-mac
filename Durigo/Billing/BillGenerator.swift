@@ -100,10 +100,13 @@ struct BillItem: View {
 
     var body: some View {
         HStack {
-            Text("\(item.quantity.formatNumberWithFraction())")
+            Text(String(format: "%.1f", item.quantity))
                 .bold()
                 .padding(.trailing, 8)
                 .accessibilityIdentifier("menu-item-quantity-Text-\(item.id.uuidString)")
+                .onTapGesture {
+                    item.quantity += 0.5
+                }
             Stepper("Quantity", value: $item.quantity, in: 1...100)
                 .labelsHidden()
                 .accessibilityIdentifier("menu-item-quantity-Stepper-\(item.id.uuidString)")
@@ -230,7 +233,7 @@ struct BillGenerator: View {
     /// Button to add a new item.
     private var addItemButton: some View {
         Button(action: {
-            menuLoader.billItems.append(MenuItem(id: UUID(), name: "", quantity: 1, price: 0, allowPartialOrder: false))
+            menuLoader.billItems.append(MenuItem(id: UUID(), name: "", quantity: 1, price: 0))
         }) {
             Image(systemName: "plus.circle.fill")
         }

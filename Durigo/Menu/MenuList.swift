@@ -41,7 +41,7 @@ struct MenuList: View {
             }
             let (quantity, _) = Helper.extractNumberAndString(from: searchQuery.lowercased())
             
-            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1, quantity ?? 1), price: menuItem.price))
+            menuLoader.billItems.append(MenuItem(id: menuItem.id, name: name, prefix: menuItem.prefix, suffix: menuItem.suffix, quantity: max(1.0, Double(quantity ?? 1) ), price: menuItem.price))
         }
         #if os(iOS)
                 let impactMed = UIImpactFeedbackGenerator(style: .medium)
@@ -93,13 +93,20 @@ struct MenuList: View {
                         HStack {
                             HStack {
                                 if let quantity = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
-                                    Text("\(quantity)")
+                                    Text(String(format: "%.1f", quantity))
                                         .bold()
+                                        .onTapGesture {
+                                            print("tapped")
+                                            menuLoader.billItems = menuLoader.billItems.map({
+                                                MenuItem(id: $0.id, name: $0.name, prefix: $0.prefix, suffix: $0.suffix, quantity: $0.quantity + 0.5, price: $0.price, servingSize: $0.servingSize)
+                                            })
+                                            
+                                        }
                                 } else {
                                     Text("0").hidden()
                                 }
                             }
-                            .frame(width: 14)
+                            .frame(width: 28)
                             if let servingSizes = menuItem.servingSizes {
                                 Menu {
                                     ForEach(servingSizes) { servingSize in
@@ -109,7 +116,7 @@ struct MenuList: View {
                                                 guard billItem.id == menuItem.id  else { return billItem }
                                                 var newbillItem = billItem
                                                 newbillItem.servingSize = servingSize
-                                                newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                                newbillItem.price = Double(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
                                                 return newbillItem
                                             }
                                         }) {
@@ -158,7 +165,7 @@ struct MenuList: View {
                                             guard let servingSize = servingSizes.first else { return billItem }
                                             var newbillItem = billItem
                                             newbillItem.servingSize = servingSize
-                                            newbillItem.price = Int(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
+                                            newbillItem.price = Double(Helper.evaluateExpression(expression: servingSize.expression, withValue: Double(menuItem.price)) ?? 0)
                                             return newbillItem
                                         }
                                     }) {
@@ -170,9 +177,9 @@ struct MenuList: View {
                             .frame(width: 94)
                             
                             if let billItemPrice = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.price {
-                                Text("\(billItemPrice)")
+                                Text("\(Int(billItemPrice))")
                             } else {
-                                Text("\(menuItem.price)")
+                                Text("\(Int(menuItem.price))")
                             }
                             
                             

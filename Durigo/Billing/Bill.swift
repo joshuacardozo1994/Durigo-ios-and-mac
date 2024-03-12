@@ -78,9 +78,10 @@ struct Bill: View {
     let tableNumber: Int?
     var first = true
     var finalTotal: Int?
+    @State private var maxWidth: CGFloat = 0
     
     func itemText(item: MenuItem) -> Text {
-        var textArr = [Text("\(item.quantity)  ").bold()]
+        var textArr = [Text("")]
         
         if item.servingSize?.shouldDisplay == true {
             textArr.append(Text(" \(item.servingSize?.name ?? "")").bold())
@@ -146,6 +147,21 @@ struct Bill: View {
                 VStack(spacing: 4) {
                     ForEach(currentMenuItems) { item in
                         HStack(alignment: .bottom) {
+                                Text("\(item.quantity.formatNumberWithFraction())").bold()
+                                .background(
+                                                            GeometryReader { geometry in
+                                                                Color.clear.onAppear {
+                                                                    let textWidth = geometry.size.width
+                                                                    if textWidth > maxWidth {
+                                                                        maxWidth = textWidth
+                                                                    }
+                                                                }
+                                                            }
+                                                        )
+                                                        .frame(minWidth: maxWidth, alignment: .leading)
+                            
+                                
+                                
                             itemText(item: item)
                                 .layoutPriority(1)
                             VStack{
@@ -156,7 +172,7 @@ struct Bill: View {
                                     .padding(.bottom, 3)
                                 
                             }
-                            Text("₹\(item.price*item.quantity)")
+                            Text("₹\(Int(item.price*item.quantity))")
                         }
                     }
                     .font(.system(size: 12))
@@ -216,16 +232,16 @@ struct Bill_Previews: PreviewProvider {
             HStack { Spacer() }
             Spacer()
             Bill(currentMenuItems: [
-                MenuItem(id: UUID(), name: "Soda", quantity: 1, price: 20),
+                MenuItem(id: UUID(), name: "Soda", quantity: 1.5, price: 20),
                 MenuItem(id: UUID(), name: "Fresh Lemon Soda", quantity: 2, price: 90),
                 MenuItem(id: UUID(), name: "Virgin Mojito", quantity: 1, price: 220),
                 MenuItem(id: UUID(), name: "Chonok", quantity: 1, price: 500),
-                MenuItem(id: UUID(), name: "Chilli Chicken", quantity: 2, price: 250),
+                MenuItem(id: UUID(), name: "Chilli Chicken", quantity: 2.5, price: 250),
                 MenuItem(id: UUID(), name: "Chicken Pulao", quantity: 1, price: 200),
                 MenuItem(id: UUID(), name: "Ice Cream (Single scoop)", quantity: 1, price: 160),
                 MenuItem(id: UUID(), name: "Chocolate Brownie (With ice-cream)", quantity: 2, price: 180),
                 MenuItem(id: UUID(), name: "Chicken Soup", prefix: "1 by 2", quantity: 2, price: 180),
-                MenuItem(id: UUID(), name: "Some drink", prefix: nil, suffix: nil, quantity: 2, price: 40, servingSize: Category.Item.ServingSize(id: UUID(), name: "peg", expression: "x", description: "something", shouldDisplay: true))
+                MenuItem(id: UUID(), name: "Some drink", prefix: nil, suffix: nil, quantity: 2.5, price: 40, servingSize: Category.Item.ServingSize(id: UUID(), name: "peg", expression: "x", description: "something", shouldDisplay: true))
 //                MenuItem(id: UUID(), name: "Ice Cream", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Caramel Pudding", quantity: 1, price: 100),
 //                MenuItem(id: UUID(), name: "Pankcakes", quantity: 2, price: 100),

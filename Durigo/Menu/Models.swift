@@ -9,22 +9,10 @@ import Foundation
 import UniformTypeIdentifiers
 import CoreTransferable
 
-struct MenuItem: Identifiable, Equatable, Hashable, Codable {
-    var id: UUID
-    var name: String
-    var prefix: String?
-    var suffix: String?
-    var quantity: Int
-    var price: Int
-    var servingSize: Category.Item.ServingSize?
-    
-}
-
 extension Array where Element == MenuItem {
     func getTotal() -> Int {
-      
         self.reduce(0) { partialResult, item in
-            return partialResult + (item.price*item.quantity)
+            return partialResult + Int(item.price*item.quantity)
         }
     }
 }
@@ -58,7 +46,7 @@ struct Category: Codable, Identifiable {
         
         let id: UUID
         let name: String
-        let price: Int
+        let price: Double
         let prefix: String?
         let suffix: String?
         let visibilityScope: VisibilityScope
@@ -73,7 +61,7 @@ struct Category: Codable, Identifiable {
     let items: [Item]
     
     static var placeholder: Category {
-        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Int.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil, servingSizes: nil) }
+        let items = (1...7).map { _ in Category.Item(id: UUID(), name: "XXXXX", price: Double.random(in: 1...999), prefix: nil, suffix: nil, visibilityScope: .both, description: nil, servingSizes: nil) }
         let category = Category(id: UUID(), type: .drinks, name: "XXXXXX", items: items)
         return category
     }
@@ -118,7 +106,7 @@ struct BillHistoryItemCopy: Identifiable, Codable {
     }
     
     func convertToBillHistoryItem() -> BillHistoryItem {
-        BillHistoryItem(id: self.id, date: self.date, items: self.items, tableNumber: self.tableNumber, paymentStatus: BillHistoryItemsSchemaV2.Status(rawValue: self.paymentStatus.rawValue) ?? .pending, waiter: self.waiter)
+        BillHistoryItem(id: self.id, date: self.date, items: self.items, tableNumber: self.tableNumber, paymentStatus: BillHistoryItemStatus(rawValue: self.paymentStatus.rawValue) ?? .pending, waiter: self.waiter)
     }
 }
 

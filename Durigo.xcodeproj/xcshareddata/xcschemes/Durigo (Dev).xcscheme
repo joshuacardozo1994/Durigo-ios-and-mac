@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1510"
+   LastUpgradeVersion = "1520"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -28,30 +28,6 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
-      <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E7ED3A1E2AEAE9AE00F2DDA8"
-               BuildableName = "DurigoTests.xctest"
-               BlueprintName = "DurigoTests"
-               ReferencedContainer = "container:Durigo.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E7ED3A282AEAE9AE00F2DDA8"
-               BuildableName = "DurigoUITests.xctest"
-               BlueprintName = "DurigoUITests"
-               ReferencedContainer = "container:Durigo.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -76,7 +52,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "SERVER_URL"
-            value = "https://durigos.in/api"
+            value = "https://dev.durigos.in/api"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

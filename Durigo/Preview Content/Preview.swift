@@ -10,7 +10,7 @@ import Foundation
 
 struct PreviewData {
    static let menuItems = [
-        MenuItem(id: UUID(), name: "Soda", quantity: 1, price: 20),
+    MenuItem(id: UUID(), name: "Soda", quantity: 1, price: 20),
         MenuItem(id: UUID(), name: "Fresh Lemon Soda", quantity: 2, price: 90),
         MenuItem(id: UUID(), name: "Virgin Mojito", quantity: 1, price: 220),
         MenuItem(id: UUID(), name: "Chonok", quantity: 1, price: 500),

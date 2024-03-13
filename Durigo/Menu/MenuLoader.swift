@@ -34,7 +34,7 @@ import SwiftUI
 
     @MainActor
     func loadMenu() async {
-        guard var components = URLComponents(string: "https://durigos.in") else { return }
+        guard var components = URLComponents(string: Config.shared.serverURL) else { return }
         components.path = "/api/categories"
         guard let url = components.url else { return }
         print("url", url)

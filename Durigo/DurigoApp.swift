@@ -12,6 +12,7 @@ import SwiftData
 @main
 struct DurigoApp: App {
     let container: ModelContainer
+
     
     init() {
         do {

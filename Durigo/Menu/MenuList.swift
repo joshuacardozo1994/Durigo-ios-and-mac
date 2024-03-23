@@ -98,7 +98,7 @@ struct MenuList: View {
                                         .onTapGesture {
                                             print("tapped")
                                             menuLoader.billItems = menuLoader.billItems.map({
-                                                MenuItem(id: $0.id, name: $0.name, prefix: $0.prefix, suffix: $0.suffix, quantity: $0.quantity + 0.5, price: $0.price, servingSize: $0.servingSize)
+                                                MenuItem(id: $0.id, name: $0.name, prefix: $0.prefix, suffix: $0.suffix, quantity: $0.quantity + ($0.id == menuItem.id ? 0.5 : 0), price: $0.price, servingSize: $0.servingSize)
                                             })
                                             
                                         }

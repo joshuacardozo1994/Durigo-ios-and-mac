@@ -18,8 +18,8 @@ struct BillHistoryList: View {
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
     
     func setAppBadgeCount() {
-        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
-        UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
+//        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
+//        UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
     }
     
     func filteredBillHistoryItems() -> [BillHistoryItem] {

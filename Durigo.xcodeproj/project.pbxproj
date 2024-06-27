@@ -623,7 +623,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
@@ -776,7 +776,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
@@ -922,7 +922,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
@@ -1068,7 +1068,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
@@ -1276,7 +1276,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;
@@ -1320,7 +1320,7 @@
 				CODE_SIGN_ENTITLEMENTS = Durigo/Durigo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Durigo/Preview Content\"";
 				DEVELOPMENT_TEAM = FGQ2C68XLR;

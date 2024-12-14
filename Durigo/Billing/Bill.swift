@@ -184,7 +184,7 @@ struct Bill: View {
                                 .font(.system(size: 20))
                                 .bold()
                             //"upi://pay?pa=9545925489@okbizaxis&pn=Durigo&am=\(String(currentMenuItems.getTotal())).00"
-                            if let uiImage = "upi://pay?pa=9545925489@okbizaxis&pn=Durigo".getQRCodeImage() {
+                            if let uiImage = "upi://pay?ver=01&mode=1&pa=88117166@idfcbank&pn=DURIGOBARANDRESTAURANT&tr=STQ241211070222532I024331&mc=5812&qrMedium=03".getQRCodeImage() {
 #if os(iOS)
                                 Image(uiImage: uiImage)
                                     .resizable()

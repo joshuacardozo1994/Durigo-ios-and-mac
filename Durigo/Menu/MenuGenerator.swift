@@ -248,8 +248,7 @@ extension MenuGenerator {
                     Text("Contact: ")
                         
                     VStack(alignment: .leading) {
-                        Text("9145529203")
-                        Text("9145925489")
+                        Text("9545925489")
                     }
                 }
                 .padding(.top)
@@ -348,19 +347,19 @@ struct MenuGenerator: View {
                             .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]])
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[3]], right: [menu[2],  menu[6], menu[9]])
                             .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]])
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[1], menu[5], menu[8]], right: [menu[4], menu[10], menu[7]])
                             .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]])
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[11], menu[12], menu[13]], right: [menu[14], menu[15]])
                             .background(Color.white)
                             .scaleEffect(finalScale)
                             
-                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
+                        Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[16], menu[17], menu[18]], right: [menu[19], menu[20]])
                             .background(Color.white)
                             .scaleEffect(finalScale)
                             
@@ -434,13 +433,13 @@ struct MenuGenerator: View {
         let pages =
         
         [
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[1], menu[4]], right: [menu[3],  menu[7], menu[10]]),
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[3]], right: [menu[2],  menu[6], menu[9]]),
                 
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[2], menu[6], menu[9]], right: [menu[5], menu[11], menu[8]]),
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[1], menu[5], menu[8]], right: [menu[4], menu[10], menu[7]]),
                 
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[12], menu[13], menu[14]], right: [menu[15], menu[16]]),
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[11], menu[12], menu[13]], right: [menu[14], menu[15]]),
                 
-            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[17], menu[18], menu[19]], right: [menu[20], menu[21]])
+            Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[16], menu[17], menu[18]], right: [menu[19], menu[20]])
         ]
             
         

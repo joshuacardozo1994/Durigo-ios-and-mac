@@ -102,7 +102,7 @@ struct Bill: View {
                     HStack {
                         Spacer()
                         Text("Durigo's")
-                            .font(.dancingScriptBold(size: 45))
+                            .font(.dancingScriptBold(size: 40))
 //                            .overlay {
 //                                Image(.christmasBells)
 //                                    .resizable()
@@ -133,6 +133,19 @@ struct Bill: View {
                             }
                             
                         }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        Text("GSTIN: 30AEJPR6889P1ZI")
+                            .font(.system(size: 10))
+                            .padding(.top)
+                    }
+                    
+                    .overlay(alignment: .topTrailing) {
+                            Text("VAT TIN: 30031114703")
+                                .font(.system(size: 10))
+                                .padding(.top)
+                            
+                        
                     }
                     
                     Text("+91 9545925489")

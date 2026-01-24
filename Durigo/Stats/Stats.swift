@@ -15,143 +15,193 @@ extension Stats {
         let sortedMenuItemsForSale: [String]
         let sortedMenuItemsForQuantity: [String]
     }
+
+    struct StatsData {
+        var totalBills: Int = 0
+        var totalQuantity: Double = 0
+        var totalSales: Double = 0
+        var averageBillAmount: Double = 0
+        var cashPayments: [BillHistoryItem] = []
+        var cardPayments: [BillHistoryItem] = []
+        var upiPayments: [BillHistoryItem] = []
+        var container: Container?
+        var filteredItems: [BillHistoryItem] = []
+    }
 }
 
 struct Stats: View {
-    @Query private var billHistoryItems: [BillHistoryItem]
+    @Environment(\.modelContext) private var modelContext
     @State private var isShowingStatsFilter = false
     @State private var startDate = Date()
     @State private var endDate = Date()
-    
-    
-    func getFilteredBillHistoryItems() -> [BillHistoryItem] {
-        if startDate > endDate {
-            return billHistoryItems
+    @State private var isLoading = true
+    @State private var statsData = StatsData()
+
+    private func loadStats() async {
+        isLoading = true
+
+        // Fetch data on background thread
+        let descriptor = FetchDescriptor<BillHistoryItem>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+
+        do {
+            let items = try modelContext.fetch(descriptor)
+
+            // Filter by date range
+            let filteredItems: [BillHistoryItem]
+            if startDate <= endDate {
+                filteredItems = items.filter { (startDate...endDate).contains($0.date) }
+            } else {
+                filteredItems = items
+            }
+
+            // Calculate stats
+            var data = StatsData()
+            data.filteredItems = filteredItems
+            data.totalBills = filteredItems.count
+
+            data.totalQuantity = filteredItems.reduce(0.0) { partialResult, item in
+                partialResult + item.items.reduce(0.0) { $0 + $1.quantity }
+            }
+
+            data.totalSales = filteredItems.reduce(0.0) { partialResult, item in
+                partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
+            }
+
+            data.averageBillAmount = data.totalSales / max(Double(data.totalBills), 1.0)
+
+            data.cashPayments = filteredItems.filter { $0.paymentStatus == .paidByCash }
+            data.cardPayments = filteredItems.filter { $0.paymentStatus == .paidByCard }
+            data.upiPayments = filteredItems.filter { $0.paymentStatus == .paidByUPI }
+
+            data.container = filteredItems.getStatsContainer()
+
+            // Set minimum start date
+            if let minDate = items.map({ $0.date }).min() {
+                await MainActor.run {
+                    if startDate > minDate {
+                        startDate = minDate
+                    }
+                }
+            }
+
+            await MainActor.run {
+                statsData = data
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                isLoading = false
+            }
         }
-        return billHistoryItems.filter { (startDate...endDate).contains($0.date) }
     }
     
     var body: some View {
-        let billHistoryItems = getFilteredBillHistoryItems()
         NavigationStack {
-            Form {
-                Section {
-                    HStack {
-                        Text("Total number of bills")
+            Group {
+                if isLoading {
+                    VStack {
                         Spacer()
-                        Text("\(billHistoryItems.count)")
-                    }
-                    HStack {
-                        Text("Total number of items sold")
+                        ProgressView("Loading stats...")
                         Spacer()
-                        let totalQuantity = billHistoryItems.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + menuitem.quantity
-                            })
-                        })
-                        Text("\(totalQuantity)")
                     }
-                    HStack {
-                        Text("Total sales")
-                        Spacer()
-                        let sales = billHistoryItems.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + (menuitem.quantity * menuitem.price)
-                            })
-                        })
-                        Text("\(sales.asCurrencyString() ?? "")")
-                    }
-                    HStack {
-                        Text("Average Bill amount")
-                        Spacer()
-                        let average = billHistoryItems.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + (menuitem.quantity * menuitem.price)
-                            })
-                        }) / max(Double(billHistoryItems.count), 1.0)
-                        Text("\(average.asCurrencyString() ?? "")")
-                    }
-                } header: {
-                    Text("Overview")
-                }
-                
-                Section{
-                    let container = billHistoryItems.getStatsContainer()
-                    NavigationLink {
-                        StatsPopularQuantities(statsContainer: container)
-                    } label: {
-                        HStack {
-                            Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0) \(container.sortedMenuItemsForQuantity.first ?? "") sold")
+                } else {
+                    Form {
+                        Section {
+                            HStack {
+                                Text("Total number of bills")
+                                Spacer()
+                                Text("\(statsData.totalBills)")
+                            }
+                            HStack {
+                                Text("Total number of items sold")
+                                Spacer()
+                                Text("\(statsData.totalQuantity, specifier: "%.1f")")
+                            }
+                            HStack {
+                                Text("Total sales")
+                                Spacer()
+                                Text("\(statsData.totalSales.asCurrencyString() ?? "")")
+                            }
+                            HStack {
+                                Text("Average Bill amount")
+                                Spacer()
+                                Text("\(statsData.averageBillAmount.asCurrencyString() ?? "")")
+                            }
+                        } header: {
+                            Text("Overview")
+                        }
+
+                        if let container = statsData.container {
+                            Section {
+                                NavigationLink {
+                                    StatsPopularQuantities(statsContainer: container)
+                                } label: {
+                                    HStack {
+                                        Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0, specifier: "%.1f") \(container.sortedMenuItemsForQuantity.first ?? "") sold")
+                                    }
+                                }
+                                NavigationLink {
+                                    StatsPopularSales(statsContainer: container)
+                                } label: {
+                                    HStack {
+                                        Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
+                                    }
+                                }
+                            } header: {
+                                Text("Popular")
+                            }
+                        }
+
+                        Section {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Label("\(Int(Double(statsData.cashPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by cash", systemImage: "banknote")
+                                    Spacer()
+                                    Text("\(statsData.cashPayments.count)")
+                                }
+                                let salesInCash = statsData.cashPayments.reduce(0.0) { partialResult, item in
+                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
+                                }
+                                Text(salesInCash.asCurrencyString() ?? "")
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Label("\(Int(Double(statsData.cardPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by card", systemImage: "creditcard")
+                                    Spacer()
+                                    Text("\(statsData.cardPayments.count)")
+                                }
+                                let salesInCard = statsData.cardPayments.reduce(0.0) { partialResult, item in
+                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
+                                }
+                                Text(salesInCard.asCurrencyString() ?? "")
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Label("\(Int(Double(statsData.upiPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by UPI", systemImage: "indianrupeesign")
+                                    Spacer()
+                                    Text("\(statsData.upiPayments.count)")
+                                }
+                                let salesInUPI = statsData.upiPayments.reduce(0.0) { partialResult, item in
+                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
+                                }
+                                Text(salesInUPI.asCurrencyString() ?? "")
+                            }
+                        } header: {
+                            Text("Payment Distribution")
                         }
                     }
-                    NavigationLink {
-                        StatsPopularSales(statsContainer: container)
-                    } label: {
-                        HStack {
-                            Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
-                        }
-                    }
-                } header: {
-                    Text("Popular")
-                }
-                
-                Section{
-                    let cashPayments = billHistoryItems.filter { billHistoryItem in
-                        billHistoryItem.paymentStatus == .paidByCash
-                    }
-                    let cardPayments = billHistoryItems.filter { billHistoryItem in
-                        billHistoryItem.paymentStatus == .paidByCard
-                    }
-                    let upiPayments = billHistoryItems.filter { billHistoryItem in
-                        billHistoryItem.paymentStatus == .paidByUPI
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Label("\(Int(Double(cashPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by cash", systemImage: "banknote")
-                            Spacer()
-                            Text("\(cashPayments.count)")
-                        }
-                        let salesInCash = cashPayments.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + (menuitem.quantity * menuitem.price)
-                            })
-                        })
-                        Text(salesInCash.asCurrencyString() ?? "")
-                    }
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Label("\(Int(Double(cardPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by card", systemImage: "creditcard")
-                            Spacer()
-                            Text("\(cardPayments.count)")
-                        }
-                        let salesInCard = cardPayments.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + (menuitem.quantity * menuitem.price)
-                            })
-                        })
-                        Text(salesInCard.asCurrencyString() ?? "")
-                    }
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Label("\(Int(Double(upiPayments.count)/Double(max(billHistoryItems.count, 1))*100))% paid by UPI", systemImage: "indianrupeesign")
-                            Spacer()
-                            Text("\(upiPayments.count)")
-                        }
-                        let salesInupi = upiPayments.reduce(0.0, { partialResult, item in
-                            partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                                partialResult + (menuitem.quantity * menuitem.price)
-                            })
-                        })
-                        Text(salesInupi.asCurrencyString() ?? "")
-                    }
-                    
-                } header: {
-                    Text("Payment Distribution")
                 }
             }
-            .onAppear {
-                startDate = billHistoryItems.map({ $0.date }).min() ?? Date()
+            .task {
+                await loadStats()
+            }
+            .onChange(of: startDate) { _, _ in
+                Task { await loadStats() }
+            }
+            .onChange(of: endDate) { _, _ in
+                Task { await loadStats() }
             }
             .navigationTitle("Stats")
             .toolbar {
@@ -159,11 +209,10 @@ struct Stats: View {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                 }
                 NavigationLink {
-                    StatsChart(billHistoryItems: billHistoryItems)
+                    StatsChart(billHistoryItems: statsData.filteredItems)
                 } label: {
                     Image(systemName: "chart.xyaxis.line")
                 }
-
             }
             .sheet(isPresented: $isShowingStatsFilter) {
                 StatsFilter(startDate: $startDate, endDate: $endDate)

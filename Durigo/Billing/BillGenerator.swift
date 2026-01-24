@@ -13,38 +13,38 @@ struct TableDropdownSelector: View {
     @Binding var selectedOption: Int?
     let options: [Int]
 
+    private var allOptions: [Int] {
+        [0] + options // 0 = Parcel
+    }
+
     var body: some View {
-        Menu {
-            Button("Parcel") {
-                self.selectedOption = 0
-            }
+        Picker(selection: Binding(
+            get: { selectedOption ?? -1 },
+            set: { selectedOption = $0 == -1 ? nil : $0 }
+        )) {
+            Text("Table").tag(-1)
+            Text("Parcel").tag(0)
             ForEach(options, id: \.self) { option in
-                Button("\(option)") {
-                    self.selectedOption = option
-                }
-                .accessibilityIdentifier("Table-Option-\(option)")
+                Text("Table \(option)").tag(option)
             }
         } label: {
-            if let selectedOption {
-                VStack {
+            HStack {
+                if let selectedOption {
                     if selectedOption == 0 {
-                        Text("Parcel")
+                        Text("\(showIfSelected ? "● " : "")Parcel")
                     } else {
-                        Text("\(showIfSelected ? "●" : "") Table \(selectedOption)")
+                        Text("\(showIfSelected ? "● " : "")Table \(selectedOption)")
                     }
+                } else {
+                    Text("Table")
                 }
-                .font(.title)
-                .bold()
-                .tint(Color.primary)
-            } else {
-                Text("Table")
-                    .font(.title)
-                    .bold()
-                    .tint(Color.primary)
-                    .accessibilityIdentifier("Table-Selector")
             }
+            .font(.title)
+            .bold()
         }
-        
+        .pickerStyle(.menu)
+        .tint(Color.primary)
+        .accessibilityIdentifier("Table-Selector")
     }
 }
 
@@ -54,43 +54,35 @@ struct WaiterDropdownSelector: View {
     let options: [String]
 
     var body: some View {
-        Menu {
-            Section {
+        Picker(selection: Binding(
+            get: { selectedOption ?? "" },
+            set: { selectedOption = $0.isEmpty ? nil : $0 }
+        )) {
+            Text("Waiter").tag("")
+            Section("Waiters") {
                 ForEach(Array(options.prefix(3)), id: \.self) { option in
-                    Button("\(option)") {
-                        self.selectedOption = option
-                    }
-                    .accessibilityIdentifier("Waiter-Option-\(option)")
+                    Text(option).tag(option)
                 }
-            } header: {
-                Text("Waiters")
             }
-
-            Section {
+            Section("Admins") {
                 ForEach(Array(options.suffix(3)), id: \.self) { option in
-                    Button("\(option)") {
-                        self.selectedOption = option
-                    }
-                    .accessibilityIdentifier("Waiter-Option-\(option)")
+                    Text(option).tag(option)
                 }
-            } header: {
-                Text("Admins")
             }
         } label: {
-            if let selectedOption {
-                Text("\(showIfSelected ? "●" : "")  \(selectedOption)")
-                    .font(.title)
-                    .bold()
-                    .tint(Color.primary)
-            } else {
-                Text("Waiter")
-                    .font(.title)
-                    .bold()
-                    .tint(Color.primary)
-                    .accessibilityIdentifier("Waiter-Selector")
+            HStack {
+                if let selectedOption {
+                    Text("\(showIfSelected ? "● " : "")\(selectedOption)")
+                } else {
+                    Text("Waiter")
+                }
             }
+            .font(.title)
+            .bold()
         }
-        
+        .pickerStyle(.menu)
+        .tint(Color.primary)
+        .accessibilityIdentifier("Waiter-Selector")
     }
 }
 

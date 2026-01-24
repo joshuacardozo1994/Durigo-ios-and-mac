@@ -15,43 +15,85 @@ struct BillHistoryList: View {
     @State private var showTodaysBills = false
     @State private var sharingURL: URL?
     @State private var selectedPaymentStatus: BillHistoryItemStatus?
-    @Query(sort: \BillHistoryItem.date, order: .reverse) private var billHistoryItems: [BillHistoryItem]
-    
+    @Environment(\.modelContext) private var modelContext
+
+    // Pagination state
+    private let pageSize = 20
+    @State private var displayedItems: [BillHistoryItem] = []
+    @State private var currentPage = 0
+    @State private var hasMoreItems = true
+    @State private var isLoading = false
+
     func setAppBadgeCount() {
 //        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
 //        UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
     }
-    
-    func filteredBillHistoryItems() -> [BillHistoryItem] {
-        var filteredBillHistoryItems = billHistoryItems
-        if showTodaysBills {
-            filteredBillHistoryItems = filteredBillHistoryItems.filter({ billHistoryItem in
-                abs(billHistoryItem.date.timeIntervalSinceNow) < 60*60*24
-            })
+
+    private func loadItems(reset: Bool = false) {
+        guard !isLoading else { return }
+        isLoading = true
+
+        if reset {
+            currentPage = 0
+            displayedItems = []
+            hasMoreItems = true
         }
-        if let selectedTable {
-            filteredBillHistoryItems = filteredBillHistoryItems.filter({ billHistoryItem in
-                billHistoryItem.tableNumber == selectedTable
-            })
+
+        var descriptor = FetchDescriptor<BillHistoryItem>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = pageSize
+        descriptor.fetchOffset = currentPage * pageSize
+
+        do {
+            let newItems = try modelContext.fetch(descriptor)
+
+            // Apply filters
+            let filteredNewItems = newItems.filter { billHistoryItem in
+                var matches = true
+                if showTodaysBills {
+                    matches = matches && abs(billHistoryItem.date.timeIntervalSinceNow) < 60*60*24
+                }
+                if let selectedTable {
+                    matches = matches && billHistoryItem.tableNumber == selectedTable
+                }
+                if let selectedWaiter {
+                    matches = matches && billHistoryItem.waiter == selectedWaiter
+                }
+                if let selectedPaymentStatus {
+                    matches = matches && billHistoryItem.paymentStatus == selectedPaymentStatus
+                }
+                return matches
+            }
+
+            if reset {
+                displayedItems = filteredNewItems
+            } else {
+                displayedItems.append(contentsOf: filteredNewItems)
+            }
+
+            hasMoreItems = newItems.count == pageSize
+            currentPage += 1
+        } catch {
+            print("Failed to fetch items: \(error)")
         }
-        if let selectedWaiter {
-            filteredBillHistoryItems = filteredBillHistoryItems.filter({ billHistoryItem in
-                billHistoryItem.waiter == selectedWaiter
-            })
+
+        isLoading = false
+    }
+
+    private func loadMoreIfNeeded(currentItem: BillHistoryItem) {
+        guard hasMoreItems, !isLoading else { return }
+        let thresholdIndex = displayedItems.index(displayedItems.endIndex, offsetBy: -5)
+        if let currentIndex = displayedItems.firstIndex(where: { $0.id == currentItem.id }),
+           currentIndex >= thresholdIndex {
+            loadItems()
         }
-        if let selectedPaymentStatus {
-            filteredBillHistoryItems = filteredBillHistoryItems.filter({ billHistoryItem in
-                billHistoryItem.paymentStatus == selectedPaymentStatus
-            })
-        }
-        return filteredBillHistoryItems
     }
     
     var body: some View {
         NavigationStack {
             VStack {
-                let items = filteredBillHistoryItems()
-                if items.count == 0 {
+                if displayedItems.isEmpty && !isLoading {
                     VStack {
                         Spacer()
                         ContentUnavailableView(
@@ -63,8 +105,8 @@ struct BillHistoryList: View {
                     }
                 } else {
                 List {
-                    
-                    ForEach(items) { billHistoryItem in
+
+                    ForEach(displayedItems) { billHistoryItem in
                         NavigationLink {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
@@ -161,11 +203,36 @@ struct BillHistoryList: View {
                                 
                             }
                         }
-                        
+                        .onAppear {
+                            loadMoreIfNeeded(currentItem: billHistoryItem)
+                        }
+                    }
+
+                    if hasMoreItems {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .onAppear {
+                                    loadItems()
+                                }
+                            Spacer()
+                        }
                     }
                 }
-                .animation(.linear, value: items)
+                .animation(.linear, value: displayedItems)
             }
+            }
+            .onAppear {
+                if displayedItems.isEmpty {
+                    loadItems(reset: true)
+                }
+            }
+            .onChange(of: showTodaysBills) { _, _ in loadItems(reset: true) }
+            .onChange(of: selectedTable) { _, _ in loadItems(reset: true) }
+            .onChange(of: selectedWaiter) { _, _ in loadItems(reset: true) }
+            .onChange(of: selectedPaymentStatus) { _, _ in loadItems(reset: true) }
+            .refreshable {
+                loadItems(reset: true)
             }
             .navigationTitle("History")
             .toolbar {
@@ -255,13 +322,16 @@ struct BillHistoryList: View {
                 Button(action: {
                     let url = URL.documentsDirectory.appending(path: "billsHistory.durigobills")
                     do {
-                        let data = try JSONEncoder().encode(DurigoBills(items: billHistoryItems.map({  BillHistoryItemCopy(billHistoryItem: $0) }) ))
+                        // Fetch all items for sharing
+                        let descriptor = FetchDescriptor<BillHistoryItem>(
+                            sortBy: [SortDescriptor(\.date, order: .reverse)]
+                        )
+                        let allItems = try modelContext.fetch(descriptor)
+                        let data = try JSONEncoder().encode(DurigoBills(items: allItems.map({ BillHistoryItemCopy(billHistoryItem: $0) })))
                         try data.write(to: url, options: [.atomic, .completeFileProtection])
-                        let input = try String(contentsOf: url)
-                        print("WTF did i save", input)
                         sharingURL = url
                     } catch {
-                        
+                        print("Failed to share: \(error)")
                     }
                 }) {
                     Text("Share")

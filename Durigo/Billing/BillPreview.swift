@@ -96,8 +96,10 @@ struct BillPreview: View {
         // 1: Save it to our documents directory
         let url = URL.documentsDirectory.appending(path: "Bill.pdf")
 
-        // 2: PDF size
-        var box = CGRect(x: 0, y: 0, width: 420, height: 595)
+        // 2: PDF size - must match the frame size used in preview
+        let pageWidth: CGFloat = 420
+        let pageHeight: CGFloat = 595
+        var box = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
 
         // 3: Create the CGContext for our PDF pages
         guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else {
@@ -112,9 +114,20 @@ struct BillPreview: View {
         for (index, group) in groupedArray.enumerated() {
             pdf.beginPDFPage(nil)
 
-            let renderer = ImageRenderer(content:
-                Bill(currentMenuItems: group.items, tableNumber: tableNumber, first: groupedArray.first == group, finalTotal: groupedArray.last == group ? billItems.getTotal() : nil).frame(width: 420, height: 595)
+            let billView = Bill(
+                currentMenuItems: group.items,
+                tableNumber: tableNumber,
+                first: groupedArray.first == group,
+                finalTotal: groupedArray.last == group ? billItems.getTotal() : nil
             )
+            .frame(width: pageWidth, height: pageHeight)
+            .background(Color.white)
+
+            let renderer = ImageRenderer(content: billView)
+            // Set scale to 1.0 to match PDF point size exactly
+            renderer.scale = 1.0
+            // Set proposed size to ensure consistent layout
+            renderer.proposedSize = ProposedViewSize(width: pageWidth, height: pageHeight)
 
             renderer.render { size, context in
                 context(pdf)

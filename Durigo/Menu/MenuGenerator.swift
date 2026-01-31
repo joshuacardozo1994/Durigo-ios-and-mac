@@ -380,20 +380,16 @@ struct MenuGenerator: View {
         .overlay(alignment: .topTrailing, content: {
             if let menu = menuLoader.menu {
                 ShareLink("Export Menu", item: render(menu: menu))
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(6)
+                    .buttonStyle(.borderedProminent)
                     .padding()
             }
         })
         .overlay(alignment: .topLeading, content: {
             Button(action: { isShowingSettings.toggle() }) {
                 Image(systemName: "gear")
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(6)
-                    .padding()
             }
+            .buttonStyle(.borderedProminent)
+            .padding()
         })
         .popover(isPresented: $isShowingSettings, content: {
             Settings(a4Size: $a4Size, titleFontSize: $titleFontSize, subtitleFontSize: $subtitleFontSize, menuTextFontSize: $menuTextFontSize, categoryFontSize: $categoryFontSize, itemFontSize: $itemFontSize, itemDescriptionFontSize: $itemDescriptionFontSize, itemPageHorizontalPadding: $itemPageHorizontalPadding, itemPageVerticalPadding: $itemPageVerticalPadding, backCoverTitleFontSize: $backCoverTitleFontSize, backCoverPadding: $backCoverPadding)
@@ -405,81 +401,80 @@ struct MenuGenerator: View {
     
     
     @MainActor func render(menu: [Category]) -> URL {
+        let pageWidth = a4Size.size.width
+        let pageHeight = a4Size.size.height
+        let proposedSize = ProposedViewSize(width: pageWidth, height: pageHeight)
+
         // 1: Save it to our documents directory
         let url = URL.documentsDirectory.appending(path: "Menu.pdf")
-        
+
         // 2: PDF size
-        var box = CGRect(x: 0, y: 0, width: a4Size.size.width, height: a4Size.size.height)
-        
+        var box = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
+
         // 3: Create the CGContext for our PDF pages
         guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else {
             return url
         }
-        
+
         pdf.beginPDFPage(nil)
-        
-        let fontCoverRenderer = ImageRenderer(content:
-                                                FrontCover(a4Size: a4Size, titleFontSize: titleFontSize, subtitleFontSize: subtitleFontSize)
-            .frame(width: a4Size.size.width, height: a4Size.size.height)
+
+        let frontCoverRenderer = ImageRenderer(content:
+            FrontCover(a4Size: a4Size, titleFontSize: titleFontSize, subtitleFontSize: subtitleFontSize)
+                .background(Color.white)
         )
-        
-        fontCoverRenderer.render { size, context in
+        frontCoverRenderer.scale = 1.0
+        frontCoverRenderer.proposedSize = proposedSize
+
+        frontCoverRenderer.render { size, context in
             context(pdf)
         }
-        
-        pdf.endPDFPage()
-        
 
-        let pages =
-        
-        [
+        pdf.endPDFPage()
+
+        let pages = [
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, isFirst: true, left: [menu[0], menu[3]], right: [menu[2],  menu[6], menu[9]]),
-                
+
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[1], menu[5], menu[8]], right: [menu[4], menu[10], menu[7]]),
-                
+
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[11], menu[12], menu[13]], right: [menu[14], menu[15]]),
-                
+
             Page(a4Size: a4Size, menuTextFontSize: menuTextFontSize, categoryFontSize: categoryFontSize, itemFontSize: itemFontSize, itemTopPadding: itemTopPadding, itemDescriptionFontSize: itemDescriptionFontSize, horizontalPadding: itemPageHorizontalPadding, verticalPadding: itemPageVerticalPadding, left: [menu[16], menu[17], menu[18]], right: [menu[19], menu[20]])
         ]
-            
-        
+
         // 4: Render each page
         for page in pages {
-            
             pdf.beginPDFPage(nil)
-            
+
             let renderer = ImageRenderer(content:
-                                            page
-                .frame(width: a4Size.size.width, height: a4Size.size.height)
+                page.background(Color.white)
             )
-            
+            renderer.scale = 1.0
+            renderer.proposedSize = proposedSize
+
             renderer.render { size, context in
                 context(pdf)
             }
-            
+
             pdf.endPDFPage()
-            
         }
-        
+
         pdf.beginPDFPage(nil)
-        
+
         let backCoverRenderer = ImageRenderer(content:
-                                                BackCover(a4Size: a4Size, backCoverTitleFontSize: backCoverTitleFontSize, textFontSize: categoryFontSize, padding: backCoverPadding)
-            .frame(width: a4Size.size.width, height: a4Size.size.height)
+            BackCover(a4Size: a4Size, backCoverTitleFontSize: backCoverTitleFontSize, textFontSize: categoryFontSize, padding: backCoverPadding)
+                .background(Color.white)
         )
-        
+        backCoverRenderer.scale = 1.0
+        backCoverRenderer.proposedSize = proposedSize
+
         backCoverRenderer.render { size, context in
             context(pdf)
         }
-        
+
         pdf.endPDFPage()
-        
-        
-        
-        
+
         pdf.closePDF()
-        
-        
+
         return url
     }
 }

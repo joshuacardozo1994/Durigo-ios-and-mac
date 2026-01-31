@@ -49,10 +49,12 @@ struct BillPreview: View {
                         .padding()
                 } else if let pdfURL {
                     ShareLink("Export PDF", item: pdfURL)
+                        .buttonStyle(.borderedProminent)
                 } else {
                     Button("Generate PDF") {
                         generatePDF()
                     }
+                    .buttonStyle(.borderedProminent)
                 }
             }
             .padding()

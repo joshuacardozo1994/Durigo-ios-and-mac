@@ -39,40 +39,46 @@ struct BillHistoryList: View {
             hasMoreItems = true
         }
 
+        // Build date predicate when filtering to today only (can be pushed to DB)
+        let predicate: Predicate<BillHistoryItem>?
+        if showTodaysBills {
+            let startOfDay = Calendar.current.startOfDay(for: Date())
+            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+            predicate = #Predicate<BillHistoryItem> { $0.date >= startOfDay && $0.date < endOfDay }
+        } else {
+            predicate = nil
+        }
+
         var descriptor = FetchDescriptor<BillHistoryItem>(
+            predicate: predicate,
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        descriptor.fetchLimit = pageSize
-        descriptor.fetchOffset = currentPage * pageSize
+        // Only paginate when no in-memory filters are active; otherwise fetch all matching rows
+        let hasInMemoryFilters = selectedTable != nil || selectedWaiter != nil || selectedPaymentStatus != nil
+        if !hasInMemoryFilters {
+            descriptor.fetchLimit = pageSize
+            descriptor.fetchOffset = currentPage * pageSize
+        }
 
         do {
-            let newItems = try modelContext.fetch(descriptor)
+            let fetchedItems = try modelContext.fetch(descriptor)
 
-            // Apply filters
-            let filteredNewItems = newItems.filter { billHistoryItem in
-                var matches = true
-                if showTodaysBills {
-                    matches = matches && abs(billHistoryItem.date.timeIntervalSinceNow) < 60*60*24
-                }
-                if let selectedTable {
-                    matches = matches && billHistoryItem.tableNumber == selectedTable
-                }
-                if let selectedWaiter {
-                    matches = matches && billHistoryItem.waiter == selectedWaiter
-                }
-                if let selectedPaymentStatus {
-                    matches = matches && billHistoryItem.paymentStatus == selectedPaymentStatus
-                }
-                return matches
+            // Apply remaining filters in-memory (table, waiter, payment status)
+            let newItems = fetchedItems.filter { item in
+                if let selectedTable, item.tableNumber != selectedTable { return false }
+                if let selectedWaiter, item.waiter != selectedWaiter { return false }
+                if let selectedPaymentStatus, item.paymentStatus != selectedPaymentStatus { return false }
+                return true
             }
 
             if reset {
-                displayedItems = filteredNewItems
+                displayedItems = newItems
             } else {
-                displayedItems.append(contentsOf: filteredNewItems)
+                displayedItems.append(contentsOf: newItems)
             }
 
-            hasMoreItems = newItems.count == pageSize
+            // Only track "more pages" when pagination is active
+            hasMoreItems = !hasInMemoryFilters && fetchedItems.count == pageSize
             currentPage += 1
         } catch {
             print("Failed to fetch items: \(error)")
@@ -219,7 +225,7 @@ struct BillHistoryList: View {
                         }
                     }
                 }
-                .animation(.linear, value: displayedItems)
+
             }
             }
             .onAppear {

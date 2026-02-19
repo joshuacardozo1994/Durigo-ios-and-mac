@@ -25,6 +25,12 @@ import SwiftUI
             }
         }
     
+    #if DEBUG
+    func loadFromBundle() {
+        self.menu = MockDataLoader.loadCategories()
+    }
+    #endif
+
     func resetBill() {
         billItems.removeAll()
         tableNumber = nil

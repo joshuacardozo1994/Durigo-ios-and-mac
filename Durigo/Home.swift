@@ -15,6 +15,11 @@ struct Home: View {
     @StateObject private var navigation = Navigation()
     @Query private var billHistoryItems: [BillHistoryItem]
     @Environment(\.modelContext) var modelContext
+
+    private var pendingCount: Int {
+        billHistoryItems.count { $0.paymentStatus == .pending }
+    }
+
     var body: some View {
         TabView(selection: $navigation.tabSelection) {
             BillHistoryList()
@@ -22,7 +27,7 @@ struct Home: View {
                     Label("History", systemImage: "doc.text")
                 }
                 .tag(TabItems.billHistoryList)
-                .badge(billHistoryItems.filter({ $0.paymentStatus == .pending }).count)
+                .badge(pendingCount)
                 
             BillGenerator()
                 .tabItem {

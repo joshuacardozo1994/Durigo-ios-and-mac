@@ -20,37 +20,34 @@ extension StatsChart {
     struct PaymentDistribution: View {
         let billHistoryItems: [BillHistoryItem]
         @State private var type = 0
+
+        // Precomputed once from billHistoryItems
+        private var cashCount: Int { billHistoryItems.filter { $0.paymentStatus == .paidByCash }.count }
+        private var cardCount: Int { billHistoryItems.filter { $0.paymentStatus == .paidByCard }.count }
+        private var upiCount: Int { billHistoryItems.filter { $0.paymentStatus == .paidByUPI }.count }
+        private var cashAmount: Double {
+            billHistoryItems.filter { $0.paymentStatus == .paidByCash }
+                .reduce(0.0) { $0 + $1.items.reduce(0.0) { $0 + $1.quantity * $1.price } }
+        }
+        private var cardAmount: Double {
+            billHistoryItems.filter { $0.paymentStatus == .paidByCard }
+                .reduce(0.0) { $0 + $1.items.reduce(0.0) { $0 + $1.quantity * $1.price } }
+        }
+        private var upiAmount: Double {
+            billHistoryItems.filter { $0.paymentStatus == .paidByUPI }
+                .reduce(0.0) { $0 + $1.items.reduce(0.0) { $0 + $1.quantity * $1.price } }
+        }
+
         var body: some View {
-            let cashPayments = billHistoryItems.filter { billHistoryItem in
-                billHistoryItem.paymentStatus == .paidByCash
-            }
-            let cardPayments = billHistoryItems.filter { billHistoryItem in
-                billHistoryItem.paymentStatus == .paidByCard
-            }
-            let upiPayments = billHistoryItems.filter { billHistoryItem in
-                billHistoryItem.paymentStatus == .paidByUPI
-            }
             VStack {
                 Picker("Select the payment distribution type", selection: $type) {
                     Text("Count").tag(0)
                     Text("Amount").tag(1)
                 }
                 .pickerStyle(SegmentedPickerStyle())
-                let cashValue = type == 0 ? Double(cashPayments.count) : cashPayments.reduce(0.0, { partialResult, item in
-                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                        partialResult + (menuitem.quantity * menuitem.price)
-                    })
-                })
-                let upiValue = type == 0 ? Double(upiPayments.count) : upiPayments.reduce(0.0, { partialResult, item in
-                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                        partialResult + (menuitem.quantity * menuitem.price)
-                    })
-                })
-                let cardValue = type == 0 ? Double(cardPayments.count) : cardPayments.reduce(0.0, { partialResult, item in
-                    partialResult + item.items.reduce(0.0, { partialResult, menuitem in
-                        partialResult + (menuitem.quantity * menuitem.price)
-                    })
-                })
+                let cashValue = type == 0 ? Double(cashCount) : cashAmount
+                let upiValue = type == 0 ? Double(upiCount) : upiAmount
+                let cardValue = type == 0 ? Double(cardCount) : cardAmount
                 Chart {
                     SectorMark(angle: .value("Cash", cashValue))
                         .foregroundStyle(by: .value("Type", "Cash"))
@@ -78,15 +75,21 @@ extension StatsChart {
         let billHistoryItems: [BillHistoryItem]
         @State private var searchQuery = ""
         @Binding var itemNames: [String]
-        
-        func getFilteredResults() -> [String] {
+
+        // Computed once; does not re-run on searchQuery changes
+        private var allSortedItems: [String] {
+            billHistoryItems.getStatsContainer().sortedMenuItemsForSale
+        }
+
+        private var filteredResults: [String] {
             if searchQuery.isEmpty {
-                return billHistoryItems.getStatsContainer().sortedMenuItemsForSale
+                return allSortedItems
             } else {
-                return billHistoryItems.getStatsContainer().sortedMenuItemsForSale.filter { $0.lowercased().contains(searchQuery.lowercased()) }
+                let query = searchQuery.lowercased()
+                return allSortedItems.filter { $0.lowercased().contains(query) }
             }
         }
-        
+
         var body: some View {
             VStack {
                 HStack {
@@ -100,11 +103,10 @@ extension StatsChart {
                             .padding()
                     }
                     .accessibilityIdentifier("clearSearchField")
-                    
                 }
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
                 .padding()
-                List(getFilteredResults(), id: \.self) { itemName in
+                List(filteredResults, id: \.self) { itemName in
                     HStack {
                         Image(systemName: itemNames.contains(itemName) ? "checkmark.circle.fill" : "circle")
                         Text(itemName)
@@ -190,60 +192,31 @@ extension StatsChart {
 
 struct StatsChart: View {
     let billHistoryItems: [BillHistoryItem]
-    
-    func getSortedTotalsByDate() -> [DateTotal] {
-        var totalsByDate = [Date: Double]()
 
+    @State private var sortedTotalsByDate: [DateTotal] = []
+    @State private var aggregatedTotalsByDate: [DateTotal] = []
+
+    private func computeSortedTotalsByDate() -> [DateTotal] {
+        var totalsByDate = [Date: Double]()
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
-
         for bill in billHistoryItems {
             let total = bill.totalAmount
-
-            // Convert UTC date to local date
             let localDate = utcCalendar.date(byAdding: .second, value: TimeZone.current.secondsFromGMT(), to: bill.date)!
-            
-            print("localDate", localDate)
-
-            // Get start of the day for local date
             let localStartOfDay = utcCalendar.startOfDay(for: localDate)
-
-            if let currentTotal = totalsByDate[localStartOfDay] {
-                totalsByDate[localStartOfDay] = currentTotal + total
-            } else {
-                totalsByDate[localStartOfDay] = total
-            }
-            print("Bill Date (UTC): \(bill.date), Local Start of Day: \(localStartOfDay)")
+            totalsByDate[localStartOfDay, default: 0] += total
         }
-
-        // Convert to array of DateTotal
-        let dateTotals = totalsByDate.map { DateTotal(date: $0.key, totalAmount: $0.value) }
-        
-        // Sorting by date
-        return dateTotals.sorted { $0.date < $1.date }
+        return totalsByDate.map { DateTotal(date: $0.key, totalAmount: $0.value) }
+            .sorted { $0.date < $1.date }
     }
 
-
-
-    
-    func getAggregatedTotalsByDate() -> [DateTotal] {
+    private func computeAggregatedTotalsByDate() -> [DateTotal] {
         var totalsByDate = [Date: Double]()
         for bill in billHistoryItems {
-            let total = bill.totalAmount
-//            let date = Calendar.current.startOfDay(for: bill.date) // Grouping by date
-
-            if let currentTotal = totalsByDate[bill.date] {
-                totalsByDate[bill.date] = currentTotal + total
-            } else {
-                totalsByDate[bill.date] = total
-            }
+            totalsByDate[bill.date, default: 0] += bill.totalAmount
         }
-
-        // Convert to array of DateTotal and sort by date
         var dateTotals = totalsByDate.map { DateTotal(date: $0.key, totalAmount: $0.value) }
-        dateTotals.sort { $0.date < $1.date }
-
-        // Calculate cumulative sum
+            .sorted { $0.date < $1.date }
         var cumulativeSum: Double = 0
         for i in 0..<dateTotals.count {
             cumulativeSum += dateTotals[i].totalAmount
@@ -251,13 +224,11 @@ struct StatsChart: View {
         }
         return dateTotals
     }
-    
-    
-    
+
     var body: some View {
         Form {
             Section {
-                Chart(getSortedTotalsByDate()) { dateTotal in
+                Chart(sortedTotalsByDate) { dateTotal in
                     BarMark(
                         x: .value("Date", dateTotal.date),
                         y: .value("Sales", dateTotal.totalAmount)
@@ -269,7 +240,7 @@ struct StatsChart: View {
                 Text("Sales")
             }
             Section {
-                Chart(getAggregatedTotalsByDate()) { dateTotal in
+                Chart(aggregatedTotalsByDate) { dateTotal in
                     LineMark(
                         x: .value("Date", dateTotal.date),
                         y: .value("Sales", dateTotal.totalAmount)
@@ -280,13 +251,13 @@ struct StatsChart: View {
             } header: {
                 Text("Cumulative Sales")
             }
-            
+
             Section {
                 PaymentDistribution(billHistoryItems: billHistoryItems)
             } header: {
                 Text("Payment Distribution")
             }
-            
+
             Section {
                 ItemSalesComparison(billHistoryItems: billHistoryItems)
             } header: {
@@ -294,6 +265,10 @@ struct StatsChart: View {
             }
         }
         .navigationTitle("Charts")
+        .task(id: billHistoryItems.count) {
+            sortedTotalsByDate = computeSortedTotalsByDate()
+            aggregatedTotalsByDate = computeAggregatedTotalsByDate()
+        }
     }
 }
 #if DEBUG

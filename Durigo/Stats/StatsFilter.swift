@@ -11,9 +11,9 @@ import SwiftData
 struct StatsFilter: View {
     @Binding var startDate: Date
     @Binding var endDate: Date
-    @Query private var billHistoryItems: [BillHistoryItem]
+    @Query(sort: \BillHistoryItem.date, order: .forward) private var billHistoryItems: [BillHistoryItem]
     var body: some View {
-        let firstDate = billHistoryItems.map({ $0.date }).min() ?? Date()
+        let firstDate = billHistoryItems.first?.date ?? Date()
         Form {
             Button(action: {
                         startDate = firstDate

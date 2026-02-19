@@ -79,6 +79,9 @@ struct Bill: View {
     var first = true
     var finalTotal: Int?
     @State private var maxWidth: CGFloat = 0
+    #if os(iOS)
+    @State private var qrCodeImage: UIImage? = nil
+    #endif
     
     func itemText(item: MenuItem) -> Text {
         var textArr = [Text("")]
@@ -196,15 +199,13 @@ struct Bill: View {
                             Text("Total: ₹\(finalTotal)")
                                 .font(.system(size: 20))
                                 .bold()
-                            //"upi://pay?pa=9545925489@okbizaxis&pn=Durigo&am=\(String(currentMenuItems.getTotal())).00"
-                            if let uiImage = "upi://pay?ver=01&mode=1&pa=88117166@idfcbank&pn=DURIGOBARANDRESTAURANT&tr=STQ241211070222532I024331&mc=5812&qrMedium=03".getQRCodeImage() {
-#if os(iOS)
+                            #if os(iOS)
+                            if let uiImage = qrCodeImage {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .frame(width: 50, height: 50)
-#endif
-                                
                             }
+                            #endif
 //                            Image(.snowman)
 //                                .resizable()
 //                                .aspectRatio(contentMode: .fit)
@@ -225,6 +226,13 @@ struct Bill: View {
             }
             .padding()
             .foregroundColor(.black)
+            .onAppear {
+                #if os(iOS)
+                if qrCodeImage == nil {
+                    qrCodeImage = "upi://pay?ver=01&mode=1&pa=88117166@idfcbank&pn=DURIGOBARANDRESTAURANT&tr=STQ241211070222532I024331&mc=5812&qrMedium=03".getQRCodeImage()
+                }
+                #endif
+            }
 //            VStack(spacing: 40) {
 //                Spacer()
 //                    .frame(height: 70)

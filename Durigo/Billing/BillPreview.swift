@@ -27,10 +27,13 @@ struct BillPreview: View {
     @State private var pdfURL: URL?
     @State private var isGeneratingPDF = false
 
-    var body: some View {
-        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
+    private var groupedArray: [GroupedMenu] {
+        stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
             GroupedMenu(id: index, items: Array(billItems[index ..< min(index + maxItemCount, billItems.count)]))
         }
+    }
+
+    var body: some View {
         VStack {
             TabView {
                 ForEach(groupedArray) { group in
@@ -106,10 +109,6 @@ struct BillPreview: View {
         // 3: Create the CGContext for our PDF pages
         guard let pdf = CGContext(url as CFURL, mediaBox: &box, nil) else {
             return url
-        }
-
-        let groupedArray: [GroupedMenu] = stride(from: 0, to: billItems.count, by: maxItemCount).map { index in
-            GroupedMenu(id: index, items: Array(billItems[index ..< min(index + maxItemCount, billItems.count)]))
         }
 
         // 4: Render each page - use Task.yield() to prevent blocking

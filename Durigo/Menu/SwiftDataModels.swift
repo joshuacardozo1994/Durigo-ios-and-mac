@@ -32,7 +32,7 @@ enum BillHistoryItemsSchemaV1: VersionedSchema {
 
     @Model
     class BillHistoryItem: Identifiable {
-        let id: UUID
+        var id: UUID
         var date: Date
         var tableNumber: Int?
         var items: [MenuItem]
@@ -74,7 +74,7 @@ enum BillHistoryItemsSchemaV2: VersionedSchema {
 
     @Model
     class BillHistoryItem: Identifiable {
-        let id: UUID
+        var id: UUID
         var date: Date
         var tableNumber: Int
         var items: [MenuItem]

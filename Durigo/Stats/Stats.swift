@@ -24,6 +24,9 @@ extension Stats {
         var cashPayments: [BillHistoryItem] = []
         var cardPayments: [BillHistoryItem] = []
         var upiPayments: [BillHistoryItem] = []
+        var salesInCash: Double = 0
+        var salesInCard: Double = 0
+        var salesInUPI: Double = 0
         var container: Container?
         var filteredItems: [BillHistoryItem] = []
     }
@@ -71,9 +74,23 @@ struct Stats: View {
 
             data.averageBillAmount = data.totalSales / max(Double(data.totalBills), 1.0)
 
-            data.cashPayments = filteredItems.filter { $0.paymentStatus == .paidByCash }
-            data.cardPayments = filteredItems.filter { $0.paymentStatus == .paidByCard }
-            data.upiPayments = filteredItems.filter { $0.paymentStatus == .paidByUPI }
+            // Single pass to categorise by payment status
+            for item in filteredItems {
+                let itemTotal = item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
+                switch item.paymentStatus {
+                case .paidByCash:
+                    data.cashPayments.append(item)
+                    data.salesInCash += itemTotal
+                case .paidByCard:
+                    data.cardPayments.append(item)
+                    data.salesInCard += itemTotal
+                case .paidByUPI:
+                    data.upiPayments.append(item)
+                    data.salesInUPI += itemTotal
+                case .pending:
+                    break
+                }
+            }
 
             data.container = filteredItems.getStatsContainer()
 
@@ -161,10 +178,7 @@ struct Stats: View {
                                     Spacer()
                                     Text("\(statsData.cashPayments.count)")
                                 }
-                                let salesInCash = statsData.cashPayments.reduce(0.0) { partialResult, item in
-                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
-                                }
-                                Text(salesInCash.asCurrencyString() ?? "")
+                                Text(statsData.salesInCash.asCurrencyString() ?? "")
                             }
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
@@ -172,10 +186,7 @@ struct Stats: View {
                                     Spacer()
                                     Text("\(statsData.cardPayments.count)")
                                 }
-                                let salesInCard = statsData.cardPayments.reduce(0.0) { partialResult, item in
-                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
-                                }
-                                Text(salesInCard.asCurrencyString() ?? "")
+                                Text(statsData.salesInCard.asCurrencyString() ?? "")
                             }
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
@@ -183,10 +194,7 @@ struct Stats: View {
                                     Spacer()
                                     Text("\(statsData.upiPayments.count)")
                                 }
-                                let salesInUPI = statsData.upiPayments.reduce(0.0) { partialResult, item in
-                                    partialResult + item.items.reduce(0.0) { $0 + ($1.quantity * $1.price) }
-                                }
-                                Text(salesInUPI.asCurrencyString() ?? "")
+                                Text(statsData.salesInUPI.asCurrencyString() ?? "")
                             }
                         } header: {
                             Text("Payment Distribution")

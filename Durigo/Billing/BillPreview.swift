@@ -51,13 +51,25 @@ struct BillPreview: View {
                     ProgressView()
                         .padding()
                 } else if let pdfURL {
-                    ShareLink("Export PDF", item: pdfURL)
-                        .buttonStyle(.borderedProminent)
-                } else {
-                    Button("Generate PDF") {
-                        generatePDF()
+                    if #available(iOS 26.0, *) {
+                        ShareLink("Export PDF", item: pdfURL)
+                            .buttonStyle(.glass)
+                    } else {
+                        ShareLink("Export PDF", item: pdfURL)
+                            .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.borderedProminent)
+                } else {
+                    if #available(iOS 26.0, *) {
+                        Button("Generate PDF") {
+                            generatePDF()
+                        }
+                        .buttonStyle(.glass)
+                    } else {
+                        Button("Generate PDF") {
+                            generatePDF()
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
             }
             .padding()

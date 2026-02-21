@@ -37,7 +37,30 @@ struct Helper {
     }
     
     private static func areStringsSimilar(a: String, b: String, threshold: Int = 2) -> Bool {
-        return levenshteinDistance(a: a, b: b) <= threshold
+        // Dynamic threshold based on search length (more forgiving for longer searches)
+        let dynamicThreshold = max(threshold, b.count / 4)
+        
+        // Check exact match first
+        if a == b { return true }
+        
+        // Check if search query is a substring
+        if a.contains(b) { return true }
+        
+        // Check Levenshtein distance
+        if levenshteinDistance(a: a, b: b) <= dynamicThreshold {
+            return true
+        }
+        
+        // Check if all characters from search appear in order (allows skipped characters)
+        var searchIndex = b.startIndex
+        for char in a {
+            if searchIndex < b.endIndex && char == b[searchIndex] {
+                searchIndex = b.index(after: searchIndex)
+            }
+            if searchIndex == b.endIndex { return true }
+        }
+        
+        return false
     }
     
     static func extractNumberAndString(from input: String) -> (Int?, String?) {

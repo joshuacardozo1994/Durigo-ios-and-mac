@@ -238,7 +238,10 @@ struct StatsChart: View {
                 .frame(height: 300)
             } header: {
                 Text("Sales")
+                    .textCase(.uppercase)
+                    .font(.headline)
             }
+            
             Section {
                 Chart(aggregatedTotalsByDate) { dateTotal in
                     LineMark(
@@ -250,21 +253,28 @@ struct StatsChart: View {
                 .frame(height: 300)
             } header: {
                 Text("Cumulative Sales")
+                    .textCase(.uppercase)
+                    .font(.headline)
             }
 
             Section {
                 PaymentDistribution(billHistoryItems: billHistoryItems)
             } header: {
                 Text("Payment Distribution")
+                    .textCase(.uppercase)
+                    .font(.headline)
             }
 
             Section {
                 ItemSalesComparison(billHistoryItems: billHistoryItems)
             } header: {
                 Text("Item Sales Comparison")
+                    .textCase(.uppercase)
+                    .font(.headline)
             }
         }
         .navigationTitle("Charts")
+        .navigationBarTitleDisplayMode(.large)
         .task(id: billHistoryItems.count) {
             sortedTotalsByDate = computeSortedTotalsByDate()
             aggregatedTotalsByDate = computeAggregatedTotalsByDate()

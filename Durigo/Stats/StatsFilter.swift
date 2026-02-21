@@ -14,45 +14,39 @@ struct StatsFilter: View {
     @Query(sort: \BillHistoryItem.date, order: .forward) private var billHistoryItems: [BillHistoryItem]
     var body: some View {
         let firstDate = billHistoryItems.first?.date ?? Date()
-        Form {
-            Button(action: {
-                        startDate = firstDate
-                    endDate = Date()
-                    }) {
-                        HStack {
-                            Image(systemName: "arrow.clockwise")
-
-                            Text("Reset")
-                                
-                        }
-                        .fontWeight(.semibold)
-                        .padding()
-                        .foregroundColor(.white)
-                        .background(Color.red)
-                        .cornerRadius(8)
-                    }
-            
-        
-            Section("FROM") {
-                DatePicker(
-                        "Start Date",
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker(
+                        "From",
                         selection: $startDate,
                         in: firstDate...Date(),
                         displayedComponents: [.date, .hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
-            }
-            Section("To") {
-                DatePicker(
-                        "Start Date",
+                }
+                
+                Section {
+                    DatePicker(
+                        "To",
                         selection: $endDate,
                         in: startDate...Date(),
                         displayedComponents: [.date, .hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
+                }
             }
-            
-            
+            .navigationTitle("Filter")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Reset") {
+                        startDate = firstDate
+                        endDate = Date()
+                    }
+                    .foregroundStyle(.red)
+                }
+            }
         }
     }
 }

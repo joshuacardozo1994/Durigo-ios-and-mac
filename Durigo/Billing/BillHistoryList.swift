@@ -116,7 +116,21 @@ struct BillHistoryList: View {
                         NavigationLink {
                             BillHistory(billHistoryItem: billHistoryItem)
                         } label: {
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Top: Table and Amount
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(billHistoryItem.tableNumber == 0 ? "Parcel" : "Table \(billHistoryItem.tableNumber)")
+                                        .font(.headline)
+                                    
+                                    Spacer()
+                                    
+                                    Text(billHistoryItem.items.getTotal().asCurrencyString() ?? "")
+                                        .font(.system(.title3, design: .rounded))
+                                        .fontWeight(.semibold)
+                                        .accessibilityIdentifier("BillHistoryList-Item-\(billHistoryItem.id.uuidString)")
+                                }
+                                
+                                // Middle: Details
                                 HStack {
                                     Menu {
                                         Menu {
@@ -152,62 +166,62 @@ struct BillHistoryList: View {
                                         }
                                         
                                     } label: {
-                                        VStack {
+                                        HStack(spacing: 6) {
                                             switch billHistoryItem.paymentStatus {
                                             case .pending:
-                                                Label("Pending", systemImage: "hourglass")
-                                                    .foregroundStyle(Color.red)
-                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                                Circle()
+                                                    .fill(Color.red)
+                                                    .frame(width: 6, height: 6)
+                                                Text("Pending")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.red)
                                             case .paidByCard:
-                                                Label("Paid by card", systemImage: "creditcard")
-                                                    .foregroundStyle(Color.green)
-                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                                Circle()
+                                                    .fill(Color(red: 0.5, green: 0.4, blue: 0.9))
+                                                    .frame(width: 6, height: 6)
+                                                Text("Card")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
                                             case .paidByCash:
-                                                Label("Paid by cash", systemImage: "banknote")
-                                                    .foregroundStyle(Color.green)
-                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                                Circle()
+                                                    .fill(Color(red: 0.2, green: 0.7, blue: 0.3))
+                                                    .frame(width: 6, height: 6)
+                                                Text("Cash")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
                                             case .paidByUPI:
-                                                Label("Paid by UPI", systemImage: "indianrupeesign")
-                                                    .foregroundStyle(Color.green)
-                                                    .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
+                                                Circle()
+                                                    .fill(Color(red: 1.0, green: 0.6, blue: 0.2))
+                                                    .frame(width: 6, height: 6)
+                                                Text("UPI")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
                                             }
                                         }
+                                        .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
                                     }
-                                    Spacer()
-                                    Label(billHistoryItem.waiter, systemImage: "person.circle")
-                                }
-                                .padding(.bottom)
-
-                                HStack {
-                                    GroupBox {
-                                        let tableNumber = billHistoryItem.tableNumber
-                                        if tableNumber == 0 {
-                                            Text("Parcel")
-                                        } else {
-                                            Text("Table: \(tableNumber)")
-                                        }
-                                    }
-                                    .backgroundStyle(Color.tableColor(tableNumber: billHistoryItem.tableNumber))
-                                    Spacer()
-                                    GroupBox {
-                                        Text("\(billHistoryItem.items.count)")
-                                    }
-                                    .backgroundStyle(Color.billHistoryItemQuantity)
                                     
-                                    GroupBox {
-                                        
-                                        Text("\(billHistoryItem.items.getTotal().asCurrencyString() ?? "")")
-                                            .accessibilityIdentifier("BillHistoryList-Item-\(billHistoryItem.id.uuidString)")
-                                        
-                                    }
-                                    .backgroundStyle(Color.billHistoryItemTotal)
+                                    Text("•")
+                                        .foregroundStyle(.tertiary)
                                     
+                                    Text("\(billHistoryItem.items.count) items")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    
+                                    Text("•")
+                                        .foregroundStyle(.tertiary)
+                                    
+                                    Text(billHistoryItem.waiter)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .bold()
-                                Text(billHistoryItem.date.getTimeInFormat(dateStyle: .medium, timeStyle: .short))
-                                    .padding(.vertical, 4)
                                 
+                                // Bottom: Date
+                                Text(billHistoryItem.date.getTimeInFormat(dateStyle: .medium, timeStyle: .short))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
                             }
+                            .padding(.vertical, 8)
                         }
                         .onAppear {
                             loadMoreIfNeeded(currentItem: billHistoryItem)
@@ -241,6 +255,7 @@ struct BillHistoryList: View {
                 loadItems(reset: true)
             }
             .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 Menu {
                     Button(action: {

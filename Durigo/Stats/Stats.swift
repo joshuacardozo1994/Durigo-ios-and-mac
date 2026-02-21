@@ -30,6 +30,131 @@ extension Stats {
         var container: Container?
         var filteredItems: [BillHistoryItem] = []
     }
+    
+    struct HeroMetric: View {
+        let totalSales: Double
+        
+        var body: some View {
+            VStack(spacing: 12) {
+                Text("Total Sales")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .textCase(.uppercase)
+                Text(totalSales.asCurrencyString() ?? "₹0.00")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(red: 0.2, green: 0.6, blue: 1.0), Color(red: 0.1, green: 0.4, blue: 0.9)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: Color.blue.opacity(0.3), radius: 16, y: 8)
+            )
+            .padding(.horizontal)
+        }
+    }
+    
+    struct SecondaryMetrics: View {
+        let totalBills: Int
+        let totalQuantity: Double
+        
+        var body: some View {
+            HStack(spacing: 16) {
+                VStack(spacing: 8) {
+                    Text("\(totalBills)")
+                        .font(.system(.title, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.purple)
+                    Text("Bills")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.purple.opacity(0.1))
+                )
+                
+                VStack(spacing: 8) {
+                    Text("\(totalQuantity, specifier: "%.0f")")
+                        .font(.system(.title, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.orange)
+                    Text("Items")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.orange.opacity(0.1))
+                )
+            }
+            .padding(.horizontal)
+        }
+    }
+    
+    struct AverageBillCard: View {
+        let averageBillAmount: Double
+        
+        var body: some View {
+            VStack(spacing: 8) {
+                Text(averageBillAmount.asCurrencyString() ?? "₹0.00")
+                    .font(.system(.title2, design: .rounded))
+                    .fontWeight(.semibold)
+                Text("Average Bill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .padding(.horizontal)
+        }
+    }
+    
+    struct PaymentRow: View {
+        let color: Color
+        let title: String
+        let percentage: Int
+        let count: Int
+        let amount: String
+        
+        var body: some View {
+            HStack(alignment: .center, spacing: 12) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.body)
+                    Text("\(percentage)% · \(count) bills")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(amount)
+                    .font(.body)
+                    .fontWeight(.semibold)
+            }
+            .padding()
+        }
+    }
 }
 
 struct Stats: View {
@@ -40,6 +165,115 @@ struct Stats: View {
     @State private var isLoading = true
     @State private var statsData = StatsData()
 
+    @ViewBuilder
+    private func popularSection(container: Container) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Popular")
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+            
+            VStack(spacing: 0) {
+                NavigationLink {
+                    StatsPopularQuantities(statsContainer: container)
+                } label: {
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0, specifier: "%.0f") sold")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text(container.sortedMenuItemsForQuantity.first ?? "")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                }
+                
+                Divider()
+                    .padding(.leading)
+                
+                NavigationLink {
+                    StatsPopularSales(statsContainer: container)
+                } label: {
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") sold")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text(container.sortedMenuItemsForSale.first ?? "")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .padding(.horizontal)
+        }
+    }
+    
+    @ViewBuilder
+    private func paymentDistributionSection() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Payment Distribution")
+                .font(.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+            
+            VStack(spacing: 0) {
+                PaymentRow(
+                    color: Color(red: 0.3, green: 0.7, blue: 0.4),
+                    title: "Cash",
+                    percentage: Int(Double(statsData.cashPayments.count)/Double(max(statsData.totalBills, 1))*100),
+                    count: statsData.cashPayments.count,
+                    amount: statsData.salesInCash.asCurrencyString() ?? ""
+                )
+                
+                Divider()
+                    .padding(.leading)
+                
+                PaymentRow(
+                    color: Color(red: 0.5, green: 0.4, blue: 0.9),
+                    title: "Card",
+                    percentage: Int(Double(statsData.cardPayments.count)/Double(max(statsData.totalBills, 1))*100),
+                    count: statsData.cardPayments.count,
+                    amount: statsData.salesInCard.asCurrencyString() ?? ""
+                )
+                
+                Divider()
+                    .padding(.leading)
+                
+                PaymentRow(
+                    color: Color.orange,
+                    title: "UPI",
+                    percentage: Int(Double(statsData.upiPayments.count)/Double(max(statsData.totalBills, 1))*100),
+                    count: statsData.upiPayments.count,
+                    amount: statsData.salesInUPI.asCurrencyString() ?? ""
+                )
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .padding(.horizontal)
+        }
+    }
+    
     private func loadStats() async {
         isLoading = true
 
@@ -124,82 +358,23 @@ struct Stats: View {
                         Spacer()
                     }
                 } else {
-                    Form {
-                        Section {
-                            HStack {
-                                Text("Total number of bills")
-                                Spacer()
-                                Text("\(statsData.totalBills)")
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            HeroMetric(totalSales: statsData.totalSales)
+                            
+                            SecondaryMetrics(totalBills: statsData.totalBills, totalQuantity: statsData.totalQuantity)
+                            
+                            AverageBillCard(averageBillAmount: statsData.averageBillAmount)
+                            
+                            if let container = statsData.container {
+                                popularSection(container: container)
                             }
-                            HStack {
-                                Text("Total number of items sold")
-                                Spacer()
-                                Text("\(statsData.totalQuantity, specifier: "%.1f")")
-                            }
-                            HStack {
-                                Text("Total sales")
-                                Spacer()
-                                Text("\(statsData.totalSales.asCurrencyString() ?? "")")
-                            }
-                            HStack {
-                                Text("Average Bill amount")
-                                Spacer()
-                                Text("\(statsData.averageBillAmount.asCurrencyString() ?? "")")
-                            }
-                        } header: {
-                            Text("Overview")
+                            
+                            paymentDistributionSection()
                         }
-
-                        if let container = statsData.container {
-                            Section {
-                                NavigationLink {
-                                    StatsPopularQuantities(statsContainer: container)
-                                } label: {
-                                    HStack {
-                                        Text("\(container.totalQuantities[container.sortedMenuItemsForQuantity.first ?? ""] ?? 0, specifier: "%.1f") \(container.sortedMenuItemsForQuantity.first ?? "") sold")
-                                    }
-                                }
-                                NavigationLink {
-                                    StatsPopularSales(statsContainer: container)
-                                } label: {
-                                    HStack {
-                                        Text("\((container.totalSalesAmounts[container.sortedMenuItemsForSale.first ?? ""] ?? 0).asCurrencyString() ?? "") of \(container.sortedMenuItemsForSale.first ?? "") sold")
-                                    }
-                                }
-                            } header: {
-                                Text("Popular")
-                            }
-                        }
-
-                        Section {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Label("\(Int(Double(statsData.cashPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by cash", systemImage: "banknote")
-                                    Spacer()
-                                    Text("\(statsData.cashPayments.count)")
-                                }
-                                Text(statsData.salesInCash.asCurrencyString() ?? "")
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Label("\(Int(Double(statsData.cardPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by card", systemImage: "creditcard")
-                                    Spacer()
-                                    Text("\(statsData.cardPayments.count)")
-                                }
-                                Text(statsData.salesInCard.asCurrencyString() ?? "")
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Label("\(Int(Double(statsData.upiPayments.count)/Double(max(statsData.totalBills, 1))*100))% paid by UPI", systemImage: "indianrupeesign")
-                                    Spacer()
-                                    Text("\(statsData.upiPayments.count)")
-                                }
-                                Text(statsData.salesInUPI.asCurrencyString() ?? "")
-                            }
-                        } header: {
-                            Text("Payment Distribution")
-                        }
+                        .padding(.vertical)
                     }
+                    .background(Color(.systemGroupedBackground))
                 }
             }
             .task {
@@ -212,6 +387,7 @@ struct Stats: View {
                 Task { await loadStats() }
             }
             .navigationTitle("Stats")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 Button(action: { isShowingStatsFilter.toggle() }) {
                     Image(systemName: "line.3.horizontal.decrease.circle")

@@ -48,44 +48,55 @@ extension MenuGenerator {
         @Binding var backCoverPadding: CGFloat
         
         var body: some View {
-            VStack(alignment: .leading) {
+            NavigationStack {
                 Form {
                     Section {
-                        Picker("Select Page Size", selection: $a4Size) {
+                        Picker("Page Size", selection: $a4Size) {
                             ForEach(sizes) { size in
                                 Text(size.name)
                                     .tag(size)
                             }
                         }
                     } header: {
-                        Text("Page size")
+                        Text("Page Size")
+                            .textCase(.uppercase)
+                            .font(.headline)
                     }
+                    
                     Section {
                         Stepper("Title Font Size \(Int(titleFontSize))", value: $titleFontSize, step: 10)
                         Stepper("Subtitle Font Size \(Int(subtitleFontSize))", value: $subtitleFontSize, step: 10)
                     } header: {
                         Text("Front Cover")
+                            .textCase(.uppercase)
+                            .font(.headline)
                     }
+                    
                     Section {
-                        Stepper("Menu Text Font Size \(Int(menuTextFontSize))", value: $menuTextFontSize, step: 10)
-                        Stepper("Category Font Size \(Int(categoryFontSize))", value: $categoryFontSize)
-                        Stepper("Item Font Size \(Int(itemFontSize))", value: $itemFontSize)
-                        Stepper("Item Description Font Size \(Int(itemDescriptionFontSize))", value: $itemDescriptionFontSize)
+                        Stepper("Menu Text \(Int(menuTextFontSize))", value: $menuTextFontSize, step: 10)
+                        Stepper("Category \(Int(categoryFontSize))", value: $categoryFontSize)
+                        Stepper("Item \(Int(itemFontSize))", value: $itemFontSize)
+                        Stepper("Description \(Int(itemDescriptionFontSize))", value: $itemDescriptionFontSize)
                         Stepper("Horizontal Padding \(Int(itemPageHorizontalPadding))", value: $itemPageHorizontalPadding)
                         Stepper("Vertical Padding \(Int(itemPageVerticalPadding))", value: $itemPageVerticalPadding)
                     } header: {
                         Text("Item Pages")
+                            .textCase(.uppercase)
+                            .font(.headline)
                     }
+                    
                     Section {
-                        Stepper("Back Cover Title Font Size \(Int(backCoverTitleFontSize))", value: $backCoverTitleFontSize)
-                        Stepper("Back Cover Padding \(Int(backCoverPadding))", value: $backCoverPadding)
+                        Stepper("Title Font Size \(Int(backCoverTitleFontSize))", value: $backCoverTitleFontSize)
+                        Stepper("Padding \(Int(backCoverPadding))", value: $backCoverPadding)
                     } header: {
                         Text("Back Cover")
+                            .textCase(.uppercase)
+                            .font(.headline)
                     }
-
                 }
+                .navigationTitle("Configure")
+                .navigationBarTitleDisplayMode(.inline)
             }
-            .padding(.top, 30)
         }
     }
     
@@ -369,21 +380,35 @@ struct MenuGenerator: View {
                 }
             }
         }
-        .background(Color.secondary)
-        .overlay(alignment: .topTrailing, content: {
+        .background(Color(.systemGroupedBackground))
+        .overlay(alignment: .top) {
             if let menu = menuLoader.menu {
-                ShareLink("Export Menu", item: render(menu: menu))
-                    .buttonStyle(.borderedProminent)
-                    .padding()
+                HStack(spacing: 12) {
+                    if #available(iOS 26.0, *) {
+                        Button(action: { isShowingSettings.toggle() }) {
+                            Image(systemName: "gear")
+                        }
+                        .buttonStyle(.glass)
+                    } else {
+                        Button(action: { isShowingSettings.toggle() }) {
+                            Image(systemName: "gear")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    
+                    Spacer()
+                    
+                    if #available(iOS 26.0, *) {
+                        ShareLink("Export PDF", item: render(menu: menu))
+                            .buttonStyle(.glass)
+                    } else {
+                        ShareLink("Export PDF", item: render(menu: menu))
+                            .buttonStyle(.bordered)
+                    }
+                }
+                .padding()
             }
-        })
-        .overlay(alignment: .topLeading, content: {
-            Button(action: { isShowingSettings.toggle() }) {
-                Image(systemName: "gear")
-            }
-            .buttonStyle(.borderedProminent)
-            .padding()
-        })
+        }
         .popover(isPresented: $isShowingSettings, content: {
             Settings(a4Size: $a4Size, titleFontSize: $titleFontSize, subtitleFontSize: $subtitleFontSize, menuTextFontSize: $menuTextFontSize, categoryFontSize: $categoryFontSize, itemFontSize: $itemFontSize, itemDescriptionFontSize: $itemDescriptionFontSize, itemPageHorizontalPadding: $itemPageHorizontalPadding, itemPageVerticalPadding: $itemPageVerticalPadding, backCoverTitleFontSize: $backCoverTitleFontSize, backCoverPadding: $backCoverPadding)
         })

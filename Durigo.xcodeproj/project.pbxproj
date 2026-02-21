@@ -11,6 +11,7 @@
 		E7083EF02BA1EC3400E8B825 /* config.dev.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EEF2BA1EC3400E8B825 /* config.dev.plist */; };
 		E7083EF22BA1EC4A00E8B825 /* config.local.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EF12BA1EC4A00E8B825 /* config.local.plist */; };
 		E7083EF42BA1EC5700E8B825 /* config.prod.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EF32BA1EC5700E8B825 /* config.prod.plist */; };
+		E71F1E262F4A4B3A005080A1 /* Reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71F1E252F4A4B3A005080A1 /* Reports.swift */; };
 		E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */; };
 		E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED322B0A7AB500132ABA /* ActivityView.swift */; };
 		E730ED352B0AA08800132ABA /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED342B0AA08800132ABA /* Home.swift */; };
@@ -84,6 +85,7 @@
 		E7083EEF2BA1EC3400E8B825 /* config.dev.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = config.dev.plist; sourceTree = "<group>"; };
 		E7083EF12BA1EC4A00E8B825 /* config.local.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = config.local.plist; sourceTree = "<group>"; };
 		E7083EF32BA1EC5700E8B825 /* config.prod.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = config.prod.plist; sourceTree = "<group>"; };
+		E71F1E252F4A4B3A005080A1 /* Reports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reports.swift; sourceTree = "<group>"; };
 		E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistoryList.swift; sourceTree = "<group>"; };
 		E730ED322B0A7AB500132ABA /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		E730ED342B0AA08800132ABA /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				E7083EEF2BA1EC3400E8B825 /* config.dev.plist */,
 				E7083EF32BA1EC5700E8B825 /* config.prod.plist */,
 				E7083EF12BA1EC4A00E8B825 /* config.local.plist */,
+				E71F1E252F4A4B3A005080A1 /* Reports.swift */,
 			);
 			path = Durigo;
 			sourceTree = "<group>";
@@ -515,6 +518,7 @@
 				E73256682B5CF72000EAB9D2 /* StatsFilter.swift in Sources */,
 				E73F5D752B4C82AA0015104D /* col2Grid.swift in Sources */,
 				E7ED3A122AEAE9AC00F2DDA8 /* DurigoApp.swift in Sources */,
+				E71F1E262F4A4B3A005080A1 /* Reports.swift in Sources */,
 				E7ED3A542AEAEADE00F2DDA8 /* MenuList.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

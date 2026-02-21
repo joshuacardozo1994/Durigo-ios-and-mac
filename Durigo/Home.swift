@@ -39,6 +39,11 @@ struct Home: View {
                     Label("Stats", systemImage: "chart.bar.fill")
                 }
                 .tag(TabItems.stats)
+            Reports()
+                .tabItem {
+                    Label("Reports", systemImage: "chart.bar.doc.horizontal.fill")
+                }
+                .tag(TabItems.reports)
             MenuGenerator()
                 .tabItem {
                     Label("Menu Generator", systemImage: "doc.plaintext.fill")

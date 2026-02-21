@@ -62,34 +62,39 @@ struct MenuList: View {
     
     
     var body: some View {
-        VStack {
-            HStack {
-                HStack {
-                    TextField("Menu Item", text: $searchQuery)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .accessibilityIdentifier("menuItemSearchQueryTextField")
-                    Button(action: {
-                        searchQuery = ""
-                    }) {
-                        Image(systemName: "x.circle")
+        NavigationStack {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    HStack {
+                        TextField("Menu Item", text: $searchQuery)
+                            .autocorrectionDisabled()
                             .padding()
+                            .accessibilityIdentifier("menuItemSearchQueryTextField")
+                        if !searchQuery.isEmpty {
+                            Button(action: {
+                                searchQuery = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                                    .padding(.trailing)
+                            }
+                            .accessibilityIdentifier("clearSearchField")
+                        }
                     }
-                    .accessibilityIdentifier("clearSearchField")
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(10)
                     
+                    Button(action: { randomiseServingSizeUUIDs() }) {
+                        Image(systemName: "arrow.2.circlepath")
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(lineWidth: 1))
-                Button(action: { randomiseServingSizeUUIDs() }) {
-                    Image(systemName: "arrow.2.circlepath")
-                        .padding(.vertical)
-                        .padding(.leading)
-                }
-            }
                 .padding()
-            let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
-            List(items) { category in
-                Section {
-                    ForEach(category.items.filter({ [Category.Item.VisibilityScope.bill, Category.Item.VisibilityScope.both].contains($0.visibilityScope)  })) { menuItem in
+                
+                let items = getFilteredResults() ?? [Category.placeholder, Category.placeholder]
+                List(items) { category in
+                    Section {
+                        ForEach(category.items.filter({ [Category.Item.VisibilityScope.bill, Category.Item.VisibilityScope.both].contains($0.visibilityScope)  })) { menuItem in
                         HStack {
                             HStack {
                                 if let quantity = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
@@ -150,12 +155,10 @@ struct MenuList: View {
                             text
                                 .accessibilityIdentifier("menu-item-name-\(menuItem.id.uuidString)")
                             Spacer()
-                            HStack {
+                            Group {
                                 if let quantity = $menuLoader.billItems.first(where: { $0.id == menuItem.id })?.quantity {
-                                    
                                     Stepper("Quantity", value: quantity, in: 0...100)
                                         .labelsHidden()
-                                    
                                 } else {
                                     Button(action: {
                                         addToMenu(menuItem: menuItem)
@@ -169,12 +172,12 @@ struct MenuList: View {
                                             return newbillItem
                                         }
                                     }) {
-                                        VStack{}
-                                            .padding(4)
+                                        Color.clear
+                                            .frame(height: 32)
                                     }
                                 }
                             }
-                            .frame(width: 94)
+                            .frame(width: 94, height: 32)
                             
                             if let billItemPrice = menuLoader.billItems.first(where: { $0.id == menuItem.id })?.price {
                                 Text("\(Int(billItemPrice))")
@@ -187,8 +190,21 @@ struct MenuList: View {
                     }
                 } header: {
                     Text(category.name)
+                        .textCase(.uppercase)
+                        .font(.headline)
                 }
             }
+            .listStyle(.insetGrouped)
+        }
+        .navigationTitle("Menu")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
         }
         .redacted(reason: menuLoader.menu == nil ? .placeholder : [])
         .task {

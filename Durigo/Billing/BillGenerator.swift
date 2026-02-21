@@ -31,16 +31,15 @@ struct TableDropdownSelector: View {
             HStack {
                 if let selectedOption {
                     if selectedOption == 0 {
-                        Text("\(showIfSelected ? "● " : "")Parcel")
+                        Text("Parcel")
                     } else {
-                        Text("\(showIfSelected ? "● " : "")Table \(selectedOption)")
+                        Text("Table \(selectedOption)")
                     }
                 } else {
                     Text("Table")
                 }
             }
-            .font(.title)
-            .bold()
+            .font(.headline)
         }
         .pickerStyle(.menu)
         .tint(Color.primary)
@@ -72,13 +71,12 @@ struct WaiterDropdownSelector: View {
         } label: {
             HStack {
                 if let selectedOption {
-                    Text("\(showIfSelected ? "● " : "")\(selectedOption)")
+                    Text(selectedOption)
                 } else {
                     Text("Waiter")
                 }
             }
-            .font(.title)
-            .bold()
+            .font(.headline)
         }
         .pickerStyle(.menu)
         .tint(Color.primary)
@@ -135,17 +133,44 @@ struct BillGenerator: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 0) {
+                // Simple, clean header
                 HStack {
                     TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...20))
                     Spacer()
                     WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
                 }
-                .padding(.horizontal)
-                .padding(.top)
+                .padding()
+                
                 billItemsList
-                totalSection
+                
+                // Clean total bar
+                HStack(alignment: .firstTextBaseline, spacing: 32) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Items")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(menuLoader.billItems.count)")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Total")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("₹\(menuLoader.billItems.getTotal())")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .accessibilityIdentifier("bill generator items total")
+                    }
+                }
+                .padding()
+                .background(Color(.systemBackground))
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("")
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
@@ -194,19 +219,7 @@ struct BillGenerator: View {
         }
     }
 
-    /// View for displaying total count and price.
-    private var totalSection: some View {
-        HStack {
-            Text("\(menuLoader.billItems.count) Items")
-                .accessibilityIdentifier("bill generator items count")
-            Spacer()
-            Text("Total: \(menuLoader.billItems.getTotal())")
-                .accessibilityIdentifier("bill generator items total")
-        }
-        .padding(.horizontal)
-        .font(.title)
-        .bold()
-    }
+
 
     /// Button to clear all items.
     private var clearButton: some View {

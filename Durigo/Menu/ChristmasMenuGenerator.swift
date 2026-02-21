@@ -421,17 +421,31 @@ struct ChristmasMenuGenerator: View {
         }
         .overlay(alignment: .topTrailing, content: {
             if let menu = menuLoader.menu {
-                ShareLink("Export Menu", item: render(menu: menu))
-                    .buttonStyle(.borderedProminent)
-                    .padding()
+                if #available(iOS 26.0, *) {
+                    ShareLink("Export Menu", item: render(menu: menu))
+                        .buttonStyle(.glass)
+                        .padding()
+                } else {
+                    ShareLink("Export Menu", item: render(menu: menu))
+                        .buttonStyle(.bordered)
+                        .padding()
+                }
             }
         })
         .overlay(alignment: .topLeading, content: {
-            Button(action: { isShowingSettings.toggle() }) {
-                Image(systemName: "gear")
+            if #available(iOS 26.0, *) {
+                Button(action: { isShowingSettings.toggle() }) {
+                    Image(systemName: "gear")
+                }
+                .buttonStyle(.glass)
+                .padding()
+            } else {
+                Button(action: { isShowingSettings.toggle() }) {
+                    Image(systemName: "gear")
+                }
+                .buttonStyle(.bordered)
+                .padding()
             }
-            .buttonStyle(.borderedProminent)
-            .padding()
         })
         .popover(isPresented: $isShowingSettings, content: {
             Settings(a4Size: $a4Size, titleFontSize: $titleFontSize, subtitleFontSize: $subtitleFontSize, menuTextFontSize: $menuTextFontSize, categoryFontSize: $categoryFontSize, itemFontSize: $itemFontSize, itemDescriptionFontSize: $itemDescriptionFontSize, itemPageHorizontalPadding: $itemPageHorizontalPadding, itemPageVerticalPadding: $itemPageVerticalPadding, backCoverTitleFontSize: $backCoverTitleFontSize, backCoverPadding: $backCoverPadding)

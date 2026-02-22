@@ -11,6 +11,7 @@ struct MenuList: View {
     @EnvironmentObject private var menuLoader: MenuLoader
     @Environment(\.dismiss) var dismiss
     @State private var searchQuery = ""
+    @State private var isShowingVoiceOrder = false
     
     func getFilteredResults() -> [Category]? {
         guard let categories = menuLoader.menu else { return nil }
@@ -199,11 +200,21 @@ struct MenuList: View {
         .navigationTitle("Menu")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(action: {
+                    isShowingVoiceOrder = true
+                }) {
+                    Image(systemName: "mic.fill")
+                }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
                     dismiss()
                 }
             }
+        }
+        .sheet(isPresented: $isShowingVoiceOrder) {
+            VoiceOrderView()
         }
         }
         .redacted(reason: menuLoader.menu == nil ? .placeholder : [])

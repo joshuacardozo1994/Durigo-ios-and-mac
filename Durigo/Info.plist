@@ -28,6 +28,10 @@
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Durigo needs microphone access to enable voice ordering feature.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Durigo needs speech recognition to convert your voice orders into menu items.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>

@@ -12,6 +12,7 @@
 		E7083EF22BA1EC4A00E8B825 /* config.local.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EF12BA1EC4A00E8B825 /* config.local.plist */; };
 		E7083EF42BA1EC5700E8B825 /* config.prod.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EF32BA1EC5700E8B825 /* config.prod.plist */; };
 		E71F1E262F4A4B3A005080A1 /* Reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71F1E252F4A4B3A005080A1 /* Reports.swift */; };
+		E71F1E282F4A65DB005080A1 /* VoiceOrderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71F1E272F4A65DB005080A1 /* VoiceOrderView.swift */; };
 		E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */; };
 		E730ED332B0A7AB500132ABA /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED322B0A7AB500132ABA /* ActivityView.swift */; };
 		E730ED352B0AA08800132ABA /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = E730ED342B0AA08800132ABA /* Home.swift */; };
@@ -86,6 +87,7 @@
 		E7083EF12BA1EC4A00E8B825 /* config.local.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = config.local.plist; sourceTree = "<group>"; };
 		E7083EF32BA1EC5700E8B825 /* config.prod.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = config.prod.plist; sourceTree = "<group>"; };
 		E71F1E252F4A4B3A005080A1 /* Reports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reports.swift; sourceTree = "<group>"; };
+		E71F1E272F4A65DB005080A1 /* VoiceOrderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOrderView.swift; sourceTree = "<group>"; };
 		E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillHistoryList.swift; sourceTree = "<group>"; };
 		E730ED322B0A7AB500132ABA /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		E730ED342B0AA08800132ABA /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 				E7D092EE2B10A8C80047F8A6 /* MenuGenerator.swift */,
 				E798C5EB2B322E6400935DCE /* SwiftDataModels.swift */,
 				E7377F462B382CD20011A3F7 /* ChristmasMenuGenerator.swift */,
+				E71F1E272F4A65DB005080A1 /* VoiceOrderView.swift */,
 			);
 			path = Menu;
 			sourceTree = "<group>";
@@ -491,6 +494,7 @@
 				E7E0CB422B0F4DA5004514CC /* Color+Extensions.swift in Sources */,
 				E7ED3A482AEAEAC400F2DDA8 /* BillPreview.swift in Sources */,
 				E73D4E142AEE98BA00EA7459 /* MenuEditor.swift in Sources */,
+				E71F1E282F4A65DB005080A1 /* VoiceOrderView.swift in Sources */,
 				E730ED302B0A57F200132ABA /* BillHistoryList.swift in Sources */,
 				E773B97D2B5D4FB30061684D /* StatsChart.swift in Sources */,
 				E730ED372B0AA45600132ABA /* BillHistory.swift in Sources */,

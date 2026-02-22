@@ -389,11 +389,13 @@ struct MenuGenerator: View {
                             Image(systemName: "gear")
                         }
                         .buttonStyle(.glass)
+                        .controlSize(.large)
                     } else {
                         Button(action: { isShowingSettings.toggle() }) {
                             Image(systemName: "gear")
                         }
                         .buttonStyle(.bordered)
+                        .controlSize(.large)
                     }
                     
                     Spacer()
@@ -401,9 +403,11 @@ struct MenuGenerator: View {
                     if #available(iOS 26.0, *) {
                         ShareLink("Export PDF", item: render(menu: menu))
                             .buttonStyle(.glass)
+                            .controlSize(.large)
                     } else {
                         ShareLink("Export PDF", item: render(menu: menu))
                             .buttonStyle(.bordered)
+                            .controlSize(.large)
                     }
                 }
                 .padding()

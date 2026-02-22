@@ -10,6 +10,7 @@ import SwiftData
 
 struct Reports: View {
     @Query private var billHistoryItems: [BillHistoryItem]
+    @EnvironmentObject private var menuLoader: MenuLoader
     
     @State private var selectedMonth = Calendar.current.component(.month, from: Date())
     @State private var selectedYear = Calendar.current.component(.year, from: Date())
@@ -33,28 +34,37 @@ struct Reports: View {
         }
     }
     
-    // Category keywords for classification (matching Python script)
-    private let foodKeywords = ["rice", "noodles", "chicken", "fish", "prawn", "veg", "paneer", "gobi",
-                                "manchurian", "fried", "curry", "biryani", "roti", "naan", "pizza",
-                                "burger", "sandwich", "soup", "salad", "tikka", "kabab", "masala",
-                                "dal", "pasta", "spring roll", "momos", "chowmein"]
+    /// Build a lookup dictionary from menu item names to their tags
+    private var menuItemTagsLookup: [String: [String]] {
+        guard let categories = menuLoader.menu else { return [:] }
+        var lookup: [String: [String]] = [:]
+        for category in categories {
+            for item in category.items {
+                if let tags = item.tags {
+                    // Store by item name (lowercased for matching)
+                    lookup[item.name.lowercased()] = tags
+                    // Also store with suffix if available
+                    if let suffix = item.suffix {
+                        lookup["\(item.name) (\(suffix))".lowercased()] = tags
+                    }
+                }
+            }
+        }
+        return lookup
+    }
     
-    private let beverageKeywords = ["juice", "coffee", "tea", "shake", "smoothie", "lassi", "water",
-                                    "soda", "cola", "pepsi", "sprite", "punch", "mojito", "lemonade",
-                                    "fanta", "thumbs up", "limca"]
-    
-    private let alcoholKeywords = ["beer", "wine", "whisky", "vodka", "rum", "gin", "brandy", "tequila",
-                                   "budweiser", "kingfisher", "heineken", "corona", "tuborg", "carlsberg"]
-    
-    private var reportData: (cashTotal: Double, cardTotal: Double, upiTotal: Double, grandTotal: Double, billCount: Int, totalItemsSold: Int, foodSales: Double, beverageSales: Double, alcoholSales: Double) {
+    private var reportData: (cashTotal: Double, cardTotal: Double, upiTotal: Double, pendingTotal: Double, grandTotal: Double, billCount: Int, paidBillCount: Int, pendingBillCount: Int, totalItemsSold: Int, foodSales: Double, beverageSales: Double, alcoholSales: Double) {
         let bills = filteredBills
         var cashTotal: Double = 0
         var cardTotal: Double = 0
         var upiTotal: Double = 0
+        var pendingTotal: Double = 0
         var totalItemsSold: Int = 0
         var foodSales: Double = 0
         var beverageSales: Double = 0
         var alcoholSales: Double = 0
+        var paidBillCount: Int = 0
+        var pendingBillCount: Int = 0
         
         for bill in bills {
             // Count total items
@@ -65,60 +75,69 @@ struct Reports: View {
             switch bill.paymentStatus {
             case .paidByCash:
                 cashTotal += billTotal
+                paidBillCount += 1
             case .paidByCard:
                 cardTotal += billTotal
+                paidBillCount += 1
             case .paidByUPI:
                 upiTotal += billTotal
+                paidBillCount += 1
             case .pending:
-                break
+                pendingTotal += billTotal
+                pendingBillCount += 1
             }
             
-            // Categorize sales by item type (only for non-pending bills)
-            for item in bill.items where bill.paymentStatus != .pending {
+            // Categorize sales by item type (for ALL bills including pending)
+            for item in bill.items {
                 let itemTotal = item.quantity * item.price
-                let itemName = item.name.lowercased()
-                var categorized = false
                 
-                // Check alcohol first (matching Python logic)
-                for keyword in alcoholKeywords {
-                    if itemName.contains(keyword) {
+                // First try to use tags if available
+                if let tags = item.tags, !tags.isEmpty {
+                    if tags.contains("alcohol") {
                         alcoholSales += itemTotal
-                        categorized = true
-                        break
+                    } else if tags.contains("beverage") {
+                        beverageSales += itemTotal
+                    } else if tags.contains("food") {
+                        foodSales += itemTotal
+                    } else {
+                        // Default to food if tag is unrecognized
+                        foodSales += itemTotal
                     }
-                }
-                
-                // Then check beverages
-                if !categorized {
-                    for keyword in beverageKeywords {
-                        if itemName.contains(keyword) {
+                } else {
+                    // Fallback: lookup item in current menu to find its tags
+                    let itemName = item.name.lowercased()
+                    let lookup = menuItemTagsLookup
+                    
+                    // Try exact match first, then try without suffix
+                    let tags = lookup[itemName] ?? {
+                        // Try to match without the suffix part (e.g., "Chicken Fried Rice" from "Chicken Fried Rice (Half)")
+                        if let parenIndex = itemName.firstIndex(of: "(") {
+                            let baseName = String(itemName[..<parenIndex]).trimmingCharacters(in: .whitespaces)
+                            return lookup[baseName]
+                        }
+                        return nil
+                    }()
+                    
+                    if let tags = tags, !tags.isEmpty {
+                        if tags.contains("alcohol") {
+                            alcoholSales += itemTotal
+                        } else if tags.contains("beverage") {
                             beverageSales += itemTotal
-                            categorized = true
-                            break
-                        }
-                    }
-                }
-                
-                // Then check food
-                if !categorized {
-                    for keyword in foodKeywords {
-                        if itemName.contains(keyword) {
+                        } else if tags.contains("food") {
                             foodSales += itemTotal
-                            categorized = true
-                            break
+                        } else {
+                            foodSales += itemTotal
                         }
+                    } else {
+                        // Default to food if item not found in menu
+                        foodSales += itemTotal
                     }
-                }
-                
-                // Default to food if not categorized (matching Python logic)
-                if !categorized {
-                    foodSales += itemTotal
                 }
             }
         }
         
-        let grandTotal = cashTotal + cardTotal + upiTotal
-        return (cashTotal, cardTotal, upiTotal, grandTotal, bills.count, totalItemsSold, foodSales, beverageSales, alcoholSales)
+        let grandTotal = cashTotal + cardTotal + upiTotal + pendingTotal
+        return (cashTotal, cardTotal, upiTotal, pendingTotal, grandTotal, bills.count, paidBillCount, pendingBillCount, totalItemsSold, foodSales, beverageSales, alcoholSales)
     }
     
     private func generateReportText() -> String {
@@ -135,7 +154,7 @@ struct Reports: View {
         return """
         Total Sales: \(data.grandTotal.asCurrencyString() ?? "₹0.00")
         Total Items Sold: \(data.totalItemsSold)
-        Total Bills: \(data.billCount)
+        Total Bills: \(data.billCount) (\(data.paidBillCount) paid, \(data.pendingBillCount) pending)
         
         Category Breakdown:
         Food Sales: \(data.foodSales.asCurrencyString() ?? "₹0.00") (\(String(format: "%.1f", foodPercentage))%)
@@ -146,6 +165,7 @@ struct Reports: View {
         Cash: \(data.cashTotal.asCurrencyString() ?? "₹0.00")
         Card: \(data.cardTotal.asCurrencyString() ?? "₹0.00")
         UPI: \(data.upiTotal.asCurrencyString() ?? "₹0.00")
+        Pending: \(data.pendingTotal.asCurrencyString() ?? "₹0.00")
         """
     }
     
@@ -274,11 +294,11 @@ struct Reports: View {
                                     )
                                     
                                     VStack(spacing: 8) {
-                                        Text("\(reportData.billCount)")
+                                        Text("\(reportData.paidBillCount)")
                                             .font(.system(.title, design: .rounded))
                                             .fontWeight(.semibold)
                                             .foregroundStyle(Color.purple)
-                                        Text("Bills")
+                                        Text("Paid Bills")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -287,6 +307,22 @@ struct Reports: View {
                                     .background(
                                         RoundedRectangle(cornerRadius: 16)
                                             .fill(Color.purple.opacity(0.1))
+                                    )
+                                    
+                                    VStack(spacing: 8) {
+                                        Text("\(reportData.pendingBillCount)")
+                                            .font(.system(.title, design: .rounded))
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(Color.red)
+                                        Text("Pending")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.red.opacity(0.1))
                                     )
                                 }
                             }
@@ -355,6 +391,14 @@ struct Reports: View {
                                     PaymentMethodRow(
                                         method: "UPI",
                                         amount: reportData.upiTotal
+                                    )
+                                    
+                                    Divider()
+                                        .padding(.leading, 20)
+                                    
+                                    PaymentMethodRow(
+                                        method: "Pending",
+                                        amount: reportData.pendingTotal
                                     )
                                 }
                                 .background(
@@ -429,6 +473,9 @@ struct Reports: View {
             .navigationTitle("Reports")
             .navigationBarTitleDisplayMode(.large)
             .background(Color(.systemGroupedBackground))
+            .task {
+                await menuLoader.loadMenu()
+            }
         }
     }
 }
@@ -442,6 +489,7 @@ struct PaymentMethodRow: View {
         case "Cash": return Color(red: 0.2, green: 0.7, blue: 0.3)
         case "Card": return Color(red: 0.5, green: 0.4, blue: 0.9)
         case "UPI": return Color(red: 1.0, green: 0.6, blue: 0.2)
+        case "Pending": return Color.red
         default: return .gray
         }
     }
@@ -522,11 +570,11 @@ struct CategoryRow: View {
         for i in 0..<5 {
             let billDate = calendar.date(byAdding: .day, value: -i, to: now) ?? now
             let items = [
-                MenuItem(id: UUID(), name: "Sprite", quantity: 2, price: 30),
-                MenuItem(id: UUID(), name: "Chicken Fried Rice", quantity: 1, price: 200),
-                MenuItem(id: UUID(), name: "Prawn Curry", quantity: 1, price: 290)
+                MenuItem(id: UUID(), name: "Sprite", quantity: 2, price: 30, tags: ["beverage"]),
+                MenuItem(id: UUID(), name: "Chicken Fried Rice", quantity: 1, price: 200, tags: ["food"]),
+                MenuItem(id: UUID(), name: "Old Monk", quantity: 1, price: 290, tags: ["alcohol"])
             ]
-            let paymentStatus: BillHistoryItemsSchemaV2.Status = i % 3 == 0 ? .paidByCash : (i % 3 == 1 ? .paidByCard : .paidByUPI)
+            let paymentStatus: BillHistoryItemStatus = i % 4 == 0 ? .paidByCash : (i % 4 == 1 ? .paidByCard : (i % 4 == 2 ? .paidByUPI : .pending))
             let bill = BillHistoryItem(id: UUID(), date: billDate, items: items, tableNumber: i + 1, paymentStatus: paymentStatus, waiter: "John")
             container.mainContext.insert(bill)
         }
@@ -536,5 +584,6 @@ struct CategoryRow: View {
     
     Reports()
         .modelContainer(container)
+        .environmentObject(MenuLoader())
 }
 #endif

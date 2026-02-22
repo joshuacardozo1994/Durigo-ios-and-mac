@@ -510,7 +510,8 @@ struct VoiceOrderView: View {
                 prefix: item.prefix,
                 suffix: item.suffix,
                 quantity: parsedItem.quantity,
-                price: item.price
+                price: item.price,
+                tags: item.tags
             ))
         }
     }

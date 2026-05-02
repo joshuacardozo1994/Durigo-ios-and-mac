@@ -1,2 +1,6 @@
 
 *.xcuserstate
+
+# Local xcodebuild artifacts (created when scripting builds via -derivedDataPath)
+build/
+DerivedData/

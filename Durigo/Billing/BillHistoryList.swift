@@ -143,6 +143,16 @@ struct BillHistoryList: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    if bill.paymentStatus == .pending {
+                        Button {
+                            markPaid(bill, status: .paidByCash)
+                        } label: {
+                            Label("Mark Paid", systemImage: "checkmark.circle.fill")
+                        }
+                        .tint(.green)
+                    }
+                }
                 .onAppear {
                     Task { await loadMoreIfNeeded(currentBill: bill) }
                 }
@@ -327,6 +337,31 @@ struct BillHistoryList: View {
             syncErrorMessage = err.errorDescription
         } catch {
             syncErrorMessage = error.localizedDescription
+        }
+    }
+
+    /// Swipe-action handler: flip a pending bill to a paid status and re-upload.
+    /// Rolls back the local change if the upload fails so SwiftData stays
+    /// consistent with the server.
+    private func markPaid(_ bill: BillHistoryItem, status: BillHistoryItemStatus) {
+        let previous = bill.paymentStatus
+        bill.paymentStatus = status
+        bill.syncedAt = nil
+        try? modelContext.save()
+
+        Task { @MainActor in
+            guard let uploader else { return }
+            do {
+                try await uploader.uploadOne(bill)
+            } catch let err as BillSyncError {
+                bill.paymentStatus = previous
+                try? modelContext.save()
+                syncErrorMessage = err.errorDescription
+            } catch {
+                bill.paymentStatus = previous
+                try? modelContext.save()
+                syncErrorMessage = error.localizedDescription
+            }
         }
     }
 

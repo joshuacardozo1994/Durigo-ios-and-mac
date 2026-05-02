@@ -32,6 +32,7 @@ struct Home: View {
     @Environment(Session.self) private var session
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
+
     private var pendingCount: Int {
         billHistoryItems.count { $0.paymentStatus == .pending }
     }
@@ -110,6 +111,7 @@ struct Home: View {
         } label: {
             Label(item.title, systemImage: item.icon)
         }
+        .accessibilityIdentifier("more-link-\(item.title.lowercased().replacingOccurrences(of: " ", with: "-"))")
     }
 
     /// Maps NavigationItem.selection ↔ IPhoneRoot. Selection changes from

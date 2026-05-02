@@ -99,7 +99,11 @@ let iPhoneRootTabs: [NavigationItem] = [
 ]
 
 @Observable class Navigation: ObservableObject {
-    var selection: NavigationItem = {
+    /// Resolved from `--start-tab=` launch args. Used as both the initial
+    /// `selection` and (on iPhone) the deep-link target for the More tab's
+    /// NavigationStack — exposing this as a static lets Home compute its
+    /// initial morePath synchronously at @State init time.
+    static func argDerivedSelection() -> NavigationItem {
         let args = CommandLine.arguments
         if args.contains("--start-tab=dashboard")     { return .dashboard }
         if args.contains("--start-tab=pos")           { return .pos }
@@ -116,7 +120,9 @@ let iPhoneRootTabs: [NavigationItem] = [
         if args.contains("--start-tab=stats")         { return .dashboard }    // back-compat
         if args.contains("--start-tab=settings")      { return .settings }
         return .pos
-    }()
+    }
+
+    var selection: NavigationItem = Navigation.argDerivedSelection()
 
     /// True when the iPhone shell should show the "More" sheet because the
     /// selected item isn't one of the four bottom tabs.

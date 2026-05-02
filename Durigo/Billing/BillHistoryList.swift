@@ -16,6 +16,8 @@ struct BillHistoryList: View {
     @State private var sharingURL: URL?
     @State private var selectedPaymentStatus: BillHistoryItemStatus?
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.scenePhase) private var scenePhase
 
     // Pagination state
     private let pageSize = 20
@@ -23,6 +25,14 @@ struct BillHistoryList: View {
     @State private var currentPage = 0
     @State private var hasMoreItems = true
     @State private var isLoading = false
+
+    // Bill sync state
+    @State private var uploader = BillUploader()
+    @State private var showingSyncSettings = false
+    @State private var syncErrorMessage: String?
+    @State private var lastSyncSummary: UploadSummary?
+    @State private var lastDownloadSummary: DownloadSummary?
+    @State private var selectedBillID: UUID?
 
     func setAppBadgeCount() {
 //        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
@@ -95,6 +105,89 @@ struct BillHistoryList: View {
             loadItems()
         }
     }
+
+    @ViewBuilder
+    private func syncIndicator(for bill: BillHistoryItem) -> some View {
+        if bill.syncedAt != nil {
+            Image(systemName: "checkmark.icloud.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+                .accessibilityLabel("Synced")
+                .accessibilityIdentifier("syncStatus-synced-\(bill.id.uuidString)")
+        } else {
+            Button {
+                Task { await syncOne(bill) }
+            } label: {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Upload")
+            .accessibilityIdentifier("syncStatus-pending-\(bill.id.uuidString)")
+        }
+    }
+
+    private func unsyncedBills() throws -> [BillHistoryItem] {
+        let descriptor = FetchDescriptor<BillHistoryItem>(
+            predicate: #Predicate { $0.syncedAt == nil },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        return try modelContext.fetch(descriptor)
+    }
+
+    private func syncOne(_ bill: BillHistoryItem) async {
+        do {
+            try await uploader.uploadOne(bill)
+            try? modelContext.save()
+        } catch let err as BillSyncError {
+            syncErrorMessage = err.errorDescription
+        } catch {
+            syncErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func pullFromServer() async {
+        do {
+            let summary = try await uploader.downloadAll(into: modelContext)
+            lastDownloadSummary = summary
+            loadItems(reset: true)
+        } catch let err as BillSyncError {
+            syncErrorMessage = err.errorDescription
+        } catch {
+            syncErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func syncAllUnsynced(batchSize: Int = 200, silentIfEmpty: Bool = true) async {
+        do {
+            let bills = try unsyncedBills()
+            guard !bills.isEmpty else {
+                if !silentIfEmpty {
+                    lastSyncSummary = UploadSummary(attempted: 0, succeeded: [], failed: [])
+                }
+                return
+            }
+            var totalSucceeded: [UUID] = []
+            var totalFailed: [(id: UUID, error: BillSyncError)] = []
+            for chunk in stride(from: 0, to: bills.count, by: batchSize) {
+                let slice = Array(bills[chunk..<min(chunk + batchSize, bills.count)])
+                let summary = try await uploader.uploadMany(slice)
+                totalSucceeded.append(contentsOf: summary.succeeded)
+                totalFailed.append(contentsOf: summary.failed)
+                try? modelContext.save()
+            }
+            lastSyncSummary = UploadSummary(
+                attempted: bills.count,
+                succeeded: totalSucceeded,
+                failed: totalFailed
+            )
+        } catch let err as BillSyncError {
+            syncErrorMessage = err.errorDescription
+        } catch {
+            syncErrorMessage = error.localizedDescription
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -121,9 +214,11 @@ struct BillHistoryList: View {
                                 HStack(alignment: .firstTextBaseline) {
                                     Text(billHistoryItem.tableNumber == 0 ? "Parcel" : "Table \(billHistoryItem.tableNumber)")
                                         .font(.headline)
-                                    
+
+                                    syncIndicator(for: billHistoryItem)
+
                                     Spacer()
-                                    
+
                                     Text(billHistoryItem.items.getTotal().asCurrencyString() ?? "")
                                         .font(.system(.title3, design: .rounded))
                                         .fontWeight(.semibold)
@@ -358,9 +453,93 @@ struct BillHistoryList: View {
                     Text("Share")
                 }
             }
+            .toolbar {
+                Menu {
+                    Button {
+                        Task { await pullFromServer() }
+                    } label: {
+                        Label("Pull from Server", systemImage: "icloud.and.arrow.down.fill")
+                    }
+                    .disabled(uploader.isUploading)
+
+                    Button {
+                        Task { await syncAllUnsynced(silentIfEmpty: false) }
+                    } label: {
+                        Label("Sync All Unsynced", systemImage: "icloud.and.arrow.up.fill")
+                    }
+                    .disabled(uploader.isUploading)
+
+                    Divider()
+
+                    Button {
+                        showingSyncSettings = true
+                    } label: {
+                        Label("Sync Settings", systemImage: "gearshape")
+                    }
+                } label: {
+                    if uploader.isUploading {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "icloud")
+                            .accessibilityIdentifier("syncMenu")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSyncSettings) {
+                BillSyncSettings()
+            }
+            .alert("Sync Error", isPresented: .init(get: { syncErrorMessage != nil }, set: { if !$0 { syncErrorMessage = nil } })) {
+                Button("OK") { syncErrorMessage = nil }
+                Button("Settings") {
+                    syncErrorMessage = nil
+                    showingSyncSettings = true
+                }
+            } message: {
+                Text(syncErrorMessage ?? "")
+            }
+            .alert("Sync Complete", isPresented: .init(get: { lastSyncSummary != nil }, set: { if !$0 { lastSyncSummary = nil } })) {
+                Button("OK") { lastSyncSummary = nil }
+            } message: {
+                if let s = lastSyncSummary {
+                    Text("\(s.succeeded.count) of \(s.attempted) bills synced.\(s.failed.isEmpty ? "" : " \(s.failed.count) failed.")")
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if let progress = uploader.progress, uploader.isUploading {
+                    HStack(spacing: 12) {
+                        ProgressView(value: Double(progress.done), total: Double(progress.total))
+                            .progressViewStyle(.linear)
+                            .frame(maxWidth: 200)
+                        Text("\(progress.done)/\(progress.total)")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 24)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active && KeychainHelper.load(.billUploadToken) != nil {
+                    Task {
+                        await pullFromServer()
+                        await syncAllUnsynced()
+                    }
+                }
+            }
+            .task {
+                // First-render trigger (scenePhase onChange doesn't fire on initial launch).
+                // Pull server bills into SwiftData, then push any locally-unsynced ones up.
+                if KeychainHelper.load(.billUploadToken) != nil {
+                    await pullFromServer()
+                    await syncAllUnsynced()
+                }
+            }
         }
         .lockWithBiometric()
-        
+
     }
 }
 

@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
 	<key>SERVER_URL</key>
-	<string>https://durigos.in</string>
+	<string>http://restaurant.local:3000</string>
 </dict>
 </plist>

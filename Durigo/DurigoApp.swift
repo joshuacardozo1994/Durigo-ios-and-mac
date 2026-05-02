@@ -12,8 +12,8 @@ import SwiftData
 @main
 struct DurigoApp: App {
     let container: ModelContainer
+    @State private var session = Session()
 
-    
     init() {
         do {
             container = try ModelContainer(
@@ -23,16 +23,18 @@ struct DurigoApp: App {
         } catch {
             fatalError("Failed to initialize model container.")
         }
-//        UNUserNotificationCenter.current().requestAuthorization(options: .badge) { (granted, error) in
-//            if error != nil {
-//                // success!
-//            }
-//        }
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            Home()
+            Group {
+                if session.isSignedIn {
+                    Home()
+                } else {
+                    LoginView()
+                }
+            }
+            .environment(session)
         }
         .modelContainer(container)
     }

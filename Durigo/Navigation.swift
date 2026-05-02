@@ -16,5 +16,13 @@ enum TabItems {
 }
 
 @Observable class Navigation: ObservableObject {
-    var tabSelection = TabItems.billGenerator
+    var tabSelection: TabItems = {
+        // Allow UI tests / screenshot scripts to land on a specific tab via launch arg.
+        let args = CommandLine.arguments
+        if args.contains("--start-tab=history") { return .billHistoryList }
+        if args.contains("--start-tab=stats") { return .stats }
+        if args.contains("--start-tab=reports") { return .reports }
+        if args.contains("--start-tab=menu") { return .menuGenerator }
+        return .billGenerator
+    }()
 }

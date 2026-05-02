@@ -145,15 +145,66 @@ enum BillHistoryItemsSchemaV3: VersionedSchema {
     }
 }
 
-typealias MenuItem = BillHistoryItemsSchemaV3.MenuItem
-typealias BillHistoryItem = BillHistoryItemsSchemaV3.BillHistoryItem
-typealias BillHistoryItemStatus = BillHistoryItemsSchemaV3.Status
+enum BillHistoryItemsSchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 0, 3)
+
+    static var models: [any PersistentModel.Type] {
+        [BillHistoryItem.self]
+    }
+
+    enum Status: String, Codable, Equatable {
+        case paidByCash
+        case paidByUPI
+        case paidByCard
+        case pending
+    }
+
+    struct MenuItem: Identifiable, Equatable, Hashable, Codable {
+        var id: UUID
+        var name: String
+        var prefix: String?
+        var suffix: String?
+        var quantity: Double
+        var price: Double
+        var servingSize: Category.Item.ServingSize?
+        var tags: [String]?
+    }
+
+    @Model
+    class BillHistoryItem: Identifiable {
+        var id: UUID
+        var date: Date
+        var tableNumber: Int
+        var items: [MenuItem]
+        var paymentStatus: Status
+        var waiter: String
+        var syncedAt: Date?
+
+        init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending, waiter: String, syncedAt: Date? = nil) {
+            self.id = id
+            self.date = date
+            self.items = items
+            self.tableNumber = tableNumber
+            self.paymentStatus = paymentStatus
+            self.waiter = waiter
+            self.syncedAt = syncedAt
+        }
+
+        var totalAmount: Double {
+            return items.reduce(0) { $0 + $1.price * $1.quantity }
+        }
+    }
+}
+
+typealias MenuItem = BillHistoryItemsSchemaV4.MenuItem
+typealias BillHistoryItem = BillHistoryItemsSchemaV4.BillHistoryItem
+typealias BillHistoryItemStatus = BillHistoryItemsSchemaV4.Status
 
 enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [BillHistoryItemsSchemaV1.self, BillHistoryItemsSchemaV2.self, BillHistoryItemsSchemaV3.self]
+        [BillHistoryItemsSchemaV1.self, BillHistoryItemsSchemaV2.self, BillHistoryItemsSchemaV3.self, BillHistoryItemsSchemaV4.self]
     }
-    
+
     static var savedV1BillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
     static var savedV2BillHistoryItems = [BillHistoryItemsSchemaV2.BillHistoryItem]()
     
@@ -224,7 +275,12 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         }
     )
     
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: BillHistoryItemsSchemaV3.self,
+        toVersion: BillHistoryItemsSchemaV4.self
+    )
+
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
 }

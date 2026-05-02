@@ -41,6 +41,7 @@ struct BillHistoryList: View {
     @State private var selectedWaiter: String?
     @State private var selectedPaymentStatus: BillHistoryItemStatus?
     @State private var showTodaysBills = false
+    @State private var selectedBill: BillHistoryItem?
 
     // Bills shown — reads from SwiftData (so offline works).
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var allBills: [BillHistoryItem]
@@ -62,7 +63,10 @@ struct BillHistoryList: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("History")
+                .navigationTitle("Billing")
+                .navigationDestination(item: $selectedBill) { bill in
+                    BillHistory(billHistoryItem: bill)
+                }
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar { toolbarContent }
                 .alert("Sync Error", isPresented: .init(get: { syncErrorMessage != nil }, set: { if !$0 { syncErrorMessage = nil } })) {
@@ -130,11 +134,12 @@ struct BillHistoryList: View {
     private var list: some View {
         List {
             ForEach(filteredBills) { bill in
-                NavigationLink {
-                    BillHistory(billHistoryItem: bill)
+                Button {
+                    selectedBill = bill
                 } label: {
                     BillRowCard(bill: bill, syncIndicator: { syncIndicator(for: bill) })
                 }
+                .buttonStyle(.plain)
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))

@@ -130,6 +130,23 @@ final class Session {
         self.token = nil
         self.user = nil
     }
+
+    /// User-initiated logout: tells the server to revoke the token (so the
+    /// JWT can't be reused even if leaked) before clearing local state.
+    /// Network failure is non-fatal — local state is always cleared.
+    func signOutRemotely() async {
+        if let currentToken = self.token {
+            let baseString = Config.shared.serverURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            if let url = URL(string: "\(baseString)/api/auth/logout") {
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("auth-token=\(currentToken)", forHTTPHeaderField: "Cookie")
+                request.timeoutInterval = 10
+                _ = try? await NetworkHelper.shared.currentSession.data(for: request)
+            }
+        }
+        signOut()
+    }
 }
 
 private struct LoginResponse: Decodable {

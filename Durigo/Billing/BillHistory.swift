@@ -37,7 +37,7 @@ struct BillHistory: View {
                 menuLoader.tableNumber = billHistoryItem.tableNumber
                 menuLoader.waiter = billHistoryItem.waiter
                 menuLoader.billID = billHistoryItem.id
-                navigation.tabSelection = .billGenerator
+                navigation.selection = .pos
             }
             Button("Cancel", role: .cancel) {}
         }

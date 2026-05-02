@@ -12,20 +12,27 @@ struct StatsFilter: View {
     @Binding var startDate: Date
     @Binding var endDate: Date
     @Query(sort: \BillHistoryItem.date, order: .forward) private var billHistoryItems: [BillHistoryItem]
+
+    /// Picker minimum: 5 years ago. The earliest *cached* bill is no longer the
+    /// floor — bills are now paginated, so locking to the cache made the filter
+    /// shrink to a few weeks. The user can pull older bills in via Bill History.
+    private var pickerLowerBound: Date {
+        Calendar.current.date(byAdding: .year, value: -5, to: Date()) ?? Date.distantPast
+    }
+
     var body: some View {
-        let firstDate = billHistoryItems.first?.date ?? Date()
         NavigationStack {
             Form {
                 Section {
                     DatePicker(
                         "From",
                         selection: $startDate,
-                        in: firstDate...Date(),
+                        in: pickerLowerBound...Date(),
                         displayedComponents: [.date, .hourAndMinute]
                     )
                     .datePickerStyle(.graphical)
                 }
-                
+
                 Section {
                     DatePicker(
                         "To",
@@ -41,7 +48,7 @@ struct StatsFilter: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Reset") {
-                        startDate = firstDate
+                        startDate = billHistoryItems.first?.date ?? pickerLowerBound
                         endDate = Date()
                     }
                     .foregroundStyle(.red)

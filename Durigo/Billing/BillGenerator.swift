@@ -1,21 +1,21 @@
 //
 //  BillGenerator.swift
-//  pdf test
+//  Durigo
 //
-//  Created by Joshua Cardozo on 15/10/23.
+//  Web-styled bill generator: table + waiter pickers in a header card,
+//  bill rows in a card with subtle dividers, total in a footer card.
+//  Inline editing (name/price/quantity) is preserved exactly — bindings
+//  still write through to MenuLoader.billItems.
 //
 
 import SwiftUI
 
+// MARK: - Header pickers
 
 struct TableDropdownSelector: View {
     var showIfSelected = false
     @Binding var selectedOption: Int?
     let options: [Int]
-
-    private var allOptions: [Int] {
-        [0] + options // 0 = Parcel
-    }
 
     var body: some View {
         Picker(selection: Binding(
@@ -28,22 +28,42 @@ struct TableDropdownSelector: View {
                 Text("Table \(option)").tag(option)
             }
         } label: {
-            HStack {
-                if let selectedOption {
-                    if selectedOption == 0 {
-                        Text("Parcel")
-                    } else {
-                        Text("Table \(selectedOption)")
-                    }
-                } else {
-                    Text("Table")
-                }
-            }
-            .font(.headline)
+            pickerLabel
         }
         .pickerStyle(.menu)
         .tint(Color.primary)
         .accessibilityIdentifier("Table-Selector")
+    }
+
+    private var pickerLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "person.2.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Group {
+                if let selectedOption {
+                    Text(selectedOption == 0 ? "Parcel" : "Table \(selectedOption)")
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("Table")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.system(.body, weight: .medium))
+            Image(systemName: "chevron.down")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .fill(Color(.tertiarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
     }
 }
 
@@ -69,63 +89,133 @@ struct WaiterDropdownSelector: View {
                 }
             }
         } label: {
-            HStack {
-                if let selectedOption {
-                    Text(selectedOption)
-                } else {
-                    Text("Waiter")
-                }
-            }
-            .font(.headline)
+            pickerLabel
         }
         .pickerStyle(.menu)
         .tint(Color.primary)
         .accessibilityIdentifier("Waiter-Selector")
     }
+
+    private var pickerLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "person.crop.circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Group {
+                if let selectedOption {
+                    Text(selectedOption)
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("Waiter")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.system(.body, weight: .medium))
+            Image(systemName: "chevron.down")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .fill(Color(.tertiarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+    }
 }
 
-/// Represents an individual item in the bill.
+// MARK: - Single editable bill row
+
 struct BillItem: View {
     @Binding var item: MenuItem
 
     var body: some View {
-        HStack {
-            Text(String(format: "%.1f", item.quantity))
-                .bold()
-                .padding(.trailing, 8)
-                .accessibilityIdentifier("menu-item-quantity-Text-\(item.id.uuidString)")
-                .onTapGesture {
-                    item.quantity += 0.5
-                }
-            Stepper("Quantity", value: $item.quantity, in: 1...100)
-                .labelsHidden()
-                .accessibilityIdentifier("menu-item-quantity-Stepper-\(item.id.uuidString)")
+        HStack(spacing: DesignTokens.spacingM) {
+            // Quantity (tap to +0.5, stepper for fine control)
+            HStack(spacing: 6) {
+                Text(String(format: "%.1f", item.quantity))
+                    .font(.system(.body, weight: .semibold))
+                    .frame(minWidth: 32, alignment: .leading)
+                    .accessibilityIdentifier("menu-item-quantity-Text-\(item.id.uuidString)")
+                    .onTapGesture { item.quantity += 0.5 }
+                Stepper("Quantity", value: $item.quantity, in: 1...100)
+                    .labelsHidden()
+                    .accessibilityIdentifier("menu-item-quantity-Stepper-\(item.id.uuidString)")
+            }
+
+            // Optional prefix + serving size badges
             if let prefix = item.prefix {
                 Text("(\(prefix))")
+                    .font(.caption)
+                    .italic()
+                    .foregroundStyle(.secondary)
                     .accessibilityIdentifier("menu-item-prefix-Text-\(item.id.uuidString)")
             }
             if let servingSize = item.servingSize, servingSize.shouldDisplay {
                 Text(servingSize.name)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.primary.opacity(0.08)))
             }
+
+            // Editable name
             TextField("Name", text: $item.name)
+                .font(.system(.body))
                 .accessibilityIdentifier("menu-item-name-TextField-\(item.id.uuidString)")
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                
-            Spacer()
-            TextField("Price", value: $item.price, format: .number)
-                .multilineTextAlignment(.trailing)
-                .accessibilityIdentifier("menu-item-price-TextField-\(item.id.uuidString)")
-            #if os(iOS)
-                .keyboardType(.numberPad)
-            #endif
-                .bold()
-                .frame(width: 35)
+
+            Spacer(minLength: 8)
+
+            // Editable price
+            HStack(spacing: 2) {
+                Text("₹")
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                TextField("0", value: $item.price, format: .number)
+                    .multilineTextAlignment(.trailing)
+                    .accessibilityIdentifier("menu-item-price-TextField-\(item.id.uuidString)")
+                #if os(iOS)
+                    .keyboardType(.numberPad)
+                #endif
+                    .font(.system(.body, weight: .semibold))
+                    .frame(width: 56)
+            }
         }
+        .padding(.vertical, 4)
     }
 }
 
-/// Main view for generating bills.
+// MARK: - Empty state
+
+private struct EmptyBillState: View {
+    var body: some View {
+        VStack(spacing: DesignTokens.spacingM) {
+            Image(systemName: "list.bullet.clipboard")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(.secondary)
+            VStack(spacing: 4) {
+                Text("No items yet")
+                    .font(.system(.headline, weight: .semibold))
+                Text("Tap the menu button or add a custom item to start the bill.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, DesignTokens.spacingL)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignTokens.spacing2XL)
+    }
+}
+
+// MARK: - Bill Generator
+
 struct BillGenerator: View {
     @EnvironmentObject private var menuLoader: MenuLoader
     @State private var showingBillClearAlert = false
@@ -133,49 +223,23 @@ struct BillGenerator: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Simple, clean header
-                HStack {
-                    TableDropdownSelector(selectedOption: $menuLoader.tableNumber, options: Array(1...20))
-                    Spacer()
-                    WaiterDropdownSelector(selectedOption: $menuLoader.waiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                    headerCard
+                    itemsCard
+                    totalsCard
                 }
-                .padding()
-                
-                billItemsList
-                
-                // Clean total bar
-                HStack(alignment: .firstTextBaseline, spacing: 32) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Items")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("\(menuLoader.billItems.count)")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Total")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text("₹\(menuLoader.billItems.getTotal())")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .accessibilityIdentifier("bill generator items total")
-                    }
-                }
-                .padding()
-                .background(Color(.systemBackground))
+                .padding(DesignTokens.spacingL)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("")
+            .navigationTitle("Bill Generator")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
             }
-            
             .alert("Are you sure you want to clear the bill", isPresented: $showingBillClearAlert) {
                 Button("Clear", role: .destructive) {
                     menuLoader.resetBill()
@@ -185,7 +249,6 @@ struct BillGenerator: View {
             #if os(iOS)
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarLeading) {
-                    EditButton()
                     clearButton
                     addItemButton
                 }
@@ -212,16 +275,110 @@ struct BillGenerator: View {
         }
     }
 
-    /// View for the list of bill items.
+    // MARK: Header card (table + waiter)
+
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.spacingM) {
+            HStack {
+                Text("New bill")
+                    .font(.system(.headline, weight: .semibold))
+                Spacer()
+                Text("#\(menuLoader.billID.uuidString.prefix(6))")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: DesignTokens.spacingM) {
+                TableDropdownSelector(
+                    selectedOption: $menuLoader.tableNumber,
+                    options: Array(1...20)
+                )
+                WaiterDropdownSelector(
+                    selectedOption: $menuLoader.waiter,
+                    options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"]
+                )
+                Spacer()
+            }
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground(cornerRadius: DesignTokens.cornerRadiusMedium)
+    }
+
+    // MARK: Items card
+
+    private var itemsCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Items")
+                    .font(.system(.headline, weight: .semibold))
+                Spacer()
+                Text("\(menuLoader.billItems.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.primary.opacity(0.08)))
+            }
+            .padding(.horizontal, DesignTokens.spacingL)
+            .padding(.top, DesignTokens.spacingL)
+            .padding(.bottom, DesignTokens.spacingS)
+
+            if menuLoader.billItems.isEmpty {
+                EmptyBillState()
+            } else {
+                billItemsList
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground(cornerRadius: DesignTokens.cornerRadiusMedium)
+    }
+
     private var billItemsList: some View {
         List($menuLoader.billItems, editActions: [.delete, .move]) { $item in
             BillItem(item: $item)
+                .listRowBackground(Color.clear)
+                .listRowSeparatorTint(Color.primary.opacity(DesignTokens.borderOpacity))
+                .listRowInsets(EdgeInsets(
+                    top: DesignTokens.spacingS,
+                    leading: DesignTokens.spacingL,
+                    bottom: DesignTokens.spacingS,
+                    trailing: DesignTokens.spacingL
+                ))
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollDisabled(true)
+        .frame(minHeight: CGFloat(max(menuLoader.billItems.count, 1)) * 56)
     }
 
+    // MARK: Totals card
 
+    private var totalsCard: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Items")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\(menuLoader.billItems.count)")
+                    .font(.system(.title3, weight: .semibold))
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Total")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("₹\(menuLoader.billItems.getTotal())")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .accessibilityIdentifier("bill generator items total")
+            }
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground(cornerRadius: DesignTokens.cornerRadiusMedium)
+    }
 
-    /// Button to clear all items.
+    // MARK: Toolbar buttons
+
     private var clearButton: some View {
         Button(action: {
         #if os(iOS)
@@ -229,47 +386,52 @@ struct BillGenerator: View {
         #endif
             showingBillClearAlert.toggle()
         }) {
-            Image(systemName: "trash.fill")
+            Image(systemName: "trash")
         }
         .disabled(menuLoader.billItems.isEmpty)
         .accessibilityIdentifier("clearBill")
     }
 
-    /// Button to add a new item.
     private var addItemButton: some View {
         Button(action: {
             menuLoader.billItems.append(MenuItem(id: UUID(), name: "", quantity: 1, price: 0))
         }) {
-            Image(systemName: "plus.circle.fill")
+            Image(systemName: "plus.circle")
         }
         .accessibilityIdentifier("addItemButton")
     }
 
-    /// Button to show the menu list.
     private var menuButton: some View {
         Button(action: {
             isShowingMenuList.toggle()
         }) {
-            Image(systemName: "book.pages.fill")
+            Image(systemName: "book.pages")
         }
         .accessibilityIdentifier("showMenuButton")
     }
 
-    /// Button to preview the bill.
     private var printButton: some View {
         NavigationLink {
-            BillPreview(tableNumber: menuLoader.tableNumber, waiter: menuLoader.waiter ?? "Unknown", billID: menuLoader.billID, billItems: menuLoader.billItems)
+            BillPreview(
+                tableNumber: menuLoader.tableNumber,
+                waiter: menuLoader.waiter ?? "Unknown",
+                billID: menuLoader.billID,
+                billItems: menuLoader.billItems
+            )
         } label: {
-            Image(systemName: "printer.fill")
+            Image(systemName: "printer")
         }
-        .disabled(menuLoader.billItems.isEmpty || menuLoader.billItems.contains { $0.price == 0 } ||
-                  menuLoader.tableNumber == nil || menuLoader.waiter == nil
+        .disabled(
+            menuLoader.billItems.isEmpty
+            || menuLoader.billItems.contains { $0.price == 0 }
+            || menuLoader.tableNumber == nil
+            || menuLoader.waiter == nil
         )
         .accessibilityIdentifier("print-bill")
     }
 }
 
-
+// MARK: - Preview
 
 struct BillGenerator_Previews: PreviewProvider {
     static var previews: some View {

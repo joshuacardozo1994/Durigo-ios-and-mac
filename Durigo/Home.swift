@@ -215,13 +215,13 @@ struct Home: View {
         switch item {
         case .dashboard:    Dashboard()
         case .pos:          BillGenerator()
-        case .kitchen:      ComingSoonView(title: "Kitchen", icon: "fork.knife.circle", note: "Live order queue with TODO / IN PREP / READY columns.")
+        case .kitchen:      KitchenAdminView()
         case .billing:      BillHistoryList()
-        case .reservations: ComingSoonView(title: "Reservations", icon: "calendar", note: "Upcoming reservations and table assignments.")
+        case .reservations: ReservationsAdminView()
         case .menu:         MenuEditor()
         case .modifiers:    ModifiersAdminView()
         case .discounts:    DiscountsAdminView()
-        case .inventory:    ComingSoonView(title: "Inventory", icon: "shippingbox", note: "Ingredient stock levels, low-stock alerts, restock entries.")
+        case .inventory:    InventoryAdminView()
         case .users:        UsersAdminView()
         case .reports:      Reports()
         case .settings:     SettingsView()
@@ -459,6 +459,20 @@ struct SettingsView: View {
                         LabeledContent("Username", value: user.username)
                         LabeledContent("Role", value: user.role)
                     }
+                }
+
+                Section {
+                    NavigationLink {
+                        AppSettingsForm()
+                    } label: {
+                        Label("Restaurant settings", systemImage: "building.2")
+                    }
+                    .accessibilityIdentifier("settings-restaurant-link")
+                } header: {
+                    Text("Configuration")
+                } footer: {
+                    Text("Restaurant info, business hours, tax rate, billing methods, inventory thresholds.")
+                        .font(.caption)
                 }
 
                 Section("Server") {
@@ -1575,6 +1589,1079 @@ private struct ModifierFormSheet: View {
             categoryId: categoryId,
             sortOrder: sortOrder,
             active: active
+        )
+        saving = true; errorMessage = nil
+        Task {
+            do {
+                if let existing { _ = try await store.update(payload, id: existing.id) }
+                else { _ = try await store.create(payload) }
+                saving = false
+                dismiss()
+            } catch {
+                saving = false
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - App settings (full editable form)
+
+struct AppSettings: Codable, Equatable {
+    var restaurant: RestaurantInfo
+    var business: BusinessHours
+    var billing: BillingSettings
+    var inventory: InventorySettings
+
+    struct RestaurantInfo: Codable, Equatable {
+        var name: String
+        var address: String
+        var phone: String
+        var email: String
+        var gstin: String
+        var socialHandle: String
+    }
+    struct BusinessHours: Codable, Equatable {
+        var openingTime: String
+        var closingTime: String
+        var orderPrefix: String
+    }
+    struct BillingSettings: Codable, Equatable {
+        var taxRate: Double
+        var taxLabel: String
+        var currency: String
+        var locale: String
+        var acceptCash: Bool
+        var acceptCard: Bool
+        var acceptUPI: Bool
+        var acceptDigitalWallet: Bool
+        var printReceipt: Bool
+    }
+    struct InventorySettings: Codable, Equatable {
+        var lowStockThreshold: Int
+        var autoReorder: Bool
+        var trackExpiry: Bool
+    }
+}
+
+@MainActor @Observable final class AppSettingsStore {
+    private let api: APIClient
+    var settings: AppSettings?
+    var isLoading = false
+    var saving = false
+    var errorMessage: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load() async {
+        isLoading = true; errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let data = try await api.get("/api/admin/settings")
+            settings = try JSONDecoder().decode(AppSettings.self, from: data)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func save(_ s: AppSettings) async throws {
+        saving = true; defer { saving = false }
+        _ = try await api.putJSON("/api/admin/settings", payload: s)
+        settings = s
+    }
+}
+
+struct AppSettingsForm: View {
+    @Environment(Session.self) private var session
+    @State private var store: AppSettingsStore?
+    @State private var draft: AppSettings?
+    @State private var saveError: String?
+    @State private var saveSuccess = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let draft = Binding($draft) {
+                    Section("Restaurant") {
+                        TextField("Name", text: draft.restaurant.name).accessibilityIdentifier("settings-restaurant-name")
+                        TextField("Address", text: draft.restaurant.address)
+                        TextField("Phone", text: draft.restaurant.phone).keyboardType(.phonePad)
+                        TextField("Email", text: draft.restaurant.email).keyboardType(.emailAddress).textInputAutocapitalization(.never)
+                        TextField("GSTIN", text: draft.restaurant.gstin).textInputAutocapitalization(.characters)
+                        TextField("Social handle", text: draft.restaurant.socialHandle)
+                    }
+                    Section("Business hours") {
+                        TextField("Opening", text: draft.business.openingTime).keyboardType(.numbersAndPunctuation)
+                        TextField("Closing", text: draft.business.closingTime).keyboardType(.numbersAndPunctuation)
+                        TextField("Order prefix", text: draft.business.orderPrefix)
+                    }
+                    Section("Billing") {
+                        HStack { Text("Tax rate"); Spacer()
+                            TextField("0", value: draft.billing.taxRate, format: .number).multilineTextAlignment(.trailing).frame(width: 80)
+                            #if os(iOS)
+                                .keyboardType(.decimalPad)
+                            #endif
+                        }
+                        TextField("Tax label", text: draft.billing.taxLabel)
+                        Toggle("Accept Cash", isOn: draft.billing.acceptCash)
+                        Toggle("Accept Card", isOn: draft.billing.acceptCard)
+                        Toggle("Accept UPI", isOn: draft.billing.acceptUPI)
+                        Toggle("Accept Digital Wallet", isOn: draft.billing.acceptDigitalWallet)
+                        Toggle("Print receipt", isOn: draft.billing.printReceipt)
+                    }
+                    Section("Inventory") {
+                        HStack { Text("Low stock threshold"); Spacer()
+                            TextField("0", value: draft.inventory.lowStockThreshold, format: .number).multilineTextAlignment(.trailing).frame(width: 80)
+                            #if os(iOS)
+                                .keyboardType(.numberPad)
+                            #endif
+                        }
+                        Toggle("Auto-reorder", isOn: draft.inventory.autoReorder)
+                        Toggle("Track expiry", isOn: draft.inventory.trackExpiry)
+                    }
+                } else {
+                    if store?.isLoading == true {
+                        Section { HStack { Spacer(); ProgressView(); Spacer() } }
+                    } else if let msg = store?.errorMessage {
+                        Section { Text(msg).foregroundStyle(.red) }
+                    }
+                }
+                if let saveError {
+                    Section { Text(saveError).foregroundStyle(.red) }
+                }
+            }
+            .navigationTitle("Settings")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    if store?.saving == true { ProgressView() }
+                    else {
+                        Button("Save") { Task { await persist() } }
+                            .disabled(draft == nil)
+                            .accessibilityIdentifier("settings-save")
+                    }
+                }
+            }
+            .alert("Saved", isPresented: $saveSuccess) {
+                Button("OK", role: .cancel) {}
+            } message: { Text("Settings updated.") }
+            .task {
+                if store == nil { store = AppSettingsStore(session: session) }
+                await store?.load()
+                draft = store?.settings
+            }
+        }
+    }
+
+    private func persist() async {
+        guard let store, let draft else { return }
+        do {
+            try await store.save(draft)
+            saveSuccess = true
+        } catch {
+            saveError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Reservations
+
+struct AdminTable: Codable, Identifiable, Hashable {
+    let id: String
+    let number: Int
+    let capacity: Int
+    let status: String
+}
+
+struct AdminReservation: Codable, Identifiable, Hashable {
+    let id: String
+    var tableId: String?
+    var guestName: String
+    var guestPhone: String
+    var guestCount: Int
+    var date: String      // ISO date
+    var time: String      // HH:MM
+    var duration: Int
+    var status: String
+    var notes: String?
+    var table: AdminTable?
+}
+
+struct ReservationCreatePayload: Encodable {
+    let tableId: String
+    let guestName: String
+    let guestPhone: String
+    let guestCount: Int
+    let date: String
+    let time: String
+    let duration: Int
+    let notes: String?
+}
+
+struct ReservationUpdatePayload: Encodable {
+    let status: String?
+    let guestName: String?
+    let guestPhone: String?
+    let guestCount: Int?
+    let time: String?
+    let notes: String?
+}
+
+@MainActor @Observable final class ReservationsStore {
+    private let api: APIClient
+    var items: [AdminReservation] = []
+    var tables: [AdminTable] = []
+    var isLoading = false
+    var errorMessage: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load() async {
+        isLoading = true; errorMessage = nil
+        defer { isLoading = false }
+        do {
+            async let resData = api.get("/api/reservations/upcoming", query: [URLQueryItem(name: "days", value: "30")])
+            async let tablesData = api.get("/api/admin/tables")
+            items = try JSONDecoder().decode([AdminReservation].self, from: try await resData)
+            tables = try JSONDecoder().decode([AdminTable].self, from: try await tablesData)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func create(_ payload: ReservationCreatePayload) async throws -> AdminReservation {
+        let data = try await api.postJSON("/api/reservations", payload: payload)
+        let created = try JSONDecoder().decode(AdminReservation.self, from: data)
+        items.append(created)
+        items.sort { $0.date < $1.date }
+        return created
+    }
+
+    func update(_ payload: ReservationUpdatePayload, id: String) async throws -> AdminReservation {
+        let data = try await api.putJSON("/api/reservations/\(id)", payload: payload)
+        let updated = try JSONDecoder().decode(AdminReservation.self, from: data)
+        if let idx = items.firstIndex(where: { $0.id == id }) { items[idx] = updated }
+        return updated
+    }
+
+    func cancel(_ r: AdminReservation) async throws {
+        try await api.delete("/api/reservations/\(r.id)")
+        items.removeAll { $0.id == r.id }
+    }
+}
+
+struct ReservationsAdminView: View {
+    @Environment(Session.self) private var session
+    @State private var store: ReservationsStore?
+    @State private var creating = false
+    @State private var editing: AdminReservation?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let store { content(store: store) }
+                else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+            }
+            .navigationTitle("Reservations")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { creating = true } label: { Image(systemName: "plus") }
+                        .accessibilityIdentifier("admin-reservations-new")
+                }
+            }
+            .sheet(isPresented: $creating) {
+                if let store { ReservationFormSheet(store: store) }
+            }
+            .sheet(item: $editing) { r in
+                if let store { ReservationDetailSheet(store: store, reservation: r) }
+            }
+            .task {
+                if store == nil { store = ReservationsStore(session: session) }
+                await store?.load()
+            }
+            .refreshable { await store?.load() }
+        }
+    }
+
+    @ViewBuilder
+    private func content(store: ReservationsStore) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                if let msg = store.errorMessage {
+                    HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+                        .padding(DesignTokens.spacingM)
+                        .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+                }
+                if store.items.isEmpty {
+                    VStack(spacing: DesignTokens.spacingM) {
+                        Image(systemName: "calendar").font(.system(size: 36, weight: .light)).foregroundStyle(.secondary)
+                        Text("No upcoming reservations").font(.headline)
+                        Text("Tap + to book a table.").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity).padding(DesignTokens.spacing2XL)
+                } else {
+                    ForEach(groupedByDay(store.items), id: \.day) { group in
+                        daySection(day: group.day, items: group.items)
+                    }
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private func daySection(day: String, items: [AdminReservation]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(day)
+                .font(.system(.headline, weight: .semibold))
+                .padding(.horizontal, DesignTokens.spacingL)
+                .padding(.top, DesignTokens.spacingL)
+                .padding(.bottom, DesignTokens.spacingS)
+
+            ForEach(Array(items.enumerated()), id: \.element.id) { idx, r in
+                reservationRow(r)
+                if idx < items.count - 1 {
+                    Divider().background(Color.primary.opacity(DesignTokens.borderOpacity)).padding(.leading, DesignTokens.spacingL)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground()
+    }
+
+    private func reservationRow(_ r: AdminReservation) -> some View {
+        Button {
+            editing = r
+        } label: {
+            HStack(spacing: DesignTokens.spacingM) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(r.time).font(.system(.body, weight: .semibold))
+                        Text("·").foregroundStyle(.secondary)
+                        Text(r.guestName).font(.body)
+                        statusChip(r.status)
+                    }
+                    Text("\(r.guestCount) guest\(r.guestCount == 1 ? "" : "s") · \(tableLabel(r))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DesignTokens.spacingL).padding(.vertical, DesignTokens.spacingM)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func tableLabel(_ r: AdminReservation) -> String {
+        if let t = r.table { return "Table \(t.number)" }
+        if let tid = r.tableId, let t = (store?.tables.first { $0.id == tid }) { return "Table \(t.number)" }
+        return "No table"
+    }
+
+    private func statusChip(_ status: String) -> some View {
+        let color: Color = {
+            switch status.uppercased() {
+            case "CONFIRMED": .green
+            case "ARRIVED":   .blue
+            case "COMPLETED": .gray
+            case "CANCELLED", "NO_SHOW": .red
+            default:          .orange
+            }
+        }()
+        return Text(status.replacingOccurrences(of: "_", with: " ").capitalized)
+            .font(.caption2)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Capsule().fill(color.opacity(0.15)))
+            .foregroundStyle(color)
+    }
+
+    /// Group reservations by `date` (the ISO day field), display "Today / Tomorrow / Mon May 4" etc.
+    private func groupedByDay(_ items: [AdminReservation]) -> [(day: String, items: [AdminReservation])] {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let groups = Dictionary(grouping: items, by: { dayLabel(for: $0.date, formatter: f) })
+        return groups
+            .sorted { ($0.value.first?.date ?? "") < ($1.value.first?.date ?? "") }
+            .map { ($0.key, $0.value.sorted { $0.time < $1.time }) }
+    }
+
+    private func dayLabel(for iso: String, formatter: ISO8601DateFormatter) -> String {
+        let date = formatter.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) ?? Date()
+        let cal = Calendar.current
+        if cal.isDateInToday(date) { return "Today" }
+        if cal.isDateInTomorrow(date) { return "Tomorrow" }
+        let df = DateFormatter(); df.dateFormat = "EEE, MMM d"
+        return df.string(from: date)
+    }
+}
+
+private struct ReservationFormSheet: View {
+    let store: ReservationsStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var tableId: String = ""
+    @State private var guestName = ""
+    @State private var guestPhone = ""
+    @State private var guestCount = 2
+    @State private var date = Date().addingTimeInterval(2 * 3600) // default 2h from now
+    @State private var time = "19:00"
+    @State private var duration = 120
+    @State private var notes = ""
+    @State private var saving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Guest") {
+                    TextField("Name", text: $guestName).accessibilityIdentifier("reservation-form-name")
+                    TextField("Phone", text: $guestPhone).keyboardType(.phonePad)
+                    Stepper(value: $guestCount, in: 1...20) { Text("\(guestCount) guest\(guestCount == 1 ? "" : "s")") }
+                }
+                Section("When") {
+                    DatePicker("Date", selection: $date, in: Date()..., displayedComponents: .date)
+                    HStack {
+                        Text("Time"); Spacer()
+                        TextField("HH:MM", text: $time).multilineTextAlignment(.trailing).frame(width: 80)
+                            .accessibilityIdentifier("reservation-form-time")
+                    }
+                    Stepper(value: $duration, in: 30...480, step: 30) { Text("\(duration) min") }
+                }
+                Section("Table") {
+                    Picker("Table", selection: $tableId) {
+                        Text("Select…").tag("")
+                        ForEach(store.tables, id: \.id) { t in
+                            Text("Table \(t.number) (\(t.capacity) seats)").tag(t.id)
+                        }
+                    }
+                }
+                Section("Notes") {
+                    TextField("Optional", text: $notes, axis: .vertical).lineLimit(2...4)
+                }
+                if let errorMessage { Section { Text(errorMessage).foregroundStyle(.red) } }
+            }
+            .navigationTitle("New Reservation")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    if saving { ProgressView() }
+                    else { Button("Save", action: save).disabled(!isValid) }
+                }
+            }
+            .onAppear {
+                if tableId.isEmpty, let first = store.tables.first { tableId = first.id }
+            }
+        }
+        .interactiveDismissDisabled(saving)
+    }
+
+    private var isValid: Bool {
+        !guestName.trimmingCharacters(in: .whitespaces).isEmpty
+        && !guestPhone.trimmingCharacters(in: .whitespaces).isEmpty
+        && !tableId.isEmpty
+        && guestCount > 0
+    }
+
+    private func save() {
+        // Server expects date-only YYYY-MM-DD, separate `time` field. If we
+        // send a full ISO timestamp the server's `new Date(date + " " + time)`
+        // produces "Invalid Date" silently.
+        let dateF = DateFormatter()
+        dateF.dateFormat = "yyyy-MM-dd"
+        dateF.timeZone = .current
+        let payload = ReservationCreatePayload(
+            tableId: tableId,
+            guestName: guestName.trimmingCharacters(in: .whitespaces),
+            guestPhone: guestPhone.trimmingCharacters(in: .whitespaces),
+            guestCount: guestCount,
+            date: dateF.string(from: date),
+            time: time,
+            duration: duration,
+            notes: notes.isEmpty ? nil : notes
+        )
+        saving = true; errorMessage = nil
+        Task {
+            do {
+                _ = try await store.create(payload)
+                saving = false
+                dismiss()
+            } catch {
+                saving = false
+                errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            }
+        }
+    }
+}
+
+private struct ReservationDetailSheet: View {
+    let store: ReservationsStore
+    let reservation: AdminReservation
+    @Environment(\.dismiss) private var dismiss
+    @State private var saving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Guest") {
+                    LabeledContent("Name", value: reservation.guestName)
+                    LabeledContent("Phone", value: reservation.guestPhone)
+                    LabeledContent("Party size", value: "\(reservation.guestCount)")
+                }
+                Section("When") {
+                    LabeledContent("Date", value: dayLabel(reservation.date))
+                    LabeledContent("Time", value: reservation.time)
+                    LabeledContent("Duration", value: "\(reservation.duration) min")
+                }
+                Section("Update status") {
+                    ForEach(["CONFIRMED", "ARRIVED", "COMPLETED", "CANCELLED", "NO_SHOW"], id: \.self) { status in
+                        Button {
+                            Task { await setStatus(status) }
+                        } label: {
+                            HStack {
+                                Text(status.replacingOccurrences(of: "_", with: " ").capitalized)
+                                if reservation.status == status {
+                                    Spacer(); Image(systemName: "checkmark").foregroundStyle(.green)
+                                }
+                            }
+                        }
+                    }
+                }
+                if let errorMessage { Section { Text(errorMessage).foregroundStyle(.red) } }
+            }
+            .navigationTitle(reservation.guestName)
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func dayLabel(_ iso: String) -> String {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) ?? Date()
+        let df = DateFormatter(); df.dateStyle = .medium
+        return df.string(from: date)
+    }
+
+    private func setStatus(_ status: String) async {
+        let payload = ReservationUpdatePayload(status: status, guestName: nil, guestPhone: nil, guestCount: nil, time: nil, notes: nil)
+        saving = true; errorMessage = nil
+        do {
+            _ = try await store.update(payload, id: reservation.id)
+            saving = false
+            dismiss()
+        } catch {
+            saving = false
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Kitchen
+
+struct KitchenOrderItem: Codable, Identifiable, Hashable {
+    let id: String
+    let quantity: Int
+    var status: String   // PENDING / PREPARING / READY / SERVED / CANCELLED
+    let notes: String?
+    let menuItem: NamedRef?
+    let itemName: String?
+
+    struct NamedRef: Codable, Hashable {
+        let id: String?
+        let name: String?
+    }
+
+    var displayName: String { menuItem?.name ?? itemName ?? "Custom item" }
+}
+
+struct KitchenOrder: Codable, Identifiable, Hashable {
+    let id: String
+    let orderNumber: String
+    var status: String
+    let type: String
+    let createdAt: String
+    let table: TableRef?
+    let items: [KitchenOrderItem]
+
+    struct TableRef: Codable, Hashable {
+        let number: Int?
+    }
+}
+
+@MainActor @Observable final class KitchenStore {
+    private let api: APIClient
+    var orders: [KitchenOrder] = []
+    var isLoading = false
+    var errorMessage: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load() async {
+        isLoading = true; errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let data = try await api.get("/api/kitchen/orders")
+            let all = try JSONDecoder().decode([KitchenOrder].self, from: data)
+            // Kitchen display: only show orders the kitchen still has work on.
+            // SERVED means the food's already at the table — drop it.
+            orders = all.filter { !["SERVED", "COMPLETED", "CANCELLED"].contains($0.status.uppercased()) }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func advance(_ order: KitchenOrder) async {
+        let next: String
+        switch order.status.uppercased() {
+        case "PENDING", "CONFIRMED":  next = "PREPARING"
+        case "PREPARING":             next = "READY"
+        case "READY":                 next = "SERVED"
+        default: return
+        }
+        do {
+            let payload: [String: String] = ["status": next]
+            let body = try JSONEncoder().encode(payload)
+            _ = try await api.patch("/api/orders/\(order.id)", body: body)
+            if let idx = orders.firstIndex(where: { $0.id == order.id }) {
+                if next == "SERVED" {
+                    orders.remove(at: idx)
+                } else {
+                    orders[idx] = KitchenOrder(
+                        id: order.id, orderNumber: order.orderNumber, status: next,
+                        type: order.type, createdAt: order.createdAt, table: order.table,
+                        items: order.items
+                    )
+                }
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    var groupedByStatus: [(status: String, orders: [KitchenOrder])] {
+        let order: [String: Int] = ["PENDING": 0, "CONFIRMED": 1, "PREPARING": 2, "READY": 3]
+        let grouped = Dictionary(grouping: orders, by: { $0.status.uppercased() })
+        return grouped
+            .sorted { (order[$0.key] ?? 99) < (order[$1.key] ?? 99) }
+            .map { ($0.key, $0.value.sorted { $0.createdAt < $1.createdAt }) }
+    }
+}
+
+struct KitchenAdminView: View {
+    @Environment(Session.self) private var session
+    @State private var store: KitchenStore?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let store { content(store: store) }
+                else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+            }
+            .navigationTitle("Kitchen")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .task {
+                if store == nil { store = KitchenStore(session: session) }
+                await store?.load()
+            }
+            .refreshable { await store?.load() }
+        }
+    }
+
+    @ViewBuilder
+    private func content(store: KitchenStore) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                if let msg = store.errorMessage {
+                    HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+                        .padding(DesignTokens.spacingM)
+                        .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+                }
+                if store.orders.isEmpty {
+                    VStack(spacing: DesignTokens.spacingM) {
+                        Image(systemName: "fork.knife.circle").font(.system(size: 36, weight: .light)).foregroundStyle(.secondary)
+                        Text("No active orders").font(.headline)
+                        Text("New orders will appear here as they come in.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity).padding(DesignTokens.spacing2XL)
+                } else {
+                    ForEach(store.groupedByStatus, id: \.status) { group in
+                        statusColumn(status: group.status, orders: group.orders, store: store)
+                    }
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private func statusColumn(status: String, orders: [KitchenOrder], store: KitchenStore) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+            HStack {
+                Text(statusTitle(status)).font(.system(.title3, weight: .bold))
+                Spacer()
+                Text("\(orders.count)")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Capsule().fill(Color.primary.opacity(0.08)))
+            }
+            ForEach(orders) { o in
+                orderCard(o, store: store)
+            }
+        }
+    }
+
+    private func orderCard(_ o: KitchenOrder, store: KitchenStore) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+            HStack {
+                Text(o.orderNumber).font(.system(.subheadline, design: .monospaced, weight: .bold))
+                Spacer()
+                if let n = o.table?.number { Text("Table \(n)").font(.caption).foregroundStyle(.secondary) }
+                else { Text(o.type).font(.caption).foregroundStyle(.secondary) }
+            }
+            ForEach(o.items.filter { $0.status.uppercased() != "CANCELLED" }) { it in
+                HStack(alignment: .top) {
+                    Text("\(it.quantity)×").font(.caption.monospaced()).frame(width: 28, alignment: .leading).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(it.displayName).font(.subheadline)
+                        if let n = it.notes, !n.isEmpty {
+                            Text("note: \(n)").font(.caption2).foregroundStyle(.blue)
+                        }
+                    }
+                    Spacer()
+                }
+            }
+            if let label = nextLabel(o.status) {
+                Button { Task { await store.advance(o) } } label: {
+                    Label(label, systemImage: "checkmark")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .padding(.top, 4)
+                .accessibilityIdentifier("kitchen-advance-\(o.id)")
+            }
+        }
+        .padding(DesignTokens.spacingM)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground()
+    }
+
+    private func nextLabel(_ status: String) -> String? {
+        switch status.uppercased() {
+        case "PENDING", "CONFIRMED":  return "Start preparing"
+        case "PREPARING":             return "Mark ready"
+        case "READY":                 return "Mark served"
+        default:                      return nil
+        }
+    }
+
+    private func statusTitle(_ status: String) -> String {
+        switch status.uppercased() {
+        case "PENDING", "CONFIRMED": "To do"
+        case "PREPARING": "Preparing"
+        case "READY":     "Ready"
+        default: status
+        }
+    }
+}
+
+// MARK: - Inventory
+
+struct AdminIngredient: Codable, Identifiable, Hashable {
+    let id: String
+    var name: String
+    var unit: String
+    var currentStock: Double
+    var minimumStock: Double
+    var maximumStock: Double?
+    var costPerUnit: Int?
+    var supplier: String?
+}
+
+struct IngredientPayload: Encodable {
+    let name: String
+    let unit: String
+    let currentStock: Double
+    let minimumStock: Double
+    let maximumStock: Double?
+    let costPerUnit: Int?
+    let supplier: String?
+}
+
+@MainActor @Observable final class InventoryStore {
+    private let api: APIClient
+    var items: [AdminIngredient] = []
+    var isLoading = false
+    var errorMessage: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load() async {
+        isLoading = true; errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let data = try await api.get("/api/admin/inventory")
+            items = try JSONDecoder().decode([AdminIngredient].self, from: data)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func create(_ payload: IngredientPayload) async throws -> AdminIngredient {
+        let data = try await api.postJSON("/api/admin/inventory", payload: payload)
+        let created = try JSONDecoder().decode(AdminIngredient.self, from: data)
+        items.append(created)
+        items.sort { $0.name < $1.name }
+        return created
+    }
+
+    func update(_ payload: IngredientPayload, id: String) async throws -> AdminIngredient {
+        let data = try await api.putJSON("/api/admin/inventory/\(id)", payload: payload)
+        let updated = try JSONDecoder().decode(AdminIngredient.self, from: data)
+        if let idx = items.firstIndex(where: { $0.id == id }) { items[idx] = updated }
+        return updated
+    }
+
+    func delete(_ ing: AdminIngredient) async throws {
+        try await api.delete("/api/admin/inventory/\(ing.id)")
+        items.removeAll { $0.id == ing.id }
+    }
+}
+
+struct InventoryAdminView: View {
+    @Environment(Session.self) private var session
+    @State private var store: InventoryStore?
+    @State private var editing: AdminIngredient?
+    @State private var creating = false
+    @State private var deleteCandidate: AdminIngredient?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let store { content(store: store) }
+                else { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
+            }
+            .navigationTitle("Inventory")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { creating = true } label: { Image(systemName: "plus") }
+                        .accessibilityIdentifier("admin-inventory-new")
+                }
+            }
+            .sheet(item: $editing) { ing in
+                if let store { IngredientFormSheet(store: store, existing: ing) }
+            }
+            .sheet(isPresented: $creating) {
+                if let store { IngredientFormSheet(store: store, existing: nil) }
+            }
+            .alert(
+                "Delete \(deleteCandidate?.name ?? "ingredient")?",
+                isPresented: Binding(get: { deleteCandidate != nil }, set: { if !$0 { deleteCandidate = nil } }),
+                presenting: deleteCandidate
+            ) { ing in
+                Button("Delete", role: .destructive) { Task { try? await store?.delete(ing) } }
+                Button("Cancel", role: .cancel) {}
+            } message: { _ in Text("Ingredients linked to recipes can't be deleted.") }
+            .task {
+                if store == nil { store = InventoryStore(session: session) }
+                await store?.load()
+            }
+            .refreshable { await store?.load() }
+        }
+    }
+
+    @ViewBuilder
+    private func content(store: InventoryStore) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                if let msg = store.errorMessage {
+                    HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+                        .padding(DesignTokens.spacingM)
+                        .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+                }
+                if store.isLoading && store.items.isEmpty {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if store.items.isEmpty {
+                    VStack(spacing: DesignTokens.spacingM) {
+                        Image(systemName: "shippingbox").font(.system(size: 36, weight: .light)).foregroundStyle(.secondary)
+                        Text("No ingredients yet").font(.headline)
+                        Text("Tap + to add an ingredient to track.").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity).padding(DesignTokens.spacing2XL)
+                } else {
+                    ForEach(store.items) { ing in ingredientCard(ing) }
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private func ingredientCard(_ ing: AdminIngredient) -> some View {
+        Button {
+            editing = ing
+        } label: {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+                HStack {
+                    Text(ing.name).font(.system(.body, weight: .semibold))
+                    if ing.currentStock <= ing.minimumStock {
+                        Text("Low").font(.caption2).foregroundStyle(.red)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Capsule().fill(Color.red.opacity(0.15)))
+                    }
+                    Spacer()
+                    Text(stockText(ing)).font(.system(.body, design: .rounded, weight: .semibold))
+                        .foregroundStyle(ing.currentStock <= ing.minimumStock ? .red : .primary)
+                }
+                stockBar(ing)
+                if let supplier = ing.supplier, !supplier.isEmpty {
+                    Text("Supplier: \(supplier)").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .webCardBackground()
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) { deleteCandidate = ing } label: { Label("Delete", systemImage: "trash") }
+        }
+    }
+
+    private func stockBar(_ ing: AdminIngredient) -> some View {
+        let max = ing.maximumStock ?? Swift.max(ing.minimumStock * 2, ing.currentStock * 1.2)
+        let frac = max > 0 ? min(1.0, ing.currentStock / max) : 0
+        let lowFrac = max > 0 ? min(1.0, ing.minimumStock / max) : 0
+        return GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.08))
+                Rectangle().fill(Color.red.opacity(0.6))
+                    .frame(width: 1, height: 6)
+                    .offset(x: geo.size.width * lowFrac)
+                RoundedRectangle(cornerRadius: 3).fill(ing.currentStock <= ing.minimumStock ? Color.red : Color.green)
+                    .frame(width: geo.size.width * frac)
+            }
+        }
+        .frame(height: 6)
+    }
+
+    private func stockText(_ ing: AdminIngredient) -> String {
+        let pretty = ing.currentStock.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(ing.currentStock))" : String(format: "%.1f", ing.currentStock)
+        return "\(pretty) \(ing.unit)"
+    }
+}
+
+private struct IngredientFormSheet: View {
+    let store: InventoryStore
+    let existing: AdminIngredient?
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var unit = "kg"
+    @State private var currentStock: Double = 0
+    @State private var minimumStock: Double = 0
+    @State private var maximumStock: Double = 0
+    @State private var hasMax = false
+    @State private var costPerUnit = 0
+    @State private var hasCost = false
+    @State private var supplier = ""
+    @State private var saving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Item") {
+                    TextField("Name", text: $name).accessibilityIdentifier("inventory-form-name")
+                    TextField("Unit (kg, L, pieces)", text: $unit)
+                }
+                Section("Stock") {
+                    HStack { Text("Current"); Spacer()
+                        TextField("0", value: $currentStock, format: .number).multilineTextAlignment(.trailing).frame(width: 100)
+                        #if os(iOS)
+                            .keyboardType(.decimalPad)
+                        #endif
+                    }
+                    HStack { Text("Minimum"); Spacer()
+                        TextField("0", value: $minimumStock, format: .number).multilineTextAlignment(.trailing).frame(width: 100)
+                        #if os(iOS)
+                            .keyboardType(.decimalPad)
+                        #endif
+                    }
+                    Toggle("Has max", isOn: $hasMax)
+                    if hasMax {
+                        HStack { Text("Maximum"); Spacer()
+                            TextField("0", value: $maximumStock, format: .number).multilineTextAlignment(.trailing).frame(width: 100)
+                            #if os(iOS)
+                                .keyboardType(.decimalPad)
+                            #endif
+                        }
+                    }
+                }
+                Section("Sourcing") {
+                    Toggle("Track cost", isOn: $hasCost)
+                    if hasCost {
+                        HStack { Text("Cost per unit (₹)"); Spacer()
+                            TextField("0", value: $costPerUnit, format: .number).multilineTextAlignment(.trailing).frame(width: 100)
+                            #if os(iOS)
+                                .keyboardType(.numberPad)
+                            #endif
+                        }
+                    }
+                    TextField("Supplier", text: $supplier)
+                }
+                if let errorMessage { Section { Text(errorMessage).foregroundStyle(.red) } }
+            }
+            .navigationTitle(existing == nil ? "New Ingredient" : "Edit Ingredient")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    if saving { ProgressView() }
+                    else { Button("Save", action: save).disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || unit.isEmpty) }
+                }
+            }
+            .onAppear {
+                if let e = existing {
+                    name = e.name; unit = e.unit
+                    currentStock = e.currentStock; minimumStock = e.minimumStock
+                    if let m = e.maximumStock { hasMax = true; maximumStock = m }
+                    if let c = e.costPerUnit { hasCost = true; costPerUnit = c }
+                    supplier = e.supplier ?? ""
+                }
+            }
+        }
+        .interactiveDismissDisabled(saving)
+    }
+
+    private func save() {
+        let payload = IngredientPayload(
+            name: name.trimmingCharacters(in: .whitespaces),
+            unit: unit.trimmingCharacters(in: .whitespaces),
+            currentStock: currentStock,
+            minimumStock: minimumStock,
+            maximumStock: hasMax ? maximumStock : nil,
+            costPerUnit: hasCost ? costPerUnit : nil,
+            supplier: supplier.isEmpty ? nil : supplier
         )
         saving = true; errorMessage = nil
         Task {

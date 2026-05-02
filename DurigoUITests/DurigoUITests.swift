@@ -430,4 +430,37 @@ final class AdminScreensUITests: XCTestCase {
         let row = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", unique)).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 6), "New modifier didn't appear")
     }
+
+    // MARK: - Smoke loads for the 2nd-batch screens (Reservations / Kitchen /
+    // Inventory / Settings). They prove auth + the initial GET decode + the
+    // screen layout don't crash. Full CRUD coverage on these can be added
+    // later if/when each becomes a load-bearing daily-use screen.
+
+    func testReservationsScreenLoadsWithoutCrashing() throws {
+        launch(startTab: "reservations", expectedNavBar: "Reservations")
+        XCTAssertTrue(app.navigationBars["Reservations"].exists)
+        XCTAssertTrue(app.buttons["admin-reservations-new"].waitForExistence(timeout: 4))
+    }
+
+    func testKitchenScreenLoadsWithoutCrashing() throws {
+        launch(startTab: "kitchen", expectedNavBar: "Kitchen")
+        XCTAssertTrue(app.navigationBars["Kitchen"].exists)
+    }
+
+    func testInventoryScreenLoadsWithoutCrashing() throws {
+        launch(startTab: "inventory", expectedNavBar: "Inventory")
+        XCTAssertTrue(app.navigationBars["Inventory"].exists)
+        XCTAssertTrue(app.buttons["admin-inventory-new"].waitForExistence(timeout: 4))
+    }
+
+    func testSettingsScreenLoadsAndRestaurantLinkPresent() throws {
+        launch(startTab: "settings", expectedNavBar: "Settings")
+        XCTAssertTrue(app.navigationBars["Settings"].exists)
+        // The "Restaurant settings" NavigationLink is the entry point to the
+        // editable form. The push-then-form-loads flow is timing-flaky from
+        // XCUITest, so the form contents themselves are verified via manual
+        // screenshot + the form's GET/PUT exercised separately via curl.
+        XCTAssertTrue(app.buttons["settings-restaurant-link"].waitForExistence(timeout: 4),
+                      "Restaurant settings link missing")
+    }
 }

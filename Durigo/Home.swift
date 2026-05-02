@@ -2205,6 +2205,13 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
     var isLoading = false
     var errorMessage: String?
 
+    /// True while the SSE stream is connected. Surfaces a small "Live" chip
+    /// in the toolbar so the user knows updates are coming in automatically.
+    var liveConnected = false
+
+    /// Active stream task — cancelled by `stop()` and on reconnect.
+    private var streamTask: Task<Void, Never>?
+
     init(session: Session) { self.api = APIClient(session: session) }
 
     func load() async {
@@ -2219,6 +2226,55 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    // MARK: - Realtime via SSE
+
+    /// Open an SSE stream and reload the order list whenever a relevant
+    /// kitchen event arrives. Reconnects with exponential-ish backoff if the
+    /// stream drops. Idempotent — calling repeatedly while already connected
+    /// is a no-op.
+    func start() {
+        guard streamTask == nil else { return }
+        streamTask = Task { [weak self] in
+            guard let self else { return }
+            var backoff: UInt64 = 1_000_000_000  // 1s
+            while !Task.isCancelled {
+                do {
+                    let stream = await self.api.eventStream("/api/events")
+                    await MainActor.run { self.liveConnected = true }
+                    for try await ev in stream {
+                        if Task.isCancelled { break }
+                        switch ev.event {
+                        case "order_created", "order_updated", "order_status_changed", "kitchen_update":
+                            // Targeted patches would be nicer, but the full
+                            // reload is cheap and keeps the local state in
+                            // exact sync with the server filter rules.
+                            await self.load()
+                        default: break  // ignore connection / heartbeat / other types
+                        }
+                    }
+                    backoff = 1_000_000_000  // reset after a clean stream end
+                } catch is CancellationError {
+                    break
+                } catch {
+                    // Connection dropped — note it, back off, retry.
+                    await MainActor.run { self.liveConnected = false }
+                    try? await Task.sleep(nanoseconds: backoff)
+                    backoff = min(backoff * 2, 30_000_000_000)  // cap at 30s
+                }
+                await MainActor.run { self.liveConnected = false }
+            }
+            await MainActor.run { self.liveConnected = false }
+        }
+    }
+
+    /// Cancel the SSE stream. Called from `.onDisappear` of the kitchen view
+    /// so we don't keep the connection alive while the user is on another tab.
+    func stop() {
+        streamTask?.cancel()
+        streamTask = nil
+        liveConnected = false
     }
 
     func advance(_ order: KitchenOrder) async {
@@ -2272,10 +2328,23 @@ struct KitchenAdminView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    if store?.liveConnected == true {
+                        HStack(spacing: 4) {
+                            Circle().fill(.green).frame(width: 8, height: 8)
+                            Text("Live").font(.caption)
+                        }
+                        .accessibilityIdentifier("kitchen-live-indicator")
+                    }
+                }
+            }
             .task {
                 if store == nil { store = KitchenStore(session: session) }
                 await store?.load()
+                store?.start()
             }
+            .onDisappear { store?.stop() }
             .refreshable { await store?.load() }
         }
     }

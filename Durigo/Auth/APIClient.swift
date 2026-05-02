@@ -115,4 +115,87 @@ final class APIClient {
 
         return data
     }
+
+    // MARK: - Server-Sent Events
+
+    /// One parsed SSE event. `event` defaults to `"message"` if the stream
+    /// didn't specify one (matches the EventSource spec).
+    struct SSEEvent: Sendable, Equatable {
+        let id: String?
+        let event: String
+        let data: String
+    }
+
+    /// Open an SSE stream. Yields each parsed event until the task is
+    /// cancelled or the connection drops. Caller is responsible for
+    /// cancelling the consuming Task to close the connection.
+    ///
+    /// On 401, this signs the session out and throws `.unauthorized`. On
+    /// network/parse errors, throws and the caller should retry with backoff.
+    func eventStream(_ path: String) -> AsyncThrowingStream<SSEEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task { [self] in
+                do {
+                    let url = baseURL.appending(path: path)
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+                    request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                    request.timeoutInterval = .infinity
+                    if let token = authSession?.token {
+                        request.setValue("auth-token=\(token)", forHTTPHeaderField: "Cookie")
+                    }
+
+                    let (bytes, response) = try await session.bytes(for: request)
+                    guard let http = response as? HTTPURLResponse else {
+                        throw APIError.badResponse
+                    }
+                    if http.statusCode == 401 {
+                        authSession?.signOut()
+                        throw APIError.unauthorized
+                    }
+                    guard (200..<300).contains(http.statusCode) else {
+                        throw APIError.server(code: http.statusCode, body: nil)
+                    }
+
+                    // Parse SSE: blank-line-separated event blocks. Each block
+                    // contains `id:`, `event:`, `data:` fields. `data:` can
+                    // span multiple lines (rare but spec-compliant).
+                    var currentId: String?
+                    var currentEvent = "message"
+                    var currentData = ""
+
+                    for try await line in bytes.lines {
+                        if Task.isCancelled { return }
+                        if line.isEmpty {
+                            // End of event block — emit if we have data.
+                            if !currentData.isEmpty {
+                                let trimmed = currentData.hasSuffix("\n")
+                                    ? String(currentData.dropLast())
+                                    : currentData
+                                continuation.yield(SSEEvent(id: currentId, event: currentEvent, data: trimmed))
+                            }
+                            currentId = nil
+                            currentEvent = "message"
+                            currentData = ""
+                            continue
+                        }
+                        if line.hasPrefix(":") { continue } // comment
+                        if line.hasPrefix("id:") {
+                            currentId = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                        } else if line.hasPrefix("event:") {
+                            currentEvent = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                        } else if line.hasPrefix("data:") {
+                            if !currentData.isEmpty { currentData += "\n" }
+                            currentData += String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                        }
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { @Sendable _ in task.cancel() }
+        }
+    }
 }

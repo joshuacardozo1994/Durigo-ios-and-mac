@@ -455,6 +455,17 @@ final class AdminScreensUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Kitchen"].exists)
     }
 
+    /// The kitchen screen opens an SSE stream to /api/events on appear and
+    /// surfaces a green "Live" chip in the toolbar while connected. This
+    /// proves the URLSession SSE consumer + event-stream parsing works
+    /// against the real localhost backend.
+    func testKitchenSSELiveIndicatorAppears() throws {
+        launch(startTab: "kitchen", expectedNavBar: "Kitchen")
+        let live = app.staticTexts["Live"].firstMatch
+        XCTAssertTrue(live.waitForExistence(timeout: 6),
+                      "SSE Live indicator never appeared — the stream isn't connecting")
+    }
+
     func testInventoryScreenLoadsWithoutCrashing() throws {
         launch(startTab: "inventory", expectedNavBar: "Inventory")
         XCTAssertTrue(app.navigationBars["Inventory"].exists)

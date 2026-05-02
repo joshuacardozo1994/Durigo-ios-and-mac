@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D9F2D73A37F48A24A10D1F0 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */; };
 		3845CDF57790C0631946E120 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF74CE34F1194601AB64C9A7 /* Session.swift */; };
 		69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B9DD9069EAAB92113C550F /* LoginView.swift */; };
 		6BAAD744C0396363E461A8A3 /* BillUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A68E113A7770C6554EEAEE6 /* BillUploader.swift */; };
@@ -90,6 +91,7 @@
 /* Begin PBXFileReference section */
 		0414EA51499EEA2E6A295519 /* BillSyncSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillSyncSettings.swift; sourceTree = "<group>"; };
 		2A68E113A7770C6554EEAEE6 /* BillUploader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillUploader.swift; sourceTree = "<group>"; };
+		2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		59B9DD9069EAAB92113C550F /* LoginView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		D77500D2BEDB2E4CAA74265B /* APIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		DD2D94297F97D6EC67F3EFB9 /* KeychainHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
@@ -341,6 +343,7 @@
 				E730ED312B0A7A9F00132ABA /* Reusable Views */,
 				E7ED3A612AEAEB5800F2DDA8 /* Fonts */,
 				E7ED3A582AEAEAF800F2DDA8 /* Extensions */,
+				2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -557,6 +560,7 @@
 				3845CDF57790C0631946E120 /* Session.swift in Sources */,
 				9C25AD807EAAB09B6B8FB8DF /* APIClient.swift in Sources */,
 				69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */,
+				0D9F2D73A37F48A24A10D1F0 /* DesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -81,19 +81,6 @@ struct Home: View {
             sidebar
         } detail: {
             destination(for: navigation.tabSelection)
-                .toolbar {
-                    // Explicit collapse/expand toggle in the detail toolbar.
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                columnVisibility = (columnVisibility == .all) ? .detailOnly : .all
-                            }
-                        } label: {
-                            Image(systemName: "sidebar.left")
-                        }
-                        .accessibilityLabel(columnVisibility == .all ? "Hide sidebar" : "Show sidebar")
-                    }
-                }
         }
         .navigationSplitViewStyle(.balanced)
     }

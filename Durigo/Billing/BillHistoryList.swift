@@ -365,7 +365,7 @@ private struct BillRowCard<Sync: View>: View {
 
             // Status + meta row
             HStack(spacing: 8) {
-                StatusChip(status: bill.paymentStatus)
+                PaymentStatusChip(status: bill.paymentStatus)
                 Text("•").foregroundStyle(.tertiary)
                 Text("\(bill.items.count) item\(bill.items.count == 1 ? "" : "s")")
                     .font(.subheadline)
@@ -395,7 +395,7 @@ private struct BillRowCard<Sync: View>: View {
 
 // MARK: - Payment status chip
 
-private struct StatusChip: View {
+private struct PaymentStatusChip: View {
     let status: BillHistoryItemStatus
 
     var body: some View {

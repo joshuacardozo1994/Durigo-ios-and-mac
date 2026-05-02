@@ -461,6 +461,24 @@ final class AdminScreensUITests: XCTestCase {
         XCTAssertTrue(app.buttons["admin-inventory-new"].waitForExistence(timeout: 4))
     }
 
+    func testReportsPerformanceSubpageLoads() throws {
+        // Reports is a bottom-tab on iPhone, so launch lands directly there.
+        // On iPad it's in the sidebar. The test taps the Performance link
+        // and confirms the Performance nav-bar appears.
+        app.launchArguments = [
+            "--autologin",
+            "--autologin-username=admin",
+            "--autologin-password=admin123",
+            "--start-tab=reports",
+        ]
+        app.launch()
+        let performanceLink = app.buttons["reports-link-performance"]
+        XCTAssertTrue(performanceLink.waitForExistence(timeout: 8), "Performance link missing from Reports")
+        performanceLink.tap()
+        XCTAssertTrue(app.navigationBars["Performance"].waitForExistence(timeout: 8),
+                      "Performance sub-page didn't load")
+    }
+
     func testSettingsScreenLoadsAndRestaurantLinkPresent() throws {
         launch(startTab: "settings", expectedNavBar: "Settings")
         XCTAssertTrue(app.navigationBars["Settings"].exists)

@@ -158,6 +158,7 @@ struct Reports: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
                     periodPicker
+                    breakoutLinks
 
                     if let store, store.isLoading && store.data == nil {
                         loadingState
@@ -204,6 +205,24 @@ struct Reports: View {
     }
 
     // MARK: - Sections
+
+    private var breakoutLinks: some View {
+        NavigationLink {
+            PerformanceReportView()
+        } label: {
+            HStack {
+                Image(systemName: "speedometer").foregroundStyle(Color.accentColor)
+                Text("Performance & efficiency").font(.system(.body, weight: .semibold))
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(DesignTokens.spacingL)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .webCardBackground()
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("reports-link-performance")
+    }
 
     private var periodPicker: some View {
         Menu {
@@ -472,6 +491,205 @@ struct Reports: View {
         let h12 = hour24 % 12 == 0 ? 12 : hour24 % 12
         let suffix = hour24 < 12 ? "AM" : "PM"
         return "\(h12) \(suffix)"
+    }
+}
+
+// MARK: - Performance sub-page (kitchen / staff / table utilization)
+
+struct PerformanceReportData: Decodable, Equatable {
+    let avgOrderTime: Double         // minutes
+    let kitchenEfficiency: Int       // percentage 0..100
+    let customerSatisfaction: Int
+    let staffProductivity: Double
+    let tableUtilization: Int
+    let orderAccuracy: Int
+    let staffPerformance: [StaffStat]
+    let busyHours: [BusyHour]
+    let alerts: [PerformanceAlert]
+
+    struct StaffStat: Decodable, Equatable, Identifiable {
+        let name: String
+        let role: String
+        let ordersHandled: Int
+        let revenue: Double
+        var id: String { "\(name)-\(role)" }
+    }
+
+    struct BusyHour: Decodable, Equatable, Identifiable {
+        let hour: Int
+        let orders: Int
+        var id: Int { hour }
+    }
+
+    struct PerformanceAlert: Decodable, Equatable, Identifiable {
+        let type: String         // warning / info / critical
+        let title: String
+        let message: String
+        var id: String { "\(type)-\(title)" }
+    }
+}
+
+@MainActor @Observable final class PerformanceReportStore {
+    private let api: APIClient
+    var data: PerformanceReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load(range: String) async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/performance",
+                                          query: [URLQueryItem(name: "range", value: range)])
+            data = try JSONDecoder().decode(PerformanceReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct PerformanceReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: PerformanceReportStore?
+    @State private var range: String = "7d"
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                rangePicker
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    metricGrid(d)
+                    if !d.alerts.isEmpty { alertsSection(d.alerts) }
+                    if !d.staffPerformance.isEmpty { staffSection(d.staffPerformance) }
+                    if !d.busyHours.isEmpty { busySection(d.busyHours) }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Performance")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = PerformanceReportStore(session: session) }
+            await store?.load(range: range)
+        }
+        .onChange(of: range) { _, newRange in Task { await store?.load(range: newRange) } }
+        .refreshable { await store?.load(range: range) }
+    }
+
+    private var rangePicker: some View {
+        Picker("Range", selection: $range) {
+            Text("Today").tag("today")
+            Text("7d").tag("7d")
+            Text("30d").tag("30d")
+        }
+        .pickerStyle(.segmented)
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: PerformanceReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(title: "Avg order time", value: String(format: "%.1f min", d.avgOrderTime), subtitle: "ticket → served", icon: "timer")
+            StatTile(title: "Kitchen efficiency", value: "\(d.kitchenEfficiency)%", subtitle: "of target throughput", icon: "fork.knife")
+            StatTile(title: "Table utilization", value: "\(d.tableUtilization)%", subtitle: "seats occupied", icon: "square.grid.3x3")
+            StatTile(title: "Order accuracy", value: "\(d.orderAccuracy)%", subtitle: "first-time correct", icon: "checkmark.seal")
+            StatTile(title: "Customer satisfaction", value: "\(d.customerSatisfaction)%", subtitle: "from feedback", icon: "face.smiling")
+            StatTile(title: "Staff productivity", value: String(format: "%.1f/hr", d.staffProductivity), subtitle: "orders per staff-hour", icon: "person.2")
+        }
+    }
+
+    private func alertsSection(_ alerts: [PerformanceReportData.PerformanceAlert]) -> some View {
+        SectionCard(title: "Alerts") {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+                ForEach(alerts) { a in
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: alertIcon(a.type))
+                            .foregroundStyle(alertColor(a.type))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(a.title).font(.subheadline.weight(.semibold))
+                            Text(a.message).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func staffSection(_ staff: [PerformanceReportData.StaffStat]) -> some View {
+        SectionCard(title: "Staff performance") {
+            VStack(spacing: 0) {
+                ForEach(Array(staff.enumerated()), id: \.element.id) { idx, s in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(s.name).font(.subheadline.weight(.medium))
+                            Text(s.role.lowercased()).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(s.ordersHandled) orders").font(.caption)
+                            Text("₹\(Int(s.revenue))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    if idx < staff.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func busySection(_ hours: [PerformanceReportData.BusyHour]) -> some View {
+        let max = Double(hours.map(\.orders).max() ?? 1)
+        return SectionCard(title: "Busy hours") {
+            VStack(spacing: DesignTokens.spacingS) {
+                ForEach(hours) { h in
+                    HStack {
+                        Text(formatHour(h.hour)).font(.caption.monospacedDigit()).frame(width: 56, alignment: .leading)
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.accentColor.opacity(0.7))
+                                .frame(width: geo.size.width * (Double(h.orders) / max))
+                        }
+                        .frame(height: 8)
+                        Text("\(h.orders)").font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 32, alignment: .trailing)
+                    }
+                }
+            }
+        }
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+
+    private func alertIcon(_ type: String) -> String {
+        switch type.lowercased() {
+        case "critical": "exclamationmark.octagon.fill"
+        case "warning":  "exclamationmark.triangle.fill"
+        default:         "info.circle.fill"
+        }
+    }
+    private func alertColor(_ type: String) -> Color {
+        switch type.lowercased() {
+        case "critical": .red
+        case "warning":  .orange
+        default:         .blue
+        }
+    }
+    private func formatHour(_ h: Int) -> String {
+        let h12 = h % 12 == 0 ? 12 : h % 12
+        return "\(h12) \(h < 12 ? "AM" : "PM")"
     }
 }
 

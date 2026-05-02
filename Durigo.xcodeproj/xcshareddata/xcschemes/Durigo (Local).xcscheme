@@ -28,6 +28,30 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E7ED3A1E2AEAE9AE00F2DDA8"
+               BuildableName = "DurigoTests.xctest"
+               BlueprintName = "DurigoTests"
+               ReferencedContainer = "container:Durigo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E7ED3A282AEAE9AE00F2DDA8"
+               BuildableName = "DurigoUITests.xctest"
+               BlueprintName = "DurigoUITests"
+               ReferencedContainer = "container:Durigo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug Local"

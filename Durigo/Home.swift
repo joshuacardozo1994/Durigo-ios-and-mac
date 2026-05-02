@@ -787,16 +787,20 @@ private struct UserFormSheet: View {
             Form {
                 Section("Account") {
                     TextField("Full name", text: $name)
+                        .accessibilityIdentifier("user-form-name")
                     TextField("Email", text: $email)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.emailAddress)
+                        .accessibilityIdentifier("user-form-email")
                     TextField("Username", text: $username)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier("user-form-username")
                 }
                 Section {
                     SecureField(existing == nil ? "Password" : "New password (leave empty to keep)", text: $password)
+                        .accessibilityIdentifier("user-form-password")
                 } header: {
                     Text("Password")
                 } footer: {
@@ -972,6 +976,7 @@ struct DiscountsAdminView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button { creating = true } label: { Image(systemName: "plus") }
+                        .accessibilityIdentifier("admin-discounts-new")
                 }
             }
             .sheet(item: $editing) { d in
@@ -1121,8 +1126,11 @@ private struct DiscountFormSheet: View {
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .font(.system(.body, design: .monospaced))
+                        .accessibilityIdentifier("discount-form-code")
                     TextField("Name", text: $name)
+                        .accessibilityIdentifier("discount-form-name")
                     TextField("Description (optional)", text: $description, axis: .vertical).lineLimit(2...4)
+                        .accessibilityIdentifier("discount-form-description")
                 }
                 Section("Type & value") {
                     Picker("Type", selection: $type) {
@@ -1347,6 +1355,7 @@ struct ModifiersAdminView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button { creating = true } label: { Image(systemName: "plus") }
+                        .accessibilityIdentifier("admin-modifiers-new")
                 }
             }
             .sheet(item: $editing) { m in
@@ -1490,7 +1499,9 @@ private struct ModifierFormSheet: View {
             Form {
                 Section("Details") {
                     TextField("Name (e.g. Extra cheese, No onion)", text: $name)
+                        .accessibilityIdentifier("modifier-form-name")
                     TextField("Description (optional)", text: $description, axis: .vertical).lineLimit(2...4)
+                        .accessibilityIdentifier("modifier-form-description")
                 }
                 Section {
                     Picker("Type", selection: $type) {

@@ -53,6 +53,21 @@ final class APIClient {
         return try await execute(method: "POST", path: path, query: query, body: body)
     }
 
+    func putJSON<T: Encodable>(_ path: String, payload: T, query: [URLQueryItem] = []) async throws -> Data {
+        let body = try JSONEncoder().encode(payload)
+        return try await execute(method: "PUT", path: path, query: query, body: body)
+    }
+
+    @discardableResult
+    func patch(_ path: String, body: Data? = nil, query: [URLQueryItem] = []) async throws -> Data {
+        try await execute(method: "PATCH", path: path, query: query, body: body)
+    }
+
+    @discardableResult
+    func delete(_ path: String, query: [URLQueryItem] = []) async throws -> Data {
+        try await execute(method: "DELETE", path: path, query: query, body: nil)
+    }
+
     private func execute(method: String, path: String, query: [URLQueryItem], body: Data?) async throws -> Data {
         var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {

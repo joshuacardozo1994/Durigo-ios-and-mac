@@ -2,29 +2,30 @@
 //  MenuLoader.swift
 //  pdf test
 //
-//  Created by Joshua Cardozo on 15/10/23.
+//  Loads the live menu from the web backend (/api/menu/full) and holds the
+//  in-progress bill for the Bill Generator.
 //
 
 import SwiftUI
 
-
 @Observable class MenuLoader: ObservableObject {
-    private let session = NetworkHelper.shared.currentSession
-    
+    private let urlSession = NetworkHelper.shared.currentSession
+
     var menu: [Category]?
     var billID = UUID()
     var tableNumber: Int?
     var waiter: String?
-    private var _billItems: [MenuItem] = [MenuItem]()
+    private var _billItems: [MenuItem] = []
     var billItems: [MenuItem] {
-            get {
-                return _billItems
-            }
-            set {
-                _billItems = newValue.filter({ $0.quantity > 0 })
-            }
-        }
-    
+        get { _billItems }
+        set { _billItems = newValue.filter { $0.quantity > 0 } }
+    }
+
+    /// Holds a weak reference to the auth Session so we can read the current
+    /// JWT cookie for menu fetches. Set this from views that have @Environment
+    /// access (e.g. Home / BillGenerator).
+    weak var authSession: Session?
+
     #if DEBUG
     func loadFromBundle() {
         self.menu = MockDataLoader.loadCategories()
@@ -40,63 +41,24 @@ import SwiftUI
 
     @MainActor
     func loadMenu() async {
-        guard var components = URLComponents(string: Config.shared.serverURL) else { return }
-        components.path = "/api/categories"
-        guard let url = components.url else { return }
-        print("url", url)
+        let baseString = Config.shared.serverURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard let url = URL(string: "\(baseString)/api/menu/full") else { return }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 30
+        if let token = authSession?.token {
+            request.setValue("auth-token=\(token)", forHTTPHeaderField: "Cookie")
+        }
         do {
-            let (data, _) = try await session.data(from: url)
+            let (data, response) = try await urlSession.data(for: request)
+            if let http = response as? HTTPURLResponse, http.statusCode == 401 {
+                authSession?.signOut()
+                return
+            }
             let decoder = JSONDecoder()
             let menu = try decoder.decode([Category].self, from: data)
             self.menu = menu
         } catch {
-            print("error", error, #file, #function, #line)
+            print("MenuLoader.loadMenu error:", error)
         }
-        
     }
-    
-    @MainActor
-    func loadServerMenu() async {
-        enum CategoryType: String, Decodable {
-            case food
-            case drinks
-        }
-        struct Category: Decodable {
-            let name: String
-            let id: UUID
-            let type: CategoryType
-            let description: String?
-        }
-        do {
-            let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
-            let decoder = JSONDecoder()
-            let _ = try decoder.decode([Category].self, from: data)
-        } catch {
-            print("error", #file, #function, #line)
-        }
-        
-    }
-    
-    @MainActor
-    func addCategory() async {
-        enum CategoryType: String, Decodable {
-            case food
-            case drinks
-        }
-        struct Category: Decodable {
-            let name: String
-            let id: UUID
-            let type: CategoryType
-            let description: String?
-        }
-        do {
-            let (data, _) = try await session.data(from: URL(string: "http://localhost:8080/categories")!)
-            let decoder = JSONDecoder()
-            let _ = try decoder.decode([Category].self, from: data)
-        } catch {
-            print("error", #file, #function, #line)
-        }
-        
-    }
-
 }

@@ -271,7 +271,7 @@ private struct LoginFormCard: View {
     }
 
     private func submit() async {
-        guard canSubmit else { return }
+        guard canSubmit, !session.isSigningIn, !session.isSignedIn else { return }
         errorMessage = nil
         do {
             try await session.signIn(

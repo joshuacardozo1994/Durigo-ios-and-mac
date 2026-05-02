@@ -2,7 +2,16 @@
 //  BillHistoryList.swift
 //  Durigo
 //
-//  Created by Joshua Cardozo on 19/11/23.
+//  Server-driven, infinite-scroll bill history with SwiftData as a local
+//  cache (so the list stays usable offline). Each row matches the web app's
+//  card-based design language.
+//
+//  Architecture:
+//   - SwiftData = display source. List binds to BillHistoryItem rows.
+//   - On view appear: fetch first page from /api/bills → upsert into SwiftData
+//   - On scroll near bottom of cached list: fetch next page (cursor-based)
+//   - On pull-to-refresh: reset cursor + re-fetch first page
+//   - On scenePhase active: also pushes any local-only bills (syncedAt == nil)
 //
 
 import SwiftUI
@@ -10,133 +19,302 @@ import SwiftData
 import LocalAuthentication
 
 struct BillHistoryList: View {
-    @State private var selectedTable: Int?
-    @State private var selectedWaiter: String?
-    @State private var showTodaysBills = false
-    @State private var sharingURL: URL?
-    @State private var selectedPaymentStatus: BillHistoryItemStatus?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(Session.self) private var session
 
-    // Pagination state
-    private let pageSize = 20
-    @State private var displayedItems: [BillHistoryItem] = []
-    @State private var currentPage = 0
-    @State private var hasMoreItems = true
-    @State private var isLoading = false
+    // Sync state (created in onAppear once Session is available).
+    @State private var uploader: BillUploader?
 
-    // Bill sync state
-    @State private var uploader = BillUploader()
-    @State private var showingSyncSettings = false
+    // Pagination state.
+    @State private var serverCursor: String?
+    @State private var hasMoreOnServer: Bool = true
+    @State private var isLoadingPage: Bool = false
+    @State private var lastFetchTriggerID: UUID?
+
+    // UI state.
+    @State private var sharingURL: URL?
     @State private var syncErrorMessage: String?
     @State private var lastSyncSummary: UploadSummary?
-    @State private var lastDownloadSummary: DownloadSummary?
-    @State private var selectedBillID: UUID?
+    @State private var selectedTable: Int?
+    @State private var selectedWaiter: String?
+    @State private var selectedPaymentStatus: BillHistoryItemStatus?
+    @State private var showTodaysBills = false
 
-    func setAppBadgeCount() {
-//        let pendingBillsCount = (billHistoryItems.filter { $0.paymentStatus == .pending }).count
-//        UNUserNotificationCenter.current().setBadgeCount(pendingBillsCount)
+    // Bills shown — reads from SwiftData (so offline works).
+    @Query(sort: \BillHistoryItem.date, order: .reverse) private var allBills: [BillHistoryItem]
+
+    private var filteredBills: [BillHistoryItem] {
+        allBills.filter { bill in
+            if showTodaysBills {
+                let startOfDay = Calendar.current.startOfDay(for: Date())
+                let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+                if !(bill.date >= startOfDay && bill.date < endOfDay) { return false }
+            }
+            if let selectedTable, bill.tableNumber != selectedTable { return false }
+            if let selectedWaiter, bill.waiter != selectedWaiter { return false }
+            if let selectedPaymentStatus, bill.paymentStatus != selectedPaymentStatus { return false }
+            return true
+        }
     }
 
-    private func loadItems(reset: Bool = false) {
-        guard !isLoading else { return }
-        isLoading = true
-
-        if reset {
-            currentPage = 0
-            displayedItems = []
-            hasMoreItems = true
+    var body: some View {
+        NavigationStack {
+            content
+                .navigationTitle("History")
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar { toolbarContent }
+                .alert("Sync Error", isPresented: .init(get: { syncErrorMessage != nil }, set: { if !$0 { syncErrorMessage = nil } })) {
+                    Button("OK") { syncErrorMessage = nil }
+                } message: {
+                    Text(syncErrorMessage ?? "")
+                }
+                .alert("Sync Complete", isPresented: .init(get: { lastSyncSummary != nil }, set: { if !$0 { lastSyncSummary = nil } })) {
+                    Button("OK") { lastSyncSummary = nil }
+                } message: {
+                    if let s = lastSyncSummary {
+                        Text("\(s.succeeded.count) of \(s.attempted) bills uploaded.\(s.failed.isEmpty ? "" : " \(s.failed.count) failed.")")
+                    }
+                }
+                .refreshable { await refresh() }
+                .task {
+                    if uploader == nil {
+                        uploader = BillUploader(session: session)
+                    }
+                    if filteredBills.isEmpty || allBills.isEmpty {
+                        await loadInitialPage()
+                    }
+                    await pushUnsynced(silentIfEmpty: true)
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active && session.isSignedIn {
+                        Task {
+                            await refreshFirstPageQuietly()
+                            await pushUnsynced(silentIfEmpty: true)
+                        }
+                    }
+                }
         }
+        .lockWithBiometric()
+    }
 
-        // Build date predicate when filtering to today only (can be pushed to DB)
-        let predicate: Predicate<BillHistoryItem>?
-        if showTodaysBills {
-            let startOfDay = Calendar.current.startOfDay(for: Date())
-            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
-            predicate = #Predicate<BillHistoryItem> { $0.date >= startOfDay && $0.date < endOfDay }
+    // MARK: - Content
+
+    @ViewBuilder
+    private var content: some View {
+        if filteredBills.isEmpty && !isLoadingPage {
+            emptyState
         } else {
-            predicate = nil
-        }
-
-        var descriptor = FetchDescriptor<BillHistoryItem>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        // Only paginate when no in-memory filters are active; otherwise fetch all matching rows
-        let hasInMemoryFilters = selectedTable != nil || selectedWaiter != nil || selectedPaymentStatus != nil
-        if !hasInMemoryFilters {
-            descriptor.fetchLimit = pageSize
-            descriptor.fetchOffset = currentPage * pageSize
-        }
-
-        do {
-            let fetchedItems = try modelContext.fetch(descriptor)
-
-            // Apply remaining filters in-memory (table, waiter, payment status)
-            let newItems = fetchedItems.filter { item in
-                if let selectedTable, item.tableNumber != selectedTable { return false }
-                if let selectedWaiter, item.waiter != selectedWaiter { return false }
-                if let selectedPaymentStatus, item.paymentStatus != selectedPaymentStatus { return false }
-                return true
-            }
-
-            if reset {
-                displayedItems = newItems
-            } else {
-                displayedItems.append(contentsOf: newItems)
-            }
-
-            // Only track "more pages" when pagination is active
-            hasMoreItems = !hasInMemoryFilters && fetchedItems.count == pageSize
-            currentPage += 1
-        } catch {
-            print("Failed to fetch items: \(error)")
-        }
-
-        isLoading = false
-    }
-
-    private func loadMoreIfNeeded(currentItem: BillHistoryItem) {
-        guard hasMoreItems, !isLoading else { return }
-        let thresholdIndex = displayedItems.index(displayedItems.endIndex, offsetBy: -5)
-        if let currentIndex = displayedItems.firstIndex(where: { $0.id == currentItem.id }),
-           currentIndex >= thresholdIndex {
-            loadItems()
+            list
         }
     }
+
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "tray")
+                .font(.system(size: 48))
+                .foregroundStyle(.tertiary)
+            Text("No bills yet")
+                .font(.headline)
+            Text("Bills generated on this or any other device will appear here.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+    }
+
+    private var list: some View {
+        List {
+            ForEach(filteredBills) { bill in
+                NavigationLink {
+                    BillHistory(billHistoryItem: bill)
+                } label: {
+                    BillRowCard(bill: bill, syncIndicator: { syncIndicator(for: bill) })
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                .onAppear {
+                    Task { await loadMoreIfNeeded(currentBill: bill) }
+                }
+            }
+
+            if isLoadingPage {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .padding(.vertical, 12)
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            } else if !hasMoreOnServer && !filteredBills.isEmpty {
+                HStack {
+                    Spacer()
+                    Text("End of history")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+        }
+        .listStyle(.plain)
+        .background(Color(.systemBackground))
+    }
+
+    // MARK: - Sync indicator
 
     @ViewBuilder
     private func syncIndicator(for bill: BillHistoryItem) -> some View {
         if bill.syncedAt != nil {
-            Image(systemName: "checkmark.icloud.fill")
+            // Synced — subtle, green checkmark.
+            Image(systemName: "checkmark.circle.fill")
                 .font(.caption)
                 .foregroundStyle(.green)
                 .accessibilityLabel("Synced")
-                .accessibilityIdentifier("syncStatus-synced-\(bill.id.uuidString)")
         } else {
             Button {
                 Task { await syncOne(bill) }
             } label: {
-                Image(systemName: "icloud.and.arrow.up")
+                Label("Upload", systemImage: "icloud.and.arrow.up")
+                    .labelStyle(.iconOnly)
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Upload")
-            .accessibilityIdentifier("syncStatus-pending-\(bill.id.uuidString)")
+            .accessibilityLabel("Upload pending")
         }
     }
 
-    private func unsyncedBills() throws -> [BillHistoryItem] {
-        let descriptor = FetchDescriptor<BillHistoryItem>(
-            predicate: #Predicate { $0.syncedAt == nil },
-            sortBy: [SortDescriptor(\.date, order: .reverse)]
-        )
-        return try modelContext.fetch(descriptor)
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Menu {
+                Button {
+                    showTodaysBills.toggle()
+                } label: {
+                    Label("\(showTodaysBills ? "● " : "")Show today's bills", systemImage: "calendar")
+                }
+                TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...20))
+                WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
+
+                Section {
+                    Button {
+                        showTodaysBills = false
+                        selectedTable = nil
+                        selectedWaiter = nil
+                        selectedPaymentStatus = nil
+                    } label: {
+                        Label("Clear filters", systemImage: "xmark.circle")
+                    }
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .overlay(alignment: .topTrailing) {
+                        let active = showTodaysBills || selectedTable != nil || selectedWaiter != nil || selectedPaymentStatus != nil
+                        Circle()
+                            .fill(active ? Color.red : Color.clear)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 4, y: -4)
+                    }
+            }
+        }
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button {
+                    Task { await pushUnsynced(silentIfEmpty: false) }
+                } label: {
+                    Label("Sync All Unsynced", systemImage: "icloud.and.arrow.up")
+                }
+                .disabled(uploader?.isUploading ?? false)
+
+                Divider()
+
+                Button {
+                    session.signOut()
+                } label: {
+                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                }
+            } label: {
+                if uploader?.isUploading == true || isLoadingPage {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "icloud")
+                }
+            }
+        }
     }
 
+    // MARK: - Pagination
+
+    private func loadInitialPage() async {
+        guard let uploader, session.isSignedIn else { return }
+        await loadPage(cursor: nil, uploader: uploader, append: false)
+    }
+
+    private func loadMoreIfNeeded(currentBill: BillHistoryItem) async {
+        guard let uploader,
+              session.isSignedIn,
+              hasMoreOnServer,
+              !isLoadingPage else { return }
+        // Only trigger when within the last few visible items.
+        guard let idx = filteredBills.firstIndex(where: { $0.id == currentBill.id }) else { return }
+        let triggerThreshold = max(filteredBills.count - 5, 0)
+        guard idx >= triggerThreshold else { return }
+        // Avoid duplicate fires for the same trigger.
+        if lastFetchTriggerID == currentBill.id { return }
+        lastFetchTriggerID = currentBill.id
+
+        await loadPage(cursor: serverCursor, uploader: uploader, append: true)
+    }
+
+    private func loadPage(cursor: String?, uploader: BillUploader, append: Bool) async {
+        isLoadingPage = true
+        defer { isLoadingPage = false }
+
+        do {
+            let result = try await uploader.downloadPage(cursor: cursor, into: modelContext, pageSize: 50)
+            serverCursor = result.nextCursor
+            hasMoreOnServer = result.hasMore
+        } catch let err as BillSyncError {
+            // Silent on auto-load (let the cached list keep showing); only alert on user-initiated.
+            if err.errorDescription?.contains("Session expired") == true {
+                syncErrorMessage = err.errorDescription
+            }
+        } catch {
+            // Silent
+        }
+    }
+
+    private func refresh() async {
+        guard let uploader else { return }
+        serverCursor = nil
+        hasMoreOnServer = true
+        lastFetchTriggerID = nil
+        await loadPage(cursor: nil, uploader: uploader, append: false)
+    }
+
+    private func refreshFirstPageQuietly() async {
+        guard let uploader else { return }
+        // Re-fetch first page silently — picks up new bills uploaded from other devices.
+        await loadPage(cursor: nil, uploader: uploader, append: false)
+    }
+
+    // MARK: - Sync (push)
+
     private func syncOne(_ bill: BillHistoryItem) async {
+        guard let uploader else { return }
         do {
             try await uploader.uploadOne(bill)
             try? modelContext.save()
@@ -147,399 +325,119 @@ struct BillHistoryList: View {
         }
     }
 
-    private func pullFromServer() async {
+    private func pushUnsynced(silentIfEmpty: Bool) async {
+        guard let uploader else { return }
         do {
-            let summary = try await uploader.downloadAll(into: modelContext)
-            lastDownloadSummary = summary
-            loadItems(reset: true)
+            let summary = try await uploader.syncAllUnsynced(in: modelContext)
+            if !silentIfEmpty || summary.attempted > 0 {
+                lastSyncSummary = summary
+            }
         } catch let err as BillSyncError {
-            syncErrorMessage = err.errorDescription
+            if !silentIfEmpty {
+                syncErrorMessage = err.errorDescription
+            }
         } catch {
-            syncErrorMessage = error.localizedDescription
+            if !silentIfEmpty {
+                syncErrorMessage = error.localizedDescription
+            }
         }
     }
+}
 
-    private func syncAllUnsynced(batchSize: Int = 200, silentIfEmpty: Bool = true) async {
-        do {
-            let bills = try unsyncedBills()
-            guard !bills.isEmpty else {
-                if !silentIfEmpty {
-                    lastSyncSummary = UploadSummary(attempted: 0, succeeded: [], failed: [])
-                }
-                return
-            }
-            var totalSucceeded: [UUID] = []
-            var totalFailed: [(id: UUID, error: BillSyncError)] = []
-            for chunk in stride(from: 0, to: bills.count, by: batchSize) {
-                let slice = Array(bills[chunk..<min(chunk + batchSize, bills.count)])
-                let summary = try await uploader.uploadMany(slice)
-                totalSucceeded.append(contentsOf: summary.succeeded)
-                totalFailed.append(contentsOf: summary.failed)
-                try? modelContext.save()
-            }
-            lastSyncSummary = UploadSummary(
-                attempted: bills.count,
-                succeeded: totalSucceeded,
-                failed: totalFailed
-            )
-        } catch let err as BillSyncError {
-            syncErrorMessage = err.errorDescription
-        } catch {
-            syncErrorMessage = error.localizedDescription
-        }
-    }
-    
+// MARK: - Bill row card (web-style)
+
+private struct BillRowCard<Sync: View>: View {
+    let bill: BillHistoryItem
+    @ViewBuilder let syncIndicator: () -> Sync
+
     var body: some View {
-        NavigationStack {
-            VStack {
-                if displayedItems.isEmpty && !isLoading {
-                    VStack {
-                        Spacer()
-                        ContentUnavailableView(
-                            "No Bills available\(showTodaysBills ? " for today" : "") \(selectedTable != nil ? " for this table" : "")",
-                            systemImage: "exclamationmark.triangle",
-                            description: Text("Try a different filter, or clear your filters")
-                        )
-                        Spacer()
-                    }
-                } else {
-                List {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header row
+            HStack(alignment: .firstTextBaseline) {
+                Text(bill.tableNumber == 0 ? "Parcel" : "Table \(bill.tableNumber)")
+                    .font(.system(.headline, weight: .semibold))
+                syncIndicator()
+                Spacer()
+                Text(bill.items.getTotal().asCurrencyString() ?? "—")
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .accessibilityIdentifier("BillHistoryList-Item-\(bill.id.uuidString)")
+            }
 
-                    ForEach(displayedItems) { billHistoryItem in
-                        NavigationLink {
-                            BillHistory(billHistoryItem: billHistoryItem)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 12) {
-                                // Top: Table and Amount
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(billHistoryItem.tableNumber == 0 ? "Parcel" : "Table \(billHistoryItem.tableNumber)")
-                                        .font(.headline)
+            // Status + meta row
+            HStack(spacing: 8) {
+                StatusChip(status: bill.paymentStatus)
+                Text("•").foregroundStyle(.tertiary)
+                Text("\(bill.items.count) item\(bill.items.count == 1 ? "" : "s")")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("•").foregroundStyle(.tertiary)
+                Text(bill.waiter)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
-                                    syncIndicator(for: billHistoryItem)
-
-                                    Spacer()
-
-                                    Text(billHistoryItem.items.getTotal().asCurrencyString() ?? "")
-                                        .font(.system(.title3, design: .rounded))
-                                        .fontWeight(.semibold)
-                                        .accessibilityIdentifier("BillHistoryList-Item-\(billHistoryItem.id.uuidString)")
-                                }
-                                
-                                // Middle: Details
-                                HStack {
-                                    Menu {
-                                        Menu {
-                                            Button(action: {
-                                                billHistoryItem.paymentStatus = .paidByCash
-                                                setAppBadgeCount()
-                                            }) {
-                                                Label("Cash", systemImage: "banknote")
-                                            }
-                                            
-                                            Button(action: {
-                                                billHistoryItem.paymentStatus = .paidByUPI
-                                                setAppBadgeCount()
-                                            }) {
-                                                Label("UPI", systemImage: "indianrupeesign")
-                                            }
-                                            
-                                            Button(action: {
-                                                billHistoryItem.paymentStatus = .paidByCard
-                                                setAppBadgeCount()
-                                            }) {
-                                                Label("Card", systemImage: "creditcard")
-                                            }
-                                        } label: {
-                                            Label("Paid", systemImage: "checkmark.circle")
-                                        }
-                                        
-                                        Button(action: {
-                                            billHistoryItem.paymentStatus = .pending
-                                            setAppBadgeCount()
-                                        }) {
-                                            Label("Pending", systemImage: "hourglass")
-                                        }
-                                        
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            switch billHistoryItem.paymentStatus {
-                                            case .pending:
-                                                Circle()
-                                                    .fill(Color.red)
-                                                    .frame(width: 6, height: 6)
-                                                Text("Pending")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.red)
-                                            case .paidByCard:
-                                                Circle()
-                                                    .fill(Color(red: 0.5, green: 0.4, blue: 0.9))
-                                                    .frame(width: 6, height: 6)
-                                                Text("Card")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                            case .paidByCash:
-                                                Circle()
-                                                    .fill(Color(red: 0.2, green: 0.7, blue: 0.3))
-                                                    .frame(width: 6, height: 6)
-                                                Text("Cash")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                            case .paidByUPI:
-                                                Circle()
-                                                    .fill(Color(red: 1.0, green: 0.6, blue: 0.2))
-                                                    .frame(width: 6, height: 6)
-                                                Text("UPI")
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        .accessibilityIdentifier("paymentStatus-\(billHistoryItem.id)")
-                                    }
-                                    
-                                    Text("•")
-                                        .foregroundStyle(.tertiary)
-                                    
-                                    Text("\(billHistoryItem.items.count) items")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    
-                                    Text("•")
-                                        .foregroundStyle(.tertiary)
-                                    
-                                    Text(billHistoryItem.waiter)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                // Bottom: Date
-                                Text(billHistoryItem.date.getTimeInFormat(dateStyle: .medium, timeStyle: .short))
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .padding(.vertical, 8)
-                        }
-                        .onAppear {
-                            loadMoreIfNeeded(currentItem: billHistoryItem)
-                        }
-                    }
-
-                    if hasMoreItems {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .onAppear {
-                                    loadItems()
-                                }
-                            Spacer()
-                        }
-                    }
-                }
-
-            }
-            }
-            .onAppear {
-                if displayedItems.isEmpty {
-                    loadItems(reset: true)
-                }
-            }
-            .onChange(of: showTodaysBills) { _, _ in loadItems(reset: true) }
-            .onChange(of: selectedTable) { _, _ in loadItems(reset: true) }
-            .onChange(of: selectedWaiter) { _, _ in loadItems(reset: true) }
-            .onChange(of: selectedPaymentStatus) { _, _ in loadItems(reset: true) }
-            .refreshable {
-                loadItems(reset: true)
-            }
-            .navigationTitle("History")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                Menu {
-                    Button(action: {
-                        showTodaysBills.toggle()
-                    }) {
-                        Label("\(showTodaysBills ? "●" : "") Show todays bills", systemImage: "calendar")
-                    }
-                    TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...20))
-                    WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
-                    
-                    Menu {
-                        Menu {
-                            Button(action: {
-                                selectedPaymentStatus = .paidByCash
-                            }) {
-                                Label("Cash", systemImage: "banknote")
-                            }
-                            
-                            Button(action: {
-                                selectedPaymentStatus = .paidByUPI
-                            }) {
-                                Label("UPI", systemImage: "indianrupeesign")
-                            }
-                            
-                            Button(action: {
-                                selectedPaymentStatus = .paidByCard
-                            }) {
-                                Label("Card", systemImage: "creditcard")
-                            }
-                        } label: {
-                            Label("Paid", systemImage: "checkmark.circle")
-                        }
-                        
-                        Button(action: {
-                            selectedPaymentStatus = .pending
-                        }) {
-                            Label("Pending", systemImage: "hourglass")
-                        }
-                        
-                    } label: {
-                        VStack {
-                            switch selectedPaymentStatus {
-                            case .pending:
-                                Label("Pending", systemImage: "hourglass")
-                                    .foregroundStyle(Color.red)
-                            case .paidByCard:
-                                Label("Paid by card", systemImage: "creditcard")
-                                    .foregroundStyle(Color.green)
-                            case .paidByCash:
-                                Label("Paid by cash", systemImage: "banknote")
-                                    .foregroundStyle(Color.green)
-                            case .paidByUPI:
-                                Label("Paid by UPI", systemImage: "indianrupeesign")
-                                    .foregroundStyle(Color.green)
-                            case .none:
-                                Label("Select a Payment Status", systemImage: "info")
-                            }
-                        }
-                    }
-                    Section {
-                        Button(action: {
-                            showTodaysBills = false
-                            selectedTable = nil
-                            selectedWaiter = nil
-                            selectedPaymentStatus = nil
-                        }) {
-                            Label("Clear filters", systemImage: "xmark.circle")
-                        }
-                    }
-
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .overlay(alignment: .topTrailing) {
-                            let isFilterApplied = !(showTodaysBills == false && selectedTable == nil && selectedWaiter == nil && selectedPaymentStatus == nil)
-                            Circle()
-                                .fill(isFilterApplied ? Color.red : Color.clear)
-                                .frame(width: 10, height: 10)
-                        }
-                }
-            }
-            .toolbar {
-                if let sharingURL {
-                    ShareLink(item: sharingURL)
-                }
-                Button(action: {
-                    let url = URL.documentsDirectory.appending(path: "billsHistory.durigobills")
-                    do {
-                        // Fetch all items for sharing
-                        let descriptor = FetchDescriptor<BillHistoryItem>(
-                            sortBy: [SortDescriptor(\.date, order: .reverse)]
-                        )
-                        let allItems = try modelContext.fetch(descriptor)
-                        let data = try JSONEncoder().encode(DurigoBills(items: allItems.map({ BillHistoryItemCopy(billHistoryItem: $0) })))
-                        try data.write(to: url, options: [.atomic, .completeFileProtection])
-                        sharingURL = url
-                    } catch {
-                        print("Failed to share: \(error)")
-                    }
-                }) {
-                    Text("Share")
-                }
-            }
-            .toolbar {
-                Menu {
-                    Button {
-                        Task { await pullFromServer() }
-                    } label: {
-                        Label("Pull from Server", systemImage: "icloud.and.arrow.down.fill")
-                    }
-                    .disabled(uploader.isUploading)
-
-                    Button {
-                        Task { await syncAllUnsynced(silentIfEmpty: false) }
-                    } label: {
-                        Label("Sync All Unsynced", systemImage: "icloud.and.arrow.up.fill")
-                    }
-                    .disabled(uploader.isUploading)
-
-                    Divider()
-
-                    Button {
-                        showingSyncSettings = true
-                    } label: {
-                        Label("Sync Settings", systemImage: "gearshape")
-                    }
-                } label: {
-                    if uploader.isUploading {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Image(systemName: "icloud")
-                            .accessibilityIdentifier("syncMenu")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingSyncSettings) {
-                BillSyncSettings()
-            }
-            .alert("Sync Error", isPresented: .init(get: { syncErrorMessage != nil }, set: { if !$0 { syncErrorMessage = nil } })) {
-                Button("OK") { syncErrorMessage = nil }
-                Button("Settings") {
-                    syncErrorMessage = nil
-                    showingSyncSettings = true
-                }
-            } message: {
-                Text(syncErrorMessage ?? "")
-            }
-            .alert("Sync Complete", isPresented: .init(get: { lastSyncSummary != nil }, set: { if !$0 { lastSyncSummary = nil } })) {
-                Button("OK") { lastSyncSummary = nil }
-            } message: {
-                if let s = lastSyncSummary {
-                    Text("\(s.succeeded.count) of \(s.attempted) bills synced.\(s.failed.isEmpty ? "" : " \(s.failed.count) failed.")")
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if let progress = uploader.progress, uploader.isUploading {
-                    HStack(spacing: 12) {
-                        ProgressView(value: Double(progress.done), total: Double(progress.total))
-                            .progressViewStyle(.linear)
-                            .frame(maxWidth: 200)
-                        Text("\(progress.done)/\(progress.total)")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.bottom, 24)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-            }
-            .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .active && KeychainHelper.load(.billUploadToken) != nil {
-                    Task {
-                        await pullFromServer()
-                        await syncAllUnsynced()
-                    }
-                }
-            }
-            .task {
-                // First-render trigger (scenePhase onChange doesn't fire on initial launch).
-                // Pull server bills into SwiftData, then push any locally-unsynced ones up.
-                if KeychainHelper.load(.billUploadToken) != nil {
-                    await pullFromServer()
-                    await syncAllUnsynced()
-                }
-            }
+            // Footer date
+            Text(bill.date.getTimeInFormat(dateStyle: .medium, timeStyle: .short))
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
-        .lockWithBiometric()
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
 
+// MARK: - Payment status chip
+
+private struct StatusChip: View {
+    let status: BillHistoryItemStatus
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(textColor)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule().fill(color.opacity(0.12))
+        )
+        .overlay(
+            Capsule().stroke(color.opacity(0.3), lineWidth: 0.5)
+        )
+        .accessibilityIdentifier("paymentStatus-\(status.rawValue)")
+    }
+
+    private var label: String {
+        switch status {
+        case .pending: "Pending"
+        case .paidByCard: "Card"
+        case .paidByCash: "Cash"
+        case .paidByUPI: "UPI"
+        }
+    }
+
+    private var color: Color {
+        switch status {
+        case .pending: .red
+        case .paidByCard: Color(red: 0.5, green: 0.4, blue: 0.9)
+        case .paidByCash: Color(red: 0.2, green: 0.7, blue: 0.3)
+        case .paidByUPI: Color(red: 1.0, green: 0.6, blue: 0.2)
+        }
+    }
+
+    private var textColor: Color {
+        status == .pending ? .red : .secondary
     }
 }
 
@@ -547,12 +445,9 @@ struct BillHistoryList: View {
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: BillHistoryItem.self, configurations: config)
-    
-    PreviewData.billHistoryItems.forEach { billHistoryItem in
-        container.mainContext.insert(billHistoryItem)
-    }
+    PreviewData.billHistoryItems.forEach { container.mainContext.insert($0) }
     return BillHistoryList()
         .modelContainer(container)
-
+        .environment(Session())
 }
 #endif

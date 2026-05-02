@@ -55,6 +55,8 @@ final class Session {
     }
 
     func signIn(username: String, password: String) async throws {
+        // Reentrancy guard — if a sign-in is already in flight, drop subsequent calls.
+        guard !isSigningIn, !isSignedIn else { return }
         isSigningIn = true
         lastError = nil
         defer { isSigningIn = false }

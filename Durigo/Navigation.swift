@@ -7,17 +7,36 @@
 
 import SwiftUI
 
-enum TabItems {
+enum TabItems: Hashable, CaseIterable {
     case billHistoryList
     case billGenerator
     case stats
     case reports
     case menuGenerator
+
+    var title: String {
+        switch self {
+        case .billHistoryList: "History"
+        case .billGenerator:   "Bill Generator"
+        case .stats:           "Stats"
+        case .reports:         "Reports"
+        case .menuGenerator:   "Menu Generator"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .billHistoryList: "doc.text"
+        case .billGenerator:   "plus.rectangle.on.rectangle"
+        case .stats:           "chart.bar.fill"
+        case .reports:         "chart.bar.doc.horizontal.fill"
+        case .menuGenerator:   "doc.plaintext.fill"
+        }
+    }
 }
 
 @Observable class Navigation: ObservableObject {
     var tabSelection: TabItems = {
-        // Allow UI tests / screenshot scripts to land on a specific tab via launch arg.
         let args = CommandLine.arguments
         if args.contains("--start-tab=history") { return .billHistoryList }
         if args.contains("--start-tab=stats") { return .stats }

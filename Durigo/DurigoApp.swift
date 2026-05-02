@@ -35,6 +35,7 @@ struct DurigoApp: App {
                 }
             }
             .environment(session)
+            .task { await session.attemptDebugAutoSignIn() }
         }
         .modelContainer(container)
     }

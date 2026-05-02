@@ -87,16 +87,20 @@ struct BillHistoryItemCopy: Identifiable, Codable {
     var items: [MenuItem]
     var paymentStatus: Status
     var waiter: String
-    
-    init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String) {
+    var discount: Double?
+    var discountReason: String?
+
+    init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending,  waiter: String, discount: Double? = nil, discountReason: String? = nil) {
         self.id = id
         self.date = date
         self.items = items
         self.tableNumber = tableNumber
         self.paymentStatus = paymentStatus
         self.waiter = waiter
+        self.discount = discount
+        self.discountReason = discountReason
     }
-    
+
     init(billHistoryItem: BillHistoryItem) {
         self.id = billHistoryItem.id
         self.date = billHistoryItem.date
@@ -104,10 +108,19 @@ struct BillHistoryItemCopy: Identifiable, Codable {
         self.tableNumber = billHistoryItem.tableNumber
         self.paymentStatus = Status(rawValue: billHistoryItem.paymentStatus.rawValue) ?? .pending
         self.waiter = billHistoryItem.waiter
+        self.discount = billHistoryItem.discount
+        self.discountReason = billHistoryItem.discountReason
     }
-    
+
     func convertToBillHistoryItem() -> BillHistoryItem {
-        BillHistoryItem(id: self.id, date: self.date, items: self.items, tableNumber: self.tableNumber, paymentStatus: BillHistoryItemStatus(rawValue: self.paymentStatus.rawValue) ?? .pending, waiter: self.waiter)
+        BillHistoryItem(
+            id: self.id, date: self.date, items: self.items,
+            tableNumber: self.tableNumber,
+            paymentStatus: BillHistoryItemStatus(rawValue: self.paymentStatus.rawValue) ?? .pending,
+            waiter: self.waiter,
+            discount: self.discount,
+            discountReason: self.discountReason
+        )
     }
 }
 

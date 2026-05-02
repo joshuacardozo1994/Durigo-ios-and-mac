@@ -2241,7 +2241,7 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
             var backoff: UInt64 = 1_000_000_000  // 1s
             while !Task.isCancelled {
                 do {
-                    let stream = await self.api.eventStream("/api/events")
+                    let stream = self.api.eventStream("/api/events")
                     await MainActor.run { self.liveConnected = true }
                     for try await ev in stream {
                         if Task.isCancelled { break }

@@ -165,29 +165,40 @@ final class APIClient {
                     var currentEvent = "message"
                     var currentData = ""
 
-                    for try await line in bytes.lines {
+                    // Parse raw bytes into lines manually — `bytes.lines`
+                    // collapses the blank lines that delimit SSE events on
+                    // some iOS versions, swallowing the event boundary.
+                    var lineBuf: [UInt8] = []
+                    for try await byte in bytes {
                         if Task.isCancelled { return }
-                        if line.isEmpty {
-                            // End of event block — emit if we have data.
-                            if !currentData.isEmpty {
-                                let trimmed = currentData.hasSuffix("\n")
-                                    ? String(currentData.dropLast())
-                                    : currentData
-                                continuation.yield(SSEEvent(id: currentId, event: currentEvent, data: trimmed))
+                        if byte == 0x0A { // LF
+                            // Drop a trailing CR for CRLF-formatted servers.
+                            if lineBuf.last == 0x0D { lineBuf.removeLast() }
+                            let line = String(decoding: lineBuf, as: UTF8.self)
+                            lineBuf.removeAll(keepingCapacity: true)
+                            if line.isEmpty {
+                                if !currentData.isEmpty {
+                                    let trimmed = currentData.hasSuffix("\n")
+                                        ? String(currentData.dropLast())
+                                        : currentData
+                                    continuation.yield(SSEEvent(id: currentId, event: currentEvent, data: trimmed))
+                                }
+                                currentId = nil
+                                currentEvent = "message"
+                                currentData = ""
+                                continue
                             }
-                            currentId = nil
-                            currentEvent = "message"
-                            currentData = ""
-                            continue
-                        }
-                        if line.hasPrefix(":") { continue } // comment
-                        if line.hasPrefix("id:") {
-                            currentId = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
-                        } else if line.hasPrefix("event:") {
-                            currentEvent = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
-                        } else if line.hasPrefix("data:") {
-                            if !currentData.isEmpty { currentData += "\n" }
-                            currentData += String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                            if line.hasPrefix(":") { continue }
+                            if line.hasPrefix("id:") {
+                                currentId = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                            } else if line.hasPrefix("event:") {
+                                currentEvent = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                            } else if line.hasPrefix("data:") {
+                                if !currentData.isEmpty { currentData += "\n" }
+                                currentData += String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                            }
+                        } else {
+                            lineBuf.append(byte)
                         }
                     }
                     continuation.finish()

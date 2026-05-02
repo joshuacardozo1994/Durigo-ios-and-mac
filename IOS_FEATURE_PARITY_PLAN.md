@@ -35,13 +35,17 @@ Bringing the Durigo iOS app to parity with the restaurant-management web app. iO
 
 | # | Phase | Estimate | Status |
 |---|---|---|---|
-| 0 | **Auth foundation**: REST login endpoint, iOS Login screen, JWT cookie wiring | ~2h | in progress |
-| 1 | **Bill upload** (Bill Generator → server) + **Bill history sync** (server → SwiftData) | ~3h | partial (needs auth refactor) |
-| 2 | **Menu management** (CRUD via authenticated endpoints) | 1-2 days | pending |
-| 3 | **Settings + Users** sync | 1 day | pending |
-| 4 | **Live ops**: POS tables, Kitchen, SSE | ~1 week | pending |
-| 5 | **Reports parity** (sales, customers, staff) | 2-3 days | pending |
-| 6 | **Long tail**: Discounts, inventory, reservations, modifiers | ~1 week | pending |
+| 0 | **Auth foundation**: REST login endpoint, iOS Login screen, JWT cookie wiring | ~2h | done |
+| 1 | **Bill upload** (Bill Generator → server) + **Bill history sync** (server → SwiftData) | ~3h | done |
+| 2 | **Menu management** (CRUD via authenticated endpoints) | 1-2 days | done |
+| 3 | **Settings + Users** sync | 1 day | done |
+| 4 | **Live ops**: POS tables, Kitchen, SSE | ~1 week | partial — Kitchen + SSE done; iOS POS = BillGenerator by design (no table-grid) |
+| 5 | **Reports parity** (sales, customers, staff, inventory) | 2-3 days | done |
+| 6 | **Long tail**: Discounts, inventory, reservations, modifiers | ~1 week | done |
+
+### Known deferred items
+- **Bill→waiter ID resolution.** iOS uploads `waiterName` (string), server matches by case-insensitive `User.name`. Mismatch → `waiterId` null → Staff report shows ₹0 from iOS-origin orders. Fix path: have iOS post `waiterId` from logged-in `Session.user.id`.
+- **Bill→customer linking.** `Order.customerId` is never set on iOS uploads. Customers report is structurally empty for iOS bills. Fix path: add a customer-tag flow to BillGenerator.
 
 ---
 

@@ -131,6 +131,23 @@ final class Session {
         self.user = nil
     }
 
+    /// Debug-only auto-signin from a launch arg (`--auto-signin=user:pass`).
+    /// Lets me skip the Login screen during simulator-driven testing where
+    /// UI automation isn't available. No-op in Release builds and when
+    /// already signed in.
+    func attemptDebugAutoSignIn() async {
+        #if DEBUG
+        guard !isSignedIn else { return }
+        for arg in CommandLine.arguments where arg.hasPrefix("--auto-signin=") {
+            let value = String(arg.dropFirst("--auto-signin=".count))
+            let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+            guard parts.count == 2 else { return }
+            try? await signIn(username: parts[0], password: parts[1])
+            return
+        }
+        #endif
+    }
+
     /// User-initiated logout: tells the server to revoke the token (so the
     /// JWT can't be reused even if leaked) before clearing local state.
     /// Network failure is non-fatal — local state is always cleared.

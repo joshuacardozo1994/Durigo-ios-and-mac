@@ -148,13 +148,21 @@ final class ReportsStore {
 
 // MARK: - View
 
+/// Routes inside the Reports navigation stack. Used by both the breakout
+/// link cards and the `--start-report=` debug launch arg, which lets us
+/// drive sim screenshots without UI automation.
+enum ReportBreakout: String, Hashable, CaseIterable {
+    case sales, performance, customers, staff, inventory
+}
+
 struct Reports: View {
     @Environment(Session.self) private var session
     @State private var store: ReportsStore?
     @State private var period: ReportPeriod = .last7d
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
                     periodPicker
@@ -196,23 +204,54 @@ struct Reports: View {
                     store = ReportsStore(session: session)
                 }
                 await store?.load(period: period)
+                applyDebugStartRouteIfPresent()
             }
             .onChange(of: period) { _, newPeriod in
                 Task { await store?.load(period: newPeriod) }
+            }
+            .navigationDestination(for: ReportBreakout.self) { route in
+                switch route {
+                case .sales:       SalesReportView()
+                case .performance: PerformanceReportView()
+                case .customers:   CustomersReportView()
+                case .staff:       StaffReportView()
+                case .inventory:   InventoryReportView()
+                }
             }
         }
         .lockWithBiometric()
     }
 
+    /// Honor `--start-report=<name>` only on first task to avoid re-pushing
+    /// the same view when the user navigates back. DEBUG-only.
+    private func applyDebugStartRouteIfPresent() {
+        #if DEBUG
+        guard path.isEmpty else { return }
+        for arg in CommandLine.arguments where arg.hasPrefix("--start-report=") {
+            let value = String(arg.dropFirst("--start-report=".count))
+            if let route = ReportBreakout(rawValue: value) { path.append(route) }
+            return
+        }
+        #endif
+    }
+
     // MARK: - Sections
 
     private var breakoutLinks: some View {
-        NavigationLink {
-            PerformanceReportView()
-        } label: {
+        VStack(spacing: DesignTokens.spacingM) {
+            breakoutLinkRow(route: .sales,       title: "Sales & comparison",   icon: "indianrupeesign.circle")
+            breakoutLinkRow(route: .performance, title: "Performance & efficiency", icon: "speedometer")
+            breakoutLinkRow(route: .customers,   title: "Customers",             icon: "person.2")
+            breakoutLinkRow(route: .staff,       title: "Staff",                 icon: "person.crop.circle.badge.checkmark")
+            breakoutLinkRow(route: .inventory,   title: "Inventory",             icon: "shippingbox")
+        }
+    }
+
+    private func breakoutLinkRow(route: ReportBreakout, title: String, icon: String) -> some View {
+        NavigationLink(value: route) {
             HStack {
-                Image(systemName: "speedometer").foregroundStyle(Color.accentColor)
-                Text("Performance & efficiency").font(.system(.body, weight: .semibold))
+                Image(systemName: icon).foregroundStyle(Color.accentColor)
+                Text(title).font(.system(.body, weight: .semibold))
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
             }
@@ -221,7 +260,7 @@ struct Reports: View {
             .webCardBackground()
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("reports-link-performance")
+        .accessibilityIdentifier("reports-link-\(route.rawValue)")
     }
 
     private var periodPicker: some View {
@@ -696,4 +735,920 @@ struct PerformanceReportView: View {
 #Preview {
     Reports()
         .environment(Session())
+}
+
+// MARK: - Sales sub-page (period-over-period comparison)
+
+struct SalesReportData: Decodable, Equatable {
+    let todayRevenue: Double
+    let todayOrders: Int
+    let avgOrderValue: Double
+    let totalCustomers: Int
+    let revenueChange: Double      // percent vs previous period
+    let ordersChange: Double       // percent vs previous period
+    let topItems: [TopItem]
+    let hourlyData: [HourBucket]
+    let paymentMethods: [PaymentBucket]
+
+    struct TopItem: Decodable, Equatable, Identifiable {
+        let id: String?
+        let name: String
+        let revenue: Double
+        let orders: Int
+        var stableID: String { id ?? name }
+    }
+
+    struct HourBucket: Decodable, Equatable, Identifiable {
+        let hour: Int
+        let revenue: Double
+        let orders: Int
+        var id: Int { hour }
+    }
+
+    struct PaymentBucket: Decodable, Equatable, Identifiable {
+        let method: String
+        let amount: Double
+        let count: Int
+        var id: String { method }
+    }
+}
+
+/// Range buckets accepted by `/api/admin/reports/sales`. Mirrors the web's
+/// `<Select>` options on `/reports/sales`: today/yesterday/week/month/quarter.
+/// Note this is *operational* (today vs yesterday) rather than analytical
+/// (24h/7d/30d) — that's why the main Reports page and this sub-page use
+/// different period enums.
+enum SalesRange: String, CaseIterable, Identifiable {
+    case today, yesterday, week, month, quarter
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .today:     "Today"
+        case .yesterday: "Yesterday"
+        case .week:      "This Week"
+        case .month:     "This Month"
+        case .quarter:   "This Quarter"
+        }
+    }
+}
+
+@MainActor @Observable final class SalesReportStore {
+    private let api: APIClient
+    var data: SalesReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load(range: SalesRange) async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/sales",
+                                          query: [URLQueryItem(name: "range", value: range.rawValue)])
+            data = try JSONDecoder().decode(SalesReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct SalesReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: SalesReportStore?
+    @State private var range: SalesRange = .today
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                rangePicker
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    metricGrid(d)
+                    if !d.topItems.isEmpty { topItemsSection(d.topItems) }
+                    if !d.paymentMethods.isEmpty { paymentSection(d.paymentMethods) }
+                    if !d.hourlyData.isEmpty { hourlySection(d.hourlyData) }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Sales")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = SalesReportStore(session: session) }
+            await store?.load(range: range)
+        }
+        .onChange(of: range) { _, newRange in Task { await store?.load(range: newRange) } }
+        .refreshable { await store?.load(range: range) }
+    }
+
+    private var rangePicker: some View {
+        Menu {
+            ForEach(SalesRange.allCases) { r in
+                Button {
+                    range = r
+                } label: {
+                    if range == r {
+                        Label(r.label, systemImage: "checkmark")
+                    } else {
+                        Text(r.label)
+                    }
+                }
+            }
+        } label: {
+            HStack {
+                Text(range.label).font(.system(.body, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DesignTokens.spacingL)
+            .padding(.vertical, DesignTokens.spacingM)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .webCardBackground(cornerRadius: DesignTokens.cornerRadiusSmall)
+        }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: SalesReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(
+                title: "Revenue",
+                value: "₹\(Int(d.todayRevenue))",
+                subtitle: "vs previous \(range.label.lowercased())",
+                icon: "indianrupeesign",
+                trend: trend(forChange: d.revenueChange)
+            )
+            StatTile(
+                title: "Orders",
+                value: "\(d.todayOrders)",
+                subtitle: "vs previous \(range.label.lowercased())",
+                icon: "doc.text",
+                trend: trend(forChange: d.ordersChange)
+            )
+            StatTile(
+                title: "Avg order",
+                value: "₹\(Int(d.avgOrderValue))",
+                subtitle: "per ticket",
+                icon: "cart"
+            )
+            StatTile(
+                title: "Customers",
+                value: "\(d.totalCustomers)",
+                subtitle: "unique in period",
+                icon: "person.2"
+            )
+        }
+    }
+
+    /// Map a percent change to a `StatTile.Trend`. Up for positive, down for
+    /// negative, neutral for ~zero. The threshold avoids showing noisy
+    /// arrows when the period change is essentially flat.
+    private func trend(forChange change: Double) -> StatTile.Trend? {
+        let formatted = String(format: "%+.1f%%", change)
+        if change > 0.5 { return .up(formatted) }
+        if change < -0.5 { return .down(formatted) }
+        return .neutral("flat")
+    }
+
+    private func topItemsSection(_ items: [SalesReportData.TopItem]) -> some View {
+        SectionCard(title: "Top items", subtitle: "by revenue") {
+            VStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element.stableID) { idx, item in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(idx + 1)")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name).font(.subheadline.weight(.medium))
+                            Text("\(item.orders) order\(item.orders == 1 ? "" : "s")")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("₹\(Int(item.revenue))")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    .padding(.vertical, 6)
+                    if idx < items.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func paymentSection(_ methods: [SalesReportData.PaymentBucket]) -> some View {
+        let total = max(1, methods.reduce(0) { $0 + $1.amount })
+        return SectionCard(title: "Payment methods") {
+            VStack(spacing: DesignTokens.spacingS) {
+                ForEach(methods) { m in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(displayName(forMethod: m.method)).font(.subheadline.weight(.medium))
+                            Spacer()
+                            Text("₹\(Int(m.amount))").font(.subheadline.monospacedDigit())
+                        }
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.accentColor.opacity(0.7))
+                                .frame(width: geo.size.width * (m.amount / total))
+                        }
+                        .frame(height: 6)
+                        Text("\(m.count) transaction\(m.count == 1 ? "" : "s")")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private func hourlySection(_ hours: [SalesReportData.HourBucket]) -> some View {
+        let max = Double(hours.map(\.orders).max() ?? 1)
+        return SectionCard(title: "Hourly", subtitle: "orders by hour of day") {
+            VStack(spacing: DesignTokens.spacingS) {
+                ForEach(hours) { h in
+                    HStack {
+                        Text(formatHour(h.hour)).font(.caption.monospacedDigit()).frame(width: 56, alignment: .leading)
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.accentColor.opacity(0.7))
+                                .frame(width: geo.size.width * (Double(h.orders) / max))
+                        }
+                        .frame(height: 8)
+                        Text("\(h.orders)")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 32, alignment: .trailing)
+                    }
+                }
+            }
+        }
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+
+    private func displayName(forMethod method: String) -> String {
+        switch method.uppercased() {
+        case "CASH":          "Cash"
+        case "CARD":          "Card"
+        case "UPI":           "UPI"
+        case "WALLET":        "Wallet"
+        case "BANK_TRANSFER": "Bank transfer"
+        default:              method.capitalized
+        }
+    }
+
+    private func formatHour(_ h: Int) -> String {
+        let h12 = h % 12 == 0 ? 12 : h % 12
+        return "\(h12) \(h < 12 ? "AM" : "PM")"
+    }
+}
+
+#Preview {
+    NavigationStack { SalesReportView() }
+        .environment(Session())
+}
+
+// MARK: - Customers sub-page
+
+struct CustomersReportData: Decodable, Equatable {
+    let period: String
+    let totalCustomers: Int
+    let newCustomers: Int
+    let returningCustomers: Int
+    let avgCustomerValue: Int
+    let retentionRate: Double
+    let avgVisitDays: Int
+    let topSpenders: [TopSpender]
+    let frequencyDistribution: [FrequencyBucket]
+    let orderTypePreferences: [OrderTypePreference]
+
+    struct TopSpender: Decodable, Equatable, Identifiable {
+        let id: String
+        let name: String
+        let orders: Int
+        let totalSpent: Int
+        let avgOrder: Int
+    }
+
+    struct FrequencyBucket: Decodable, Equatable, Identifiable {
+        let bucket: String
+        let customerCount: Int
+        var id: String { bucket }
+    }
+
+    struct OrderTypePreference: Decodable, Equatable, Identifiable {
+        let type: String
+        let uniqueCustomers: Int
+        let totalOrders: Int
+        let revenue: Int
+        var id: String { type }
+    }
+}
+
+/// Period buckets accepted by `/api/admin/reports/customers` and `/staff`.
+/// Distinct from the main reports' `ReportPeriod` because the web's customer
+/// analytics page uses a longer-window menu (no 24h, but adds 365d).
+enum AnalyticsPeriod: String, CaseIterable, Identifiable {
+    case last7d = "7d"
+    case last30d = "30d"
+    case last90d = "90d"
+    case last1y = "365d"
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .last7d:  "Last 7 Days"
+        case .last30d: "Last 30 Days"
+        case .last90d: "Last 90 Days"
+        case .last1y:  "Last Year"
+        }
+    }
+}
+
+@MainActor @Observable final class CustomersReportStore {
+    private let api: APIClient
+    var data: CustomersReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load(period: AnalyticsPeriod) async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/customers",
+                                          query: [URLQueryItem(name: "period", value: period.rawValue)])
+            data = try JSONDecoder().decode(CustomersReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct CustomersReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: CustomersReportStore?
+    @State private var period: AnalyticsPeriod = .last30d
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                AnalyticsPeriodPicker(period: $period)
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    metricGrid(d)
+                    if d.topSpenders.isEmpty && d.totalCustomers == 0 {
+                        emptyState(message: "No customer data yet. Bills uploaded from iOS don't yet associate customers — once you start linking customers in POS, this view will populate.")
+                    }
+                    if !d.topSpenders.isEmpty { topSpendersSection(d.topSpenders) }
+                    if !d.frequencyDistribution.isEmpty { frequencySection(d.frequencyDistribution, total: d.totalCustomers) }
+                    if !d.orderTypePreferences.isEmpty { orderTypeSection(d.orderTypePreferences) }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Customers")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = CustomersReportStore(session: session) }
+            await store?.load(period: period)
+        }
+        .onChange(of: period) { _, newPeriod in Task { await store?.load(period: newPeriod) } }
+        .refreshable { await store?.load(period: period) }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: CustomersReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(title: "Total customers", value: "\(d.totalCustomers)",
+                     subtitle: "\(d.newCustomers) new in period", icon: "person.2")
+            StatTile(title: "Avg value", value: "₹\(d.avgCustomerValue)",
+                     subtitle: "lifetime per customer", icon: "indianrupeesign.circle")
+            StatTile(title: "Retention", value: String(format: "%.1f%%", d.retentionRate),
+                     subtitle: "\(d.returningCustomers) returning", icon: "heart")
+            StatTile(title: "Visit frequency", value: "\(d.avgVisitDays) days",
+                     subtitle: "between visits", icon: "calendar")
+        }
+    }
+
+    private func topSpendersSection(_ spenders: [CustomersReportData.TopSpender]) -> some View {
+        SectionCard(title: "Top spenders") {
+            VStack(spacing: 0) {
+                ForEach(Array(spenders.enumerated()), id: \.element.id) { idx, c in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(idx + 1)").font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary).frame(width: 20, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(c.name).font(.subheadline.weight(.medium))
+                            Text("\(c.orders) order\(c.orders == 1 ? "" : "s") · avg ₹\(c.avgOrder)")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("₹\(c.totalSpent)").font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    .padding(.vertical, 6)
+                    if idx < spenders.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func frequencySection(_ buckets: [CustomersReportData.FrequencyBucket], total: Int) -> some View {
+        let safeTotal = max(1, total)
+        return SectionCard(title: "Visit frequency", subtitle: "customers by visits in period") {
+            VStack(spacing: DesignTokens.spacingS) {
+                ForEach(buckets) { b in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(b.bucket).font(.subheadline.weight(.medium))
+                            Spacer()
+                            Text("\(b.customerCount)").font(.subheadline.monospacedDigit())
+                        }
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.accentColor.opacity(0.7))
+                                .frame(width: geo.size.width * (Double(b.customerCount) / Double(safeTotal)))
+                        }
+                        .frame(height: 6)
+                    }
+                }
+            }
+        }
+    }
+
+    private func orderTypeSection(_ prefs: [CustomersReportData.OrderTypePreference]) -> some View {
+        SectionCard(title: "Order type preferences") {
+            VStack(spacing: 0) {
+                ForEach(Array(prefs.enumerated()), id: \.element.id) { idx, p in
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(formatOrderType(p.type)).font(.subheadline.weight(.medium))
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(p.uniqueCustomers) customers").font(.caption)
+                            Text("₹\(p.revenue)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    if idx < prefs.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func formatOrderType(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+
+    private func emptyState(message: String) -> some View {
+        SectionCard {
+            VStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.system(size: 32, weight: .light)).foregroundStyle(.secondary)
+                Text(message).font(.caption).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DesignTokens.spacingM)
+        }
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+}
+
+// MARK: - Staff sub-page
+
+struct StaffReportData: Decodable, Equatable {
+    let period: String
+    let activeStaffCount: Int
+    let totalRevenue: Int
+    let totalOrders: Int
+    let avgRevenuePerStaff: Int
+    let staffPerformance: [StaffMember]
+    let roleStats: [RoleStat]
+    let topPerformers: [TopPerformer]
+
+    struct StaffMember: Decodable, Equatable, Identifiable {
+        let id: String
+        let name: String
+        let role: String
+        let ordersHandled: Int
+        let revenueGenerated: Int
+        let avgOrder: Int
+        let daysWorked: Int
+        let lastOrder: String?
+    }
+
+    struct RoleStat: Decodable, Equatable, Identifiable {
+        let role: String
+        let staffCount: Int
+        let totalOrders: Int
+        let totalRevenue: Int
+        let avgOrder: Int
+        var id: String { role }
+    }
+
+    struct TopPerformer: Decodable, Equatable, Identifiable {
+        let name: String
+        let role: String
+        let recentOrders: Int
+        let recentRevenue: Int
+        var id: String { "\(name)-\(role)" }
+    }
+}
+
+@MainActor @Observable final class StaffReportStore {
+    private let api: APIClient
+    var data: StaffReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load(period: AnalyticsPeriod) async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/staff",
+                                          query: [URLQueryItem(name: "period", value: period.rawValue)])
+            data = try JSONDecoder().decode(StaffReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct StaffReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: StaffReportStore?
+    @State private var period: AnalyticsPeriod = .last30d
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                AnalyticsPeriodPicker(period: $period)
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    metricGrid(d)
+                    if !d.topPerformers.isEmpty { topPerformersSection(d.topPerformers) }
+                    if !d.staffPerformance.isEmpty { staffSection(d.staffPerformance) }
+                    if !d.roleStats.isEmpty { roleSection(d.roleStats) }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Staff")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = StaffReportStore(session: session) }
+            await store?.load(period: period)
+        }
+        .onChange(of: period) { _, newPeriod in Task { await store?.load(period: newPeriod) } }
+        .refreshable { await store?.load(period: period) }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: StaffReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(title: "Active staff", value: "\(d.activeStaffCount)",
+                     subtitle: "currently rostered", icon: "person.2")
+            StatTile(title: "Total revenue", value: "₹\(d.totalRevenue)",
+                     subtitle: "in period", icon: "indianrupeesign.circle")
+            StatTile(title: "Total orders", value: "\(d.totalOrders)",
+                     subtitle: "handled by staff", icon: "doc.text")
+            StatTile(title: "Avg per staff", value: "₹\(d.avgRevenuePerStaff)",
+                     subtitle: "revenue per head", icon: "person.crop.circle")
+        }
+    }
+
+    private func topPerformersSection(_ performers: [StaffReportData.TopPerformer]) -> some View {
+        SectionCard(title: "Top performers", subtitle: "last 7 days") {
+            VStack(spacing: 0) {
+                ForEach(Array(performers.enumerated()), id: \.element.id) { idx, p in
+                    HStack {
+                        Text("\(idx + 1)").font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary).frame(width: 20, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(p.name).font(.subheadline.weight(.medium))
+                            Text(formatRole(p.role)).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(p.recentOrders) orders").font(.caption)
+                            Text("₹\(p.recentRevenue)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    if idx < performers.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func staffSection(_ staff: [StaffReportData.StaffMember]) -> some View {
+        SectionCard(title: "All staff", subtitle: "ranked by revenue in period") {
+            VStack(spacing: 0) {
+                ForEach(Array(staff.enumerated()), id: \.element.id) { idx, s in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(s.name).font(.subheadline.weight(.medium))
+                            Text("\(formatRole(s.role)) · \(s.daysWorked) day\(s.daysWorked == 1 ? "" : "s")")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(s.ordersHandled) orders").font(.caption)
+                            Text("₹\(s.revenueGenerated)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    if idx < staff.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func roleSection(_ roles: [StaffReportData.RoleStat]) -> some View {
+        SectionCard(title: "By role") {
+            VStack(spacing: 0) {
+                ForEach(Array(roles.enumerated()), id: \.element.id) { idx, r in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(formatRole(r.role)).font(.subheadline.weight(.medium))
+                            Text("\(r.staffCount) staff · \(r.totalOrders) orders")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("₹\(r.totalRevenue)").font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    .padding(.vertical, 6)
+                    if idx < roles.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func formatRole(_ raw: String) -> String { raw.capitalized }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+}
+
+// MARK: - Inventory sub-page
+
+struct InventoryReportData: Decodable, Equatable {
+    let totalItems: Int
+    let totalValue: Int
+    let lowStockCount: Int
+    let overstockedCount: Int
+    let lowStockItems: [LowStockItem]
+    let topConsumed: [ConsumedItem]
+    let suppliers: [Supplier]
+
+    struct LowStockItem: Decodable, Equatable, Identifiable {
+        let id: String
+        let name: String
+        let unit: String
+        let currentStock: Double
+        let minimumStock: Double
+    }
+
+    struct ConsumedItem: Decodable, Equatable, Identifiable {
+        let id: String
+        let name: String
+        let unit: String
+        let totalConsumed: Double
+        let timesUsed: Int
+    }
+
+    struct Supplier: Decodable, Equatable, Identifiable {
+        let supplier: String
+        let itemCount: Int
+        let totalValue: Int
+        var id: String { supplier }
+    }
+}
+
+@MainActor @Observable final class InventoryReportStore {
+    private let api: APIClient
+    var data: InventoryReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load() async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/inventory")
+            data = try JSONDecoder().decode(InventoryReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct InventoryReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: InventoryReportStore?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    metricGrid(d)
+                    if !d.lowStockItems.isEmpty { lowStockSection(d.lowStockItems) }
+                    if !d.topConsumed.isEmpty { consumedSection(d.topConsumed) }
+                    if !d.suppliers.isEmpty { supplierSection(d.suppliers) }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Inventory")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = InventoryReportStore(session: session) }
+            await store?.load()
+        }
+        .refreshable { await store?.load() }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: InventoryReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(title: "Stock value", value: "₹\(d.totalValue)",
+                     subtitle: "\(d.totalItems) items", icon: "shippingbox")
+            StatTile(title: "Low stock", value: "\(d.lowStockCount)",
+                     subtitle: "need attention", icon: "exclamationmark.triangle",
+                     trend: d.lowStockCount > 0 ? .down("alert") : nil)
+            StatTile(title: "Overstocked", value: "\(d.overstockedCount)",
+                     subtitle: "above max", icon: "arrow.up.bin")
+            StatTile(title: "Total items", value: "\(d.totalItems)",
+                     subtitle: "tracked SKUs", icon: "list.bullet")
+        }
+    }
+
+    private func lowStockSection(_ items: [InventoryReportData.LowStockItem]) -> some View {
+        SectionCard(title: "Low stock", subtitle: "below minimum threshold") {
+            VStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name).font(.subheadline.weight(.medium))
+                            Text("min \(formatStock(item.minimumStock)) \(item.unit)")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("\(formatStock(item.currentStock)) \(item.unit)")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(.vertical, 6)
+                    if idx < items.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func consumedSection(_ items: [InventoryReportData.ConsumedItem]) -> some View {
+        SectionCard(title: "Top consumed", subtitle: "last 30 days") {
+            VStack(spacing: 0) {
+                ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                    HStack {
+                        Text("\(idx + 1)").font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary).frame(width: 20, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name).font(.subheadline.weight(.medium))
+                            Text("used in \(item.timesUsed) order\(item.timesUsed == 1 ? "" : "s")")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("\(formatStock(item.totalConsumed)) \(item.unit)")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    .padding(.vertical, 6)
+                    if idx < items.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func supplierSection(_ suppliers: [InventoryReportData.Supplier]) -> some View {
+        SectionCard(title: "Suppliers") {
+            VStack(spacing: 0) {
+                ForEach(Array(suppliers.enumerated()), id: \.element.id) { idx, s in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(s.supplier).font(.subheadline.weight(.medium))
+                            Text("\(s.itemCount) item\(s.itemCount == 1 ? "" : "s")")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("₹\(s.totalValue)").font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    .padding(.vertical, 6)
+                    if idx < suppliers.count - 1 { Divider() }
+                }
+            }
+        }
+    }
+
+    private func formatStock(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(value))
+            : String(format: "%.2f", value)
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+}
+
+// MARK: - Shared period picker for analytics breakouts
+
+private struct AnalyticsPeriodPicker: View {
+    @Binding var period: AnalyticsPeriod
+
+    var body: some View {
+        Menu {
+            ForEach(AnalyticsPeriod.allCases) { p in
+                Button {
+                    period = p
+                } label: {
+                    if period == p {
+                        Label(p.label, systemImage: "checkmark")
+                    } else {
+                        Text(p.label)
+                    }
+                }
+            }
+        } label: {
+            HStack {
+                Text(period.label).font(.system(.body, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DesignTokens.spacingL)
+            .padding(.vertical, DesignTokens.spacingM)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .webCardBackground(cornerRadius: DesignTokens.cornerRadiusSmall)
+        }
+    }
+}
+
+#Preview("Customers") {
+    NavigationStack { CustomersReportView() }.environment(Session())
+}
+#Preview("Staff") {
+    NavigationStack { StaffReportView() }.environment(Session())
+}
+#Preview("Inventory") {
+    NavigationStack { InventoryReportView() }.environment(Session())
 }

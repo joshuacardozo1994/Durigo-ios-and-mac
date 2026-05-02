@@ -170,6 +170,13 @@ enum BillHistoryItemsSchemaV4: VersionedSchema {
         var tags: [String]?
     }
 
+    /// V4 originally had: id/date/tableNumber/items/paymentStatus/waiter/syncedAt.
+    /// `discount` and `discountReason` were added in-place (without bumping
+    /// the schema version) — SwiftData lightweight-migrates by adding them
+    /// as nullable columns. A custom V5 stage was attempted but iOS 26's
+    /// SwiftData crashes in NSCustomMigrationStage.init even for trivial
+    /// "add optional field" cases when both versions declare distinct
+    /// nested @Model classes.
     @Model
     class BillHistoryItem: Identifiable {
         var id: UUID
@@ -179,8 +186,12 @@ enum BillHistoryItemsSchemaV4: VersionedSchema {
         var paymentStatus: Status
         var waiter: String
         var syncedAt: Date?
+        var discount: Double?
+        var discountReason: String?
 
-        init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int, paymentStatus: Status = .pending, waiter: String, syncedAt: Date? = nil) {
+        init(id: UUID, date: Date = Date(), items: [MenuItem], tableNumber: Int,
+             paymentStatus: Status = .pending, waiter: String, syncedAt: Date? = nil,
+             discount: Double? = nil, discountReason: String? = nil) {
             self.id = id
             self.date = date
             self.items = items
@@ -188,10 +199,15 @@ enum BillHistoryItemsSchemaV4: VersionedSchema {
             self.paymentStatus = paymentStatus
             self.waiter = waiter
             self.syncedAt = syncedAt
+            self.discount = discount
+            self.discountReason = discountReason
         }
 
+        var subtotalAmount: Double {
+            items.reduce(0) { $0 + $1.price * $1.quantity }
+        }
         var totalAmount: Double {
-            return items.reduce(0) { $0 + $1.price * $1.quantity }
+            max(0, subtotalAmount - (discount ?? 0))
         }
     }
 }
@@ -206,7 +222,6 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
     }
 
     static var savedV1BillHistoryItems = [BillHistoryItemsSchemaV1.BillHistoryItem]()
-    static var savedV2BillHistoryItems = [BillHistoryItemsSchemaV2.BillHistoryItem]()
     
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: BillHistoryItemsSchemaV1.self,
@@ -230,49 +245,15 @@ enum BillHistoryItemsMigrationPlan: SchemaMigrationPlan {
         }
     )
     
-    static let migrateV2toV3 = MigrationStage.custom(
+    // V3 added `tags` only inside the non-@Model `MenuItem` struct (a JSON blob
+    // from SwiftData's perspective) and a Status enum that's structurally identical
+    // to V2's. The @Model fields are unchanged. SwiftData on iOS 26 hashes V2 and
+    // V3 BillHistoryItem identically and refuses to construct an
+    // NSCustomMigrationStage for them — so this has to be lightweight.
+    // The `tags` optional decodes as nil for old rows automatically.
+    static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: BillHistoryItemsSchemaV2.self,
-        toVersion: BillHistoryItemsSchemaV3.self,
-        willMigrate: { context in
-            let oldBillHistoryItems = try context.fetch(FetchDescriptor<BillHistoryItemsSchemaV2.BillHistoryItem>())
-            savedV2BillHistoryItems = oldBillHistoryItems
-            oldBillHistoryItems.forEach { oldBillHistoryItem in
-                context.delete(oldBillHistoryItem)
-            }
-            try context.save()
-        }, didMigrate: { context in
-            savedV2BillHistoryItems.forEach { oldBillHistoryItem in
-                let items = oldBillHistoryItem.items.map { oldMenuItem in
-                    BillHistoryItemsSchemaV3.MenuItem(
-                        id: oldMenuItem.id,
-                        name: oldMenuItem.name,
-                        prefix: oldMenuItem.prefix,
-                        suffix: oldMenuItem.suffix,
-                        quantity: oldMenuItem.quantity,
-                        price: oldMenuItem.price,
-                        servingSize: oldMenuItem.servingSize,
-                        tags: nil
-                    )
-                }
-                let newStatus: BillHistoryItemsSchemaV3.Status
-                switch oldBillHistoryItem.paymentStatus {
-                case .paidByCash: newStatus = .paidByCash
-                case .paidByUPI: newStatus = .paidByUPI
-                case .paidByCard: newStatus = .paidByCard
-                case .pending: newStatus = .pending
-                }
-                context.insert(BillHistoryItemsSchemaV3.BillHistoryItem(
-                    id: oldBillHistoryItem.id,
-                    date: oldBillHistoryItem.date,
-                    items: items,
-                    tableNumber: oldBillHistoryItem.tableNumber,
-                    paymentStatus: newStatus,
-                    waiter: oldBillHistoryItem.waiter
-                ))
-            }
-            
-            try context.save()
-        }
+        toVersion: BillHistoryItemsSchemaV3.self
     )
     
     static let migrateV3toV4 = MigrationStage.lightweight(

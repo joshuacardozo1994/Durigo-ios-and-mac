@@ -12,6 +12,9 @@
 //   - On scroll near bottom of cached list: fetch next page (cursor-based)
 //   - On pull-to-refresh: reset cursor + re-fetch first page
 //   - On scenePhase active: also pushes any local-only bills (syncedAt == nil)
+//   - Live: SSE stream on /api/events refreshes the first page when other
+//     devices upload or update bills. Local-only bills (syncedAt == nil) are
+//     preserved because downloadPage upserts; it doesn't delete.
 //
 
 import SwiftUI
@@ -42,6 +45,11 @@ struct BillHistoryList: View {
     @State private var selectedPaymentStatus: BillHistoryItemStatus?
     @State private var showTodaysBills = false
     @State private var selectedBill: BillHistoryItem?
+
+    // Live updates via SSE.
+    @State private var sseTask: Task<Void, Never>?
+    @State private var liveConnected: Bool = false
+    @State private var pendingRefreshTask: Task<Void, Never>?
 
     // Bills shown — reads from SwiftData (so offline works).
     @Query(sort: \BillHistoryItem.date, order: .reverse) private var allBills: [BillHistoryItem]
@@ -90,17 +98,86 @@ struct BillHistoryList: View {
                         await loadInitialPage()
                     }
                     await pushUnsynced(silentIfEmpty: true)
+                    startLiveStreamIfNeeded()
                 }
+                .onDisappear { stopLiveStream() }
                 .onChange(of: scenePhase) { _, newPhase in
-                    if newPhase == .active && session.isSignedIn {
-                        Task {
-                            await refreshFirstPageQuietly()
-                            await pushUnsynced(silentIfEmpty: true)
+                    switch newPhase {
+                    case .active:
+                        if session.isSignedIn {
+                            Task {
+                                await refreshFirstPageQuietly()
+                                await pushUnsynced(silentIfEmpty: true)
+                            }
+                            startLiveStreamIfNeeded()
                         }
+                    case .background, .inactive:
+                        // Drop the SSE socket while backgrounded — iOS will
+                        // suspend it anyway, and we'd rather reconnect on
+                        // resume than have a dangling task.
+                        stopLiveStream()
+                    @unknown default:
+                        break
                     }
                 }
         }
         .lockWithBiometric()
+    }
+
+    // MARK: - Live (SSE)
+
+    /// Open an SSE stream against `/api/events` and quietly re-fetch the
+    /// first bill page when other devices create or update orders. Reconnects
+    /// with backoff on drop. Idempotent — calling twice is a no-op.
+    private func startLiveStreamIfNeeded() {
+        guard sseTask == nil, session.isSignedIn else { return }
+        let api = APIClient(session: session)
+        sseTask = Task { @MainActor in
+            var backoff: UInt64 = 1_000_000_000  // 1s
+            while !Task.isCancelled {
+                do {
+                    let stream = api.eventStream("/api/events")
+                    liveConnected = true
+                    for try await ev in stream {
+                        if Task.isCancelled { break }
+                        switch ev.event {
+                        case "order_created", "order_updated", "order_status_changed":
+                            scheduleQuietRefresh()
+                        default:
+                            break  // ignore connection / heartbeat / kitchen_update
+                        }
+                    }
+                    backoff = 1_000_000_000  // reset after a clean stream end
+                } catch is CancellationError {
+                    break
+                } catch {
+                    liveConnected = false
+                    try? await Task.sleep(nanoseconds: backoff)
+                    backoff = min(backoff * 2, 30_000_000_000)
+                }
+                liveConnected = false
+            }
+            liveConnected = false
+        }
+    }
+
+    private func stopLiveStream() {
+        sseTask?.cancel()
+        sseTask = nil
+        pendingRefreshTask?.cancel()
+        pendingRefreshTask = nil
+        liveConnected = false
+    }
+
+    /// Debounce refreshes — bill bursts (e.g. Sync All Unsynced from another
+    /// device) emit several events quickly, and we only need one refresh.
+    private func scheduleQuietRefresh() {
+        pendingRefreshTask?.cancel()
+        pendingRefreshTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 500ms debounce
+            if Task.isCancelled { return }
+            await refreshFirstPageQuietly()
+        }
     }
 
     // MARK: - Content

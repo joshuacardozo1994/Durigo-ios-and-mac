@@ -11,7 +11,6 @@
 		3845CDF57790C0631946E120 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF74CE34F1194601AB64C9A7 /* Session.swift */; };
 		69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B9DD9069EAAB92113C550F /* LoginView.swift */; };
 		6BAAD744C0396363E461A8A3 /* BillUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A68E113A7770C6554EEAEE6 /* BillUploader.swift */; };
-		85C325173368359E55180429 /* BillSyncSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0414EA51499EEA2E6A295519 /* BillSyncSettings.swift */; };
 		9C25AD807EAAB09B6B8FB8DF /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77500D2BEDB2E4CAA74265B /* APIClient.swift */; };
 		DA18F49353BC4963B3B1DCD0 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2D94297F97D6EC67F3EFB9 /* KeychainHelper.swift */; };
 		E7083EEE2BA1EB7700E8B825 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7083EED2BA1EB7700E8B825 /* Config.swift */; };
@@ -89,7 +88,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0414EA51499EEA2E6A295519 /* BillSyncSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillSyncSettings.swift; sourceTree = "<group>"; };
 		2A68E113A7770C6554EEAEE6 /* BillUploader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillUploader.swift; sourceTree = "<group>"; };
 		2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		59B9DD9069EAAB92113C550F /* LoginView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -316,7 +314,6 @@
 				E730ED2F2B0A57F200132ABA /* BillHistoryList.swift */,
 				E730ED362B0AA45600132ABA /* BillHistory.swift */,
 				2A68E113A7770C6554EEAEE6 /* BillUploader.swift */,
-				0414EA51499EEA2E6A295519 /* BillSyncSettings.swift */,
 			);
 			path = Billing;
 			sourceTree = "<group>";
@@ -556,7 +553,6 @@
 				E7ED3A542AEAEADE00F2DDA8 /* MenuList.swift in Sources */,
 				DA18F49353BC4963B3B1DCD0 /* KeychainHelper.swift in Sources */,
 				6BAAD744C0396363E461A8A3 /* BillUploader.swift in Sources */,
-				85C325173368359E55180429 /* BillSyncSettings.swift in Sources */,
 				3845CDF57790C0631946E120 /* Session.swift in Sources */,
 				9C25AD807EAAB09B6B8FB8DF /* APIClient.swift in Sources */,
 				69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */,

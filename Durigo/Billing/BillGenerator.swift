@@ -70,7 +70,14 @@ struct TableDropdownSelector: View {
 struct WaiterDropdownSelector: View {
     var showIfSelected = false
     @Binding var selectedOption: String?
-    let options: [String]
+    /// Live directory of staff who can serve a table — both waiters and
+    /// admins, with role attached so the picker can group them. Selection
+    /// is still by name (matches the old String-based binding) since
+    /// `MenuLoader.waiter` is a name string for legacy bill compatibility.
+    let staff: [WaiterRef]
+
+    private var waitersOnly: [WaiterRef] { staff.filter { $0.role == "WAITER" } }
+    private var adminsOnly:  [WaiterRef] { staff.filter { $0.role == "ADMIN"  } }
 
     var body: some View {
         Picker(selection: Binding(
@@ -78,14 +85,20 @@ struct WaiterDropdownSelector: View {
             set: { selectedOption = $0.isEmpty ? nil : $0 }
         )) {
             Text("Waiter").tag("")
-            Section("Waiters") {
-                ForEach(Array(options.prefix(3)), id: \.self) { option in
-                    Text(option).tag(option)
+            // Waiters first — that's the primary attribution group for
+            // bill generation. Admins listed below as fill-in coverage.
+            if !waitersOnly.isEmpty {
+                Section("Waiters") {
+                    ForEach(waitersOnly) { w in
+                        Text(w.name).tag(w.name)
+                    }
                 }
             }
-            Section("Admins") {
-                ForEach(Array(options.suffix(3)), id: \.self) { option in
-                    Text(option).tag(option)
+            if !adminsOnly.isEmpty {
+                Section("Admins") {
+                    ForEach(adminsOnly) { a in
+                        Text(a.name).tag(a.name)
+                    }
                 }
             }
         } label: {
@@ -218,8 +231,20 @@ private struct EmptyBillState: View {
 
 struct BillGenerator: View {
     @EnvironmentObject private var menuLoader: MenuLoader
+    @Environment(Session.self) private var session
     @State private var showingBillClearAlert = false
     @State private var isShowingMenuList = false
+    /// Live waiter directory pulled from /api/users/waiters. Falls back to
+    /// a hardcoded WAITER-role set if the fetch fails (offline-tolerant).
+    /// Stored as `[WaiterRef]` so the dropdown can group by role.
+    @State private var waiterStaff: [WaiterRef] = [
+        WaiterRef(id: "fallback-1", name: "Alcin",   role: "WAITER"),
+        WaiterRef(id: "fallback-2", name: "Anthony", role: "WAITER"),
+        WaiterRef(id: "fallback-3", name: "Antone",  role: "WAITER"),
+        WaiterRef(id: "fallback-4", name: "Amanda",  role: "WAITER"),
+        WaiterRef(id: "fallback-5", name: "Monica",  role: "WAITER"),
+        WaiterRef(id: "fallback-6", name: "Joshua",  role: "WAITER"),
+    ]
 
     var body: some View {
         NavigationStack {
@@ -239,6 +264,9 @@ struct BillGenerator: View {
             #endif
             .sheet(isPresented: $isShowingMenuList) {
                 MenuList()
+            }
+            .task {
+                await loadWaiters()
             }
             .alert("Are you sure you want to clear the bill", isPresented: $showingBillClearAlert) {
                 Button("Clear", role: .destructive) {
@@ -294,7 +322,7 @@ struct BillGenerator: View {
                 )
                 WaiterDropdownSelector(
                     selectedOption: $menuLoader.waiter,
-                    options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"]
+                    staff: waiterStaff
                 )
                 Spacer()
             }
@@ -428,6 +456,21 @@ struct BillGenerator: View {
             || menuLoader.waiter == nil
         )
         .accessibilityIdentifier("print-bill")
+    }
+
+    /// Fetch the live waiter directory (active WAITER + ADMIN users) so
+    /// the dropdown matches the same source POS Take Order uses. The
+    /// picker groups them by role, so we keep both. We only replace the
+    /// hardcoded fallback if the fetch returns at least one entry.
+    private func loadWaiters() async {
+        let api = APIClient(session: session)
+        do {
+            let data = try await api.get("/api/users/waiters")
+            let live = try JSONDecoder().decode([WaiterRef].self, from: data)
+            if !live.isEmpty { waiterStaff = live }
+        } catch {
+            // Keep the hardcoded fallback list — non-fatal.
+        }
     }
 }
 

@@ -297,7 +297,14 @@ struct BillHistoryList: View {
                     Label("\(showTodaysBills ? "● " : "")Show today's bills", systemImage: "calendar")
                 }
                 TableDropdownSelector(showIfSelected: true, selectedOption: $selectedTable, options: Array(1...20))
-                WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, options: ["Alcin", "Anthony", "Antone", "Amanda", "Monica", "Joshua"])
+                WaiterDropdownSelector(showIfSelected: true, selectedOption: $selectedWaiter, staff: [
+                    WaiterRef(id: "fallback-1", name: "Alcin",   role: "WAITER"),
+                    WaiterRef(id: "fallback-2", name: "Anthony", role: "WAITER"),
+                    WaiterRef(id: "fallback-3", name: "Antone",  role: "WAITER"),
+                    WaiterRef(id: "fallback-4", name: "Amanda",  role: "WAITER"),
+                    WaiterRef(id: "fallback-5", name: "Monica",  role: "WAITER"),
+                    WaiterRef(id: "fallback-6", name: "Joshua",  role: "WAITER"),
+                ])
 
                 Section {
                     Button {

@@ -8,11 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		0D9F2D73A37F48A24A10D1F0 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */; };
+		2F6EB997A70019B1A3D5C356 /* POSContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6923AAF27C492339848EE9 /* POSContainer.swift */; };
 		3845CDF57790C0631946E120 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF74CE34F1194601AB64C9A7 /* Session.swift */; };
+		571B5ECDABF564436CC70CB7 /* POSStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87FC34183B412E241723984F /* POSStore.swift */; };
+		6715E4FF5D8C151ED5968976 /* OrderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D652368E81B50888B000AA /* OrderDetailView.swift */; };
 		69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B9DD9069EAAB92113C550F /* LoginView.swift */; };
 		6BAAD744C0396363E461A8A3 /* BillUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A68E113A7770C6554EEAEE6 /* BillUploader.swift */; };
+		73DBD17EBB53A7D9BA90AF96 /* POSModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6656768D52BBC46ED43CA87 /* POSModels.swift */; };
+		868EA903F59768AB15DA8EC5 /* TablesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A472EBD9E097D5FA29E2B8 /* TablesGridView.swift */; };
 		9C25AD807EAAB09B6B8FB8DF /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77500D2BEDB2E4CAA74265B /* APIClient.swift */; };
+		9E508451D78A3B0C932F9551 /* TableMergeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86B1511273C77B53B37B28B /* TableMergeView.swift */; };
+		D00558BC5C079702E7D6873A /* ReservationDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401779939A1442A2825368C7 /* ReservationDialogView.swift */; };
 		DA18F49353BC4963B3B1DCD0 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2D94297F97D6EC67F3EFB9 /* KeychainHelper.swift */; };
+		E42E2246E5C10AA011C94E20 /* TakeOrderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DFFB9A60E671038E38D67EE /* TakeOrderView.swift */; };
 		E7083EEE2BA1EB7700E8B825 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7083EED2BA1EB7700E8B825 /* Config.swift */; };
 		E7083EF02BA1EC3400E8B825 /* config.dev.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EEF2BA1EC3400E8B825 /* config.dev.plist */; };
 		E7083EF22BA1EC4A00E8B825 /* config.local.plist in Resources */ = {isa = PBXBuildFile; fileRef = E7083EF12BA1EC4A00E8B825 /* config.local.plist */; };
@@ -90,7 +98,14 @@
 /* Begin PBXFileReference section */
 		2A68E113A7770C6554EEAEE6 /* BillUploader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BillUploader.swift; sourceTree = "<group>"; };
 		2CB2A5335EFDF087CFEC94CF /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		401779939A1442A2825368C7 /* ReservationDialogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReservationDialogView.swift; sourceTree = "<group>"; };
 		59B9DD9069EAAB92113C550F /* LoginView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		87FC34183B412E241723984F /* POSStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = POSStore.swift; sourceTree = "<group>"; };
+		8DFFB9A60E671038E38D67EE /* TakeOrderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TakeOrderView.swift; sourceTree = "<group>"; };
+		A2D652368E81B50888B000AA /* OrderDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailView.swift; sourceTree = "<group>"; };
+		B3A472EBD9E097D5FA29E2B8 /* TablesGridView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TablesGridView.swift; sourceTree = "<group>"; };
+		C86B1511273C77B53B37B28B /* TableMergeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TableMergeView.swift; sourceTree = "<group>"; };
+		CA6923AAF27C492339848EE9 /* POSContainer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = POSContainer.swift; sourceTree = "<group>"; };
 		D77500D2BEDB2E4CAA74265B /* APIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		DD2D94297F97D6EC67F3EFB9 /* KeychainHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		E7083EED2BA1EB7700E8B825 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -152,6 +167,7 @@
 		E7ED3A5A2AEAEB1F00F2DDA8 /* String+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		E7ED3A622AEAEB6500F2DDA8 /* DancingScript-VariableFont_wght.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DancingScript-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		E7ED3A662AEAEB7E00F2DDA8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F6656768D52BBC46ED43CA87 /* POSModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = POSModels.swift; sourceTree = "<group>"; };
 		FF74CE34F1194601AB64C9A7 /* Session.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -180,6 +196,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		433021DA50C7723A1C0C556B /* POS */ = {
+			isa = PBXGroup;
+			children = (
+				F6656768D52BBC46ED43CA87 /* POSModels.swift */,
+				87FC34183B412E241723984F /* POSStore.swift */,
+				CA6923AAF27C492339848EE9 /* POSContainer.swift */,
+				B3A472EBD9E097D5FA29E2B8 /* TablesGridView.swift */,
+				8DFFB9A60E671038E38D67EE /* TakeOrderView.swift */,
+				A2D652368E81B50888B000AA /* OrderDetailView.swift */,
+				C86B1511273C77B53B37B28B /* TableMergeView.swift */,
+				401779939A1442A2825368C7 /* ReservationDialogView.swift */,
+			);
+			name = POS;
+			path = POS;
+			sourceTree = "<group>";
+		};
 		C856767684E1F6459C82C2ED /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -273,6 +305,7 @@
 				E7083EF12BA1EC4A00E8B825 /* config.local.plist */,
 				E71F1E252F4A4B3A005080A1 /* Reports.swift */,
 				C856767684E1F6459C82C2ED /* Auth */,
+				433021DA50C7723A1C0C556B /* POS */,
 			);
 			path = Durigo;
 			sourceTree = "<group>";
@@ -557,6 +590,14 @@
 				9C25AD807EAAB09B6B8FB8DF /* APIClient.swift in Sources */,
 				69C09AC8CFD5E427341C1E9F /* LoginView.swift in Sources */,
 				0D9F2D73A37F48A24A10D1F0 /* DesignSystem.swift in Sources */,
+				73DBD17EBB53A7D9BA90AF96 /* POSModels.swift in Sources */,
+				571B5ECDABF564436CC70CB7 /* POSStore.swift in Sources */,
+				2F6EB997A70019B1A3D5C356 /* POSContainer.swift in Sources */,
+				868EA903F59768AB15DA8EC5 /* TablesGridView.swift in Sources */,
+				E42E2246E5C10AA011C94E20 /* TakeOrderView.swift in Sources */,
+				6715E4FF5D8C151ED5968976 /* OrderDetailView.swift in Sources */,
+				9E508451D78A3B0C932F9551 /* TableMergeView.swift in Sources */,
+				D00558BC5C079702E7D6873A /* ReservationDialogView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

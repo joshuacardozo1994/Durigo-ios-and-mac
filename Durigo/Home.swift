@@ -14,6 +14,8 @@
 
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
+import CoreTransferable
 
 // MARK: - iPhone bottom-tab roots
 
@@ -59,7 +61,7 @@ struct Home: View {
                 .tabItem { Label("Dashboard", systemImage: "square.grid.2x2") }
                 .tag(IPhoneRoot.dashboard)
 
-            BillGenerator()
+            POSContainerView()
                 .tabItem { Label("POS", systemImage: "cart") }
                 .tag(IPhoneRoot.pos)
 
@@ -146,7 +148,28 @@ struct Home: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
         } detail: {
-            destination(for: navigation.selection)
+            NavigationStack {
+                destination(for: navigation.selection)
+                    .toolbar {
+                        // Explicit sidebar toggle — `.balanced` style does
+                        // not always surface one in the toolbar on iPad,
+                        // so we add it ourselves so staff can collapse the
+                        // sidebar to free up screen space (esp. for the
+                        // kitchen kanban which wants the full width).
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                withAnimation {
+                                    columnVisibility = (columnVisibility == .all)
+                                        ? .detailOnly : .all
+                                }
+                            } label: {
+                                Image(systemName: columnVisibility == .all
+                                    ? "sidebar.left"
+                                    : "sidebar.leading")
+                            }
+                        }
+                    }
+            }
         }
         .navigationSplitViewStyle(.balanced)
     }
@@ -216,7 +239,7 @@ struct Home: View {
     private func destination(for item: NavigationItem) -> some View {
         switch item {
         case .dashboard:    Dashboard()
-        case .pos:          BillGenerator()
+        case .pos:          POSContainerView()
         case .kitchen:      KitchenAdminView()
         case .billing:      BillHistoryList()
         case .reservations: ReservationsAdminView()
@@ -2176,26 +2199,58 @@ struct KitchenOrderItem: Codable, Identifiable, Hashable {
     let notes: String?
     let menuItem: NamedRef?
     let itemName: String?
+    /// Kitchen staff who last touched this item's status. Set by the
+    /// server from the JWT user when the per-item PATCH fires. Used on
+    /// the kanban card to show "Anthony is preparing this".
+    let preparedBy: PreparedByRef?
+    /// Kitchen staff explicitly assigned to this item by an admin from
+    /// the kitchen display. Distinct from `preparedBy` (history of who
+    /// progressed it). Editable via PATCH /items/{id}/assign.
+    var assignedTo: PreparedByRef?
 
     struct NamedRef: Codable, Hashable {
         let id: String?
         let name: String?
     }
 
+    struct PreparedByRef: Codable, Hashable {
+        let id: String?
+        let name: String?
+        let role: String?
+    }
+
     var displayName: String { menuItem?.name ?? itemName ?? "Custom item" }
 }
 
-struct KitchenOrder: Codable, Identifiable, Hashable {
+// Transferable conformance lets a KitchenOrder be the payload of a SwiftUI
+// `.draggable(...)` modifier on the iPad kanban. CodableRepresentation just
+// JSON-encodes the order — that round-trips through the drag pasteboard
+// and back into Swift on drop without needing a custom UTType.
+extension UTType {
+    static let kitchenOrder = UTType(exportedAs: "com.durigo.kitchen-order")
+}
+
+struct KitchenOrder: Codable, Identifiable, Hashable, Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .kitchenOrder)
+    }
+
     let id: String
     let orderNumber: String
     var status: String
     let type: String
     let createdAt: String
     let table: TableRef?
+    let waiter: WaiterRef?
     let items: [KitchenOrderItem]
 
     struct TableRef: Codable, Hashable {
         let number: Int?
+    }
+
+    struct WaiterRef: Codable, Hashable {
+        let id: String?
+        let name: String?
     }
 }
 
@@ -2204,6 +2259,9 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
     var orders: [KitchenOrder] = []
     var isLoading = false
     var errorMessage: String?
+    /// Available kitchen staff (KITCHEN + ADMIN, active only) for the
+    /// per-item assignment picker. Loaded once on `start()`.
+    var kitchenStaff: [WaiterRef] = []
 
     /// True while the SSE stream is connected. Surfaces a small "Live" chip
     /// in the toolbar so the user knows updates are coming in automatically.
@@ -2220,9 +2278,9 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
         do {
             let data = try await api.get("/api/kitchen/orders")
             let all = try JSONDecoder().decode([KitchenOrder].self, from: data)
-            // Kitchen display: only show orders the kitchen still has work on.
-            // SERVED means the food's already at the table — drop it.
-            orders = all.filter { !["SERVED", "COMPLETED", "CANCELLED"].contains($0.status.uppercased()) }
+            // Mirror the web's 4-column kanban (NEW → PREPARING → READY →
+            // SERVED). Drop only fully closed-out orders.
+            orders = all.filter { !["COMPLETED", "CANCELLED"].contains($0.status.uppercased()) }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
@@ -2236,6 +2294,8 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
     /// is a no-op.
     func start() {
         guard streamTask == nil else { return }
+        // Lazy-load kitchen staff list once when the view first connects.
+        Task { [weak self] in await self?.loadKitchenStaff() }
         streamTask = Task { [weak self] in
             guard let self else { return }
             var backoff: UInt64 = 1_000_000_000  // 1s
@@ -2277,6 +2337,107 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
         liveConnected = false
     }
 
+    /// Load the kitchen-staff directory (active KITCHEN + ADMIN users).
+    /// Reuses the WaiterRef DTO since the shape is identical (`{id, name,
+    /// role}`).
+    func loadKitchenStaff() async {
+        do {
+            let data = try await api.get("/api/users/kitchen-staff")
+            self.kitchenStaff = try JSONDecoder().decode([WaiterRef].self, from: data)
+        } catch {
+            // Non-fatal — picker will show only "Unassigned" until refresh.
+        }
+    }
+
+    /// Assign (or un-assign with nil) a kitchen staff member to an item.
+    /// Server gates this to ADMIN role; non-admin requests will 403, which
+    /// our APIClient surfaces via errorMessage.
+    func assignItem(orderId: String, itemId: String, to userId: String?) async {
+        struct Payload: Encodable { let assignedToId: String? }
+        do {
+            let data = try await api.patch(
+                "/api/orders/\(orderId)/items/\(itemId)/assign",
+                body: try JSONEncoder().encode(Payload(assignedToId: userId))
+            )
+            // Decode the server's authoritative response so we get the
+            // joined assignedTo object back (including name/role for the
+            // chip), then patch local state.
+            struct Wrapper: Decodable {
+                struct Item: Decodable {
+                    let assignedTo: KitchenOrderItem.PreparedByRef?
+                }
+                let item: Item
+            }
+            let resp = try JSONDecoder().decode(Wrapper.self, from: data)
+            if let oi = orders.firstIndex(where: { $0.id == orderId }),
+               let ii = orders[oi].items.firstIndex(where: { $0.id == itemId }) {
+                var newItems = orders[oi].items
+                newItems[ii].assignedTo = resp.item.assignedTo
+                orders[oi] = KitchenOrder(
+                    id: orders[oi].id, orderNumber: orders[oi].orderNumber,
+                    status: orders[oi].status, type: orders[oi].type,
+                    createdAt: orders[oi].createdAt, table: orders[oi].table,
+                    waiter: orders[oi].waiter, items: newItems
+                )
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    /// Mark a single line item as READY (or any explicit status). The server
+    /// auto-promotes the parent order to the slowest item's status, so when
+    /// the last item flips READY the order moves to READY column on every
+    /// device via SSE.
+    /// Endpoint is `PATCH /api/orders/{id}/items/{itemId}/status`. Gated to
+    /// ADMIN+KITCHEN role on the server.
+    func setItemStatus(orderId: String, itemId: String, to status: String) async {
+        let upper = status.uppercased()
+        do {
+            let body = try JSONEncoder().encode(["status": upper])
+            _ = try await api.patch("/api/orders/\(orderId)/items/\(itemId)/status", body: body)
+            // Optimistic local update: flip just that item's status. The
+            // SSE event will follow and reconcile via load().
+            if let oi = orders.firstIndex(where: { $0.id == orderId }),
+               let ii = orders[oi].items.firstIndex(where: { $0.id == itemId }) {
+                var newItems = orders[oi].items
+                newItems[ii].status = upper
+                orders[oi] = KitchenOrder(
+                    id: orders[oi].id, orderNumber: orders[oi].orderNumber,
+                    status: orders[oi].status, type: orders[oi].type,
+                    createdAt: orders[oi].createdAt, table: orders[oi].table,
+                    waiter: orders[oi].waiter, items: newItems
+                )
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    /// Set an order's status to an explicit value. Used by the iPad kanban
+    /// drag-drop where the user can move backwards too (e.g. accidentally
+    /// marked READY → drag back to PREPARING). The standard `advance()`
+    /// only moves forwards.
+    func setStatus(_ order: KitchenOrder, to next: String) async {
+        let upper = next.uppercased()
+        let valid = ["PENDING", "CONFIRMED", "PREPARING", "READY", "SERVED"]
+        guard valid.contains(upper), order.status.uppercased() != upper else { return }
+        do {
+            let payload: [String: String] = ["status": upper]
+            let body = try JSONEncoder().encode(payload)
+            _ = try await api.patch("/api/orders/\(order.id)/status", body: body)
+            if let idx = orders.firstIndex(where: { $0.id == order.id }) {
+                orders[idx] = KitchenOrder(
+                    id: order.id, orderNumber: order.orderNumber, status: upper,
+                    type: order.type, createdAt: order.createdAt, table: order.table,
+                    waiter: order.waiter, items: order.items
+                )
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
     func advance(_ order: KitchenOrder) async {
         let next: String
         switch order.status.uppercased() {
@@ -2288,17 +2449,15 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
         do {
             let payload: [String: String] = ["status": next]
             let body = try JSONEncoder().encode(payload)
-            _ = try await api.patch("/api/orders/\(order.id)", body: body)
+            _ = try await api.patch("/api/orders/\(order.id)/status", body: body)
             if let idx = orders.firstIndex(where: { $0.id == order.id }) {
-                if next == "SERVED" {
-                    orders.remove(at: idx)
-                } else {
-                    orders[idx] = KitchenOrder(
-                        id: order.id, orderNumber: order.orderNumber, status: next,
-                        type: order.type, createdAt: order.createdAt, table: order.table,
-                        items: order.items
-                    )
-                }
+                // Keep SERVED orders in the kitchen list — they live in the
+                // 4th column until the cashier marks them COMPLETED.
+                orders[idx] = KitchenOrder(
+                    id: order.id, orderNumber: order.orderNumber, status: next,
+                    type: order.type, createdAt: order.createdAt, table: order.table,
+                    waiter: order.waiter, items: order.items
+                )
             }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -2306,7 +2465,7 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
     }
 
     var groupedByStatus: [(status: String, orders: [KitchenOrder])] {
-        let order: [String: Int] = ["PENDING": 0, "CONFIRMED": 1, "PREPARING": 2, "READY": 3]
+        let order: [String: Int] = ["PENDING": 0, "CONFIRMED": 1, "PREPARING": 2, "READY": 3, "SERVED": 4]
         let grouped = Dictionary(grouping: orders, by: { $0.status.uppercased() })
         return grouped
             .sorted { (order[$0.key] ?? 99) < (order[$1.key] ?? 99) }
@@ -2314,9 +2473,204 @@ struct KitchenOrder: Codable, Identifiable, Hashable {
     }
 }
 
+/// Wrapper carrying both the tapped item and its parent order so the
+/// detail sheet has full context. Identifiable so SwiftUI can use it as
+/// a `.sheet(item:)` binding.
+struct KitchenItemContext: Identifiable {
+    let item: KitchenOrderItem
+    let order: KitchenOrder
+    var id: String { item.id }
+}
+
+/// Full-detail popup for a single kitchen item. Opens when a kanban item
+/// row is tapped — gives the kitchen the entire context (full name, qty,
+/// notes, assignment, preparer, surrounding order) without truncation.
+struct KitchenItemDetailSheet: View {
+    let context: KitchenItemContext
+    @Environment(\.dismiss) private var dismiss
+
+    private var item: KitchenOrderItem { context.item }
+    private var order: KitchenOrder { context.order }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                    headerCard
+                    if let notes = item.notes, !notes.isEmpty {
+                        notesCard(notes)
+                    }
+                    attributionCard
+                    orderContextCard
+                }
+                .padding(DesignTokens.spacingL)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Item Details")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    /// Hero block: full item name (no truncation), qty, current status.
+    private var headerCard: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(item.quantity)×")
+                    .font(.system(.title, weight: .bold))
+                    .monospaced()
+                    .foregroundStyle(.secondary)
+                Text(item.displayName)
+                    .font(.system(.title2, weight: .bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            statusPill
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground()
+    }
+
+    private var statusPill: some View {
+        let s = item.status.uppercased()
+        let color: Color
+        switch s {
+        case "PENDING":   color = .orange
+        case "PREPARING": color = .yellow
+        case "READY":     color = .mint
+        case "SERVED":    color = .green
+        case "CANCELLED": color = .red
+        default:          color = .secondary
+        }
+        return Text(s.capitalized)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(Capsule().fill(color.opacity(0.18)))
+            .foregroundStyle(color)
+    }
+
+    private func notesCard(_ notes: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Notes", systemImage: "note.text")
+                .font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text(notes)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium).fill(Color.blue.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium).stroke(Color.blue.opacity(0.25), lineWidth: 1))
+    }
+
+    /// Assignment + history block: who's assigned, who actually progressed
+    /// the item (when those differ).
+    private var attributionCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            attributionRow(
+                label: "Assigned to",
+                value: item.assignedTo?.name,
+                role: item.assignedTo?.role,
+                fallback: "— Unassigned",
+                icon: "fork.knife"
+            )
+            if let prep = item.preparedBy?.name,
+               item.preparedBy?.id != item.assignedTo?.id {
+                attributionRow(
+                    label: "Last touched by",
+                    value: prep,
+                    role: item.preparedBy?.role,
+                    fallback: nil,
+                    icon: "clock.arrow.circlepath"
+                )
+            }
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground()
+    }
+
+    private func attributionRow(label: String, value: String?, role: String?, fallback: String?, icon: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.caption).foregroundStyle(.secondary)
+                if let v = value, !v.isEmpty {
+                    HStack(spacing: 6) {
+                        Text(v).font(.system(.subheadline, weight: .semibold))
+                        if let r = role {
+                            Text(r)
+                                .font(.caption2)
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Capsule().fill(Color.secondary.opacity(0.15)))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } else if let fallback {
+                    Text(fallback)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+        }
+    }
+
+    private var orderContextCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Order Context", systemImage: "doc.text")
+                .font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(.secondary)
+            HStack {
+                contextRow(label: "Order #", value: order.orderNumber.split(separator: "-").last.map(String.init) ?? order.orderNumber)
+                Spacer()
+                if let n = order.table?.number {
+                    contextRow(label: "Table", value: "\(n)")
+                } else {
+                    contextRow(label: "Type", value: order.type)
+                }
+            }
+        }
+        .padding(DesignTokens.spacingL)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .webCardBackground()
+    }
+
+    private func contextRow(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.system(.subheadline, design: .monospaced, weight: .semibold))
+        }
+    }
+}
+
 struct KitchenAdminView: View {
     @Environment(Session.self) private var session
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var store: KitchenStore?
+    /// Re-published every 30s so elapsed-time chips on each order card
+    /// stay fresh without needing per-card state. Mirrors the web's
+    /// `setInterval(setCurrentTime, 1000)` in KanbanKitchenDisplay.tsx.
+    @State private var now: Date = Date()
+    /// Item the user tapped on the kanban — opens a detail sheet showing
+    /// the full name, notes, assignment, and surrounding order context.
+    /// Carries both the item AND its parent order so the sheet has all
+    /// the context without re-querying.
+    @State private var inspectingItem: KitchenItemContext?
+    private static let tick = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
@@ -2346,11 +2700,55 @@ struct KitchenAdminView: View {
             }
             .onDisappear { store?.stop() }
             .refreshable { await store?.load() }
+            .onReceive(Self.tick) { now = $0 }
+            .sheet(item: $inspectingItem) { ctx in
+                KitchenItemDetailSheet(context: ctx)
+            }
         }
+    }
+
+    /// Minutes between order creation and `now`. Returns 0 if the timestamp
+    /// is unparseable (server always sends ISO-8601 UTC, so parsing should
+    /// only fail on malformed responses).
+    private func elapsedMinutes(_ createdAt: String) -> Int {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = f.date(from: createdAt)
+            ?? ISO8601DateFormatter().date(from: createdAt)
+        guard let date else { return 0 }
+        return max(0, Int(now.timeIntervalSince(date) / 60))
+    }
+
+    /// Mirrors web's `formatDuration`: 12m, 1h 5m, 2d 4h.
+    private func formatElapsed(_ minutes: Int) -> String {
+        if minutes < 60 { return "\(minutes)m" }
+        let h = minutes / 60, m = minutes % 60
+        if h < 24 { return m > 0 ? "\(h)h \(m)m" : "\(h)h" }
+        let d = h / 24, rh = h % 24
+        return rh > 0 ? "\(d)d \(rh)h" : "\(d)d"
+    }
+
+    /// Web thresholds (KanbanKitchenDisplay.tsx:120): >30m red, >15m yellow.
+    private func elapsedColor(_ minutes: Int) -> Color {
+        if minutes > 30 { return .red }
+        if minutes > 15 { return .yellow }
+        return .secondary
     }
 
     @ViewBuilder
     private func content(store: KitchenStore) -> some View {
+        if sizeClass == .regular {
+            // iPad: side-by-side kanban with drag-and-drop between columns.
+            kanbanContent(store: store)
+        } else {
+            // iPhone: stacked vertical sections (no kanban — columns wouldn't
+            // fit in 393pt of width).
+            verticalContent(store: store)
+        }
+    }
+
+    @ViewBuilder
+    private func verticalContent(store: KitchenStore) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
                 if let msg = store.errorMessage {
@@ -2359,12 +2757,7 @@ struct KitchenAdminView: View {
                         .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
                 }
                 if store.orders.isEmpty {
-                    VStack(spacing: DesignTokens.spacingM) {
-                        Image(systemName: "fork.knife.circle").font(.system(size: 36, weight: .light)).foregroundStyle(.secondary)
-                        Text("No active orders").font(.headline)
-                        Text("New orders will appear here as they come in.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity).padding(DesignTokens.spacing2XL)
+                    emptyKitchen
                 } else {
                     ForEach(store.groupedByStatus, id: \.status) { group in
                         statusColumn(status: group.status, orders: group.orders, store: store)
@@ -2374,6 +2767,102 @@ struct KitchenAdminView: View {
             .padding(DesignTokens.spacingL)
         }
         .background(Color(.systemGroupedBackground))
+    }
+
+    /// 4-column kanban (To do / Preparing / Ready / Served). Cards are
+    /// `.draggable(KitchenOrder)`; columns are `.dropDestination(for:
+    /// KitchenOrder.self)` and call `store.setStatus(...)` on drop. A drop
+    /// onto the same column is a no-op (handled by setStatus' guard).
+    @ViewBuilder
+    private func kanbanContent(store: KitchenStore) -> some View {
+        let cols: [(status: String, title: String, color: Color)] = [
+            ("PENDING",   "To do",     .orange),
+            ("PREPARING", "Preparing", .yellow),
+            ("READY",     "Ready",     .mint),
+            ("SERVED",    "Served",    .green),
+        ]
+        if let msg = store.errorMessage {
+            HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+                .padding(DesignTokens.spacingM)
+                .padding(.horizontal, DesignTokens.spacingL)
+        }
+        if store.orders.isEmpty {
+            emptyKitchen
+        } else {
+            HStack(alignment: .top, spacing: DesignTokens.spacingM) {
+                ForEach(cols, id: \.status) { col in
+                    kanbanColumn(
+                        store: store,
+                        targetStatus: col.status,
+                        title: col.title,
+                        color: col.color,
+                        orders: ordersForColumn(col.status, store: store)
+                    )
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+    }
+
+    private func ordersForColumn(_ targetStatus: String, store: KitchenStore) -> [KitchenOrder] {
+        // PENDING column also displays CONFIRMED orders so newly-confirmed
+        // tickets don't visually disappear before the kitchen sees them.
+        if targetStatus == "PENDING" {
+            return store.orders.filter { ["PENDING", "CONFIRMED"].contains($0.status.uppercased()) }
+        }
+        return store.orders.filter { $0.status.uppercased() == targetStatus }
+    }
+
+    private var emptyKitchen: some View {
+        VStack(spacing: DesignTokens.spacingM) {
+            Image(systemName: "fork.knife.circle").font(.system(size: 36, weight: .light)).foregroundStyle(.secondary)
+            Text("No active orders").font(.headline)
+            Text("New orders will appear here as they come in.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity).padding(DesignTokens.spacing2XL)
+    }
+
+    @ViewBuilder
+    private func kanbanColumn(store: KitchenStore, targetStatus: String, title: String, color: Color, orders: [KitchenOrder]) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
+            HStack {
+                Circle().fill(color).frame(width: 10, height: 10)
+                Text(title).font(.system(.headline, weight: .bold))
+                Spacer()
+                Text("\(orders.count)")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(Capsule().fill(color.opacity(0.18)))
+                    .foregroundStyle(color)
+            }
+            ScrollView {
+                VStack(spacing: DesignTokens.spacingS) {
+                    ForEach(orders) { o in
+                        orderCard(o, store: store)
+                            .draggable(o)
+                    }
+                }
+                // Spacer fills the column so the drop target covers the
+                // empty area below the last card.
+                Color.clear.frame(minHeight: 200)
+            }
+        }
+        .padding(DesignTokens.spacingM)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
+                .fill(color.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
+                .stroke(color.opacity(0.25), lineWidth: 1)
+        )
+        .dropDestination(for: KitchenOrder.self) { dropped, _ in
+            for o in dropped {
+                Task { await store.setStatus(o, to: targetStatus) }
+            }
+            return true
+        }
     }
 
     private func statusColumn(status: String, orders: [KitchenOrder], store: KitchenStore) -> some View {
@@ -2393,33 +2882,102 @@ struct KitchenAdminView: View {
     }
 
     private func orderCard(_ o: KitchenOrder, store: KitchenStore) -> some View {
-        VStack(alignment: .leading, spacing: DesignTokens.spacingS) {
-            HStack {
-                Text(o.orderNumber).font(.system(.subheadline, design: .monospaced, weight: .bold))
+        let elapsed = elapsedMinutes(o.createdAt)
+        let color = elapsedColor(elapsed)
+        // The full orderNumber `ORD-{ts}-{count}` is too long for a kanban
+        // card. Staff only use the trailing counter — "order 6764" — so we
+        // show just the last 4 chars with a `#` prefix, matching the
+        // OrderDetailView pattern.
+        let shortNum = o.orderNumber.split(separator: "-").last.map(String.init)
+            ?? String(o.orderNumber.suffix(4))
+        // Tight inter-row spacing inside the kanban card so cards stack
+        // densely. Header → items: 4pt; items → footer: 4pt.
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text("#\(shortNum)").font(.system(.caption, design: .monospaced, weight: .bold))
+                // Elapsed-time chip — colored at 15/30 min thresholds.
+                Text(formatElapsed(elapsed))
+                    .font(.caption.weight(.semibold))
+                    .monospacedDigit()
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .background(Capsule().fill(color.opacity(0.15)))
+                    .foregroundStyle(color)
                 Spacer()
                 if let n = o.table?.number { Text("Table \(n)").font(.caption).foregroundStyle(.secondary) }
                 else { Text(o.type).font(.caption).foregroundStyle(.secondary) }
             }
-            ForEach(o.items.filter { $0.status.uppercased() != "CANCELLED" }) { it in
-                HStack(alignment: .top) {
-                    Text("\(it.quantity)×").font(.caption.monospaced()).frame(width: 28, alignment: .leading).foregroundStyle(.secondary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(it.displayName).font(.subheadline)
-                        if let n = it.notes, !n.isEmpty {
-                            Text("note: \(n)").font(.caption2).foregroundStyle(.blue)
-                        }
-                    }
-                    Spacer()
+            // Waiter line — kitchen calls this person when food is ready.
+            if let waiter = o.waiter?.name, !waiter.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(waiter)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            if let label = nextLabel(o.status) {
-                Button { Task { await store.advance(o) } } label: {
-                    Label(label, systemImage: "checkmark")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
+            ForEach(o.items.filter { $0.status.uppercased() != "CANCELLED" }) { it in
+                // Compact row. Tapping anywhere in the name area opens a
+                // detail popup — useful when names are long and truncate.
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .center, spacing: 6) {
+                        Text("\(it.quantity)×")
+                            .font(.caption.monospaced())
+                            .frame(width: 22, alignment: .leading)
+                            .foregroundStyle(.secondary)
+                        Text(it.displayName)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                inspectingItem = KitchenItemContext(item: it, order: o)
+                            }
+                        assignMenu(for: it, order: o, store: store)
+                        itemStatusControl(item: it, order: o, store: store)
+                    }
+                    if let n = it.notes, !n.isEmpty {
+                        Text("note: \(n)")
+                            .font(.caption2).foregroundStyle(.blue)
+                            .padding(.leading, 28)
+                            .lineLimit(1)
+                    }
+                    if let chef = it.preparedBy?.name, !chef.isEmpty,
+                       it.preparedBy?.id != it.assignedTo?.id {
+                        Text("touched by \(chef)")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                            .padding(.leading, 28)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            }
+            // iPhone: explicit Menu lets the user pick which phase to move
+            // the order to (skipping ahead, going back, etc.). iPad uses
+            // drag-drop on the kanban so this is hidden there.
+            if sizeClass != .regular {
+                Menu {
+                    ForEach(allowedTransitions(from: o.status.uppercased()), id: \.self) { target in
+                        Button {
+                            Task { await store.setStatus(o, to: target) }
+                        } label: {
+                            Label("Mark \(itemStatusTitle(target))", systemImage: itemStatusIcon(target))
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.right.circle")
+                        Text("Change phase")
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8).padding(.horizontal, 12)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.15)))
+                    .foregroundStyle(Color.accentColor)
+                }
                 .padding(.top, 4)
                 .accessibilityIdentifier("kitchen-advance-\(o.id)")
             }
@@ -2427,6 +2985,145 @@ struct KitchenAdminView: View {
         .padding(DesignTokens.spacingM)
         .frame(maxWidth: .infinity, alignment: .leading)
         .webCardBackground()
+    }
+
+    // (no toggleExpanded — replaced by the detail popup approach.)
+
+    /// Per-item assignment Menu. Lists the kitchen-staff directory for
+    /// the admin/expediter to pick from. Tapping a name PATCHes the item
+    /// with the new assignedToId; "Unassigned" clears it. Server gates to
+    /// ADMIN — non-admins see the menu but get a 403 toast on tap (we
+    /// could hide based on session role, but keeping it discoverable for
+    /// now since the screen is normally an expediter station).
+    @ViewBuilder
+    private func assignMenu(for item: KitchenOrderItem, order: KitchenOrder, store: KitchenStore) -> some View {
+        let assignedName = item.assignedTo?.name
+        // Show only the first word of the assignee name so the pill stays
+        // narrow in the kanban's tight columns ("Kitchen Staff" → "Kitchen").
+        let pillLabel = assignedName?.split(separator: " ").first.map(String.init) ?? "Assign"
+        Menu {
+            ForEach(store.kitchenStaff) { staff in
+                Button {
+                    Task { await store.assignItem(orderId: order.id, itemId: item.id, to: staff.id) }
+                } label: {
+                    Label("\(staff.name) (\(staff.role))", systemImage: "fork.knife")
+                }
+            }
+            if assignedName != nil {
+                Divider()
+                Button(role: .destructive) {
+                    Task { await store.assignItem(orderId: order.id, itemId: item.id, to: nil) }
+                } label: {
+                    Label("Unassign", systemImage: "xmark.circle")
+                }
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 8, weight: .semibold))
+                Text(pillLabel)
+                    .font(.caption2.weight(assignedName == nil ? .regular : .semibold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(
+                Capsule().stroke(
+                    style: StrokeStyle(lineWidth: 1, dash: assignedName == nil ? [3] : [])
+                ).foregroundStyle((assignedName == nil ? Color.secondary : Color.accentColor).opacity(0.5))
+            )
+            .foregroundStyle(assignedName == nil ? .secondary : Color.accentColor)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier("kitchen-item-assign-\(item.id)")
+    }
+
+    /// Per-item action control — a Menu listing every valid status the
+    /// item can transition to. Lets the kitchen explicitly pick "Preparing"
+    /// (when starting a dish) vs "Ready" (when done) vs skip-ahead to
+    /// "Served" if needed, instead of a one-shot button. The current status
+    /// is the visible label with a chevron hint.
+    @ViewBuilder
+    private func itemStatusControl(item: KitchenOrderItem, order: KitchenOrder, store: KitchenStore) -> some View {
+        let cur = item.status.uppercased()
+        let color = itemStatusColor(cur)
+        Menu {
+            // Show only transitions that make sense from the current status.
+            // The server validates these too but we hide noise on the client.
+            ForEach(allowedTransitions(from: cur), id: \.self) { target in
+                Button {
+                    Task {
+                        await store.setItemStatus(orderId: order.id, itemId: item.id, to: target)
+                    }
+                } label: {
+                    Label(itemStatusTitle(target), systemImage: itemStatusIcon(target))
+                }
+            }
+            if cur != "CANCELLED" {
+                Divider()
+                Button(role: .destructive) {
+                    Task { await store.setItemStatus(orderId: order.id, itemId: item.id, to: "CANCELLED") }
+                } label: {
+                    Label("Cancel item", systemImage: "xmark.circle")
+                }
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Text(itemStatusTitle(cur))
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 7, weight: .bold))
+            }
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(Capsule().fill(color.opacity(0.18)))
+            .foregroundStyle(color)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier("kitchen-item-status-\(item.id)")
+    }
+
+    /// Status transitions allowed from a given current status. Excludes
+    /// the current status itself (no-op selection).
+    private func allowedTransitions(from current: String) -> [String] {
+        let all = ["PENDING", "PREPARING", "READY", "SERVED"]
+        return all.filter { $0 != current }
+    }
+
+    private func itemStatusTitle(_ status: String) -> String {
+        switch status {
+        case "PENDING":   return "Pending"
+        case "PREPARING": return "Preparing"
+        case "READY":     return "Ready"
+        case "SERVED":    return "Served"
+        case "CANCELLED": return "Cancelled"
+        default:          return status.capitalized
+        }
+    }
+
+    private func itemStatusIcon(_ status: String) -> String {
+        switch status {
+        case "PENDING":   return "clock"
+        case "PREPARING": return "flame"
+        case "READY":     return "checkmark.circle"
+        case "SERVED":    return "tray.and.arrow.up"
+        case "CANCELLED": return "xmark.circle"
+        default:          return "circle"
+        }
+    }
+
+    private func itemStatusColor(_ status: String) -> Color {
+        switch status {
+        case "PENDING":   return .orange
+        case "PREPARING": return .yellow
+        case "READY":     return .mint
+        case "SERVED":    return .green
+        case "CANCELLED": return .red
+        default:          return .secondary
+        }
     }
 
     private func nextLabel(_ status: String) -> String? {
@@ -2443,6 +3140,7 @@ struct KitchenAdminView: View {
         case "PENDING", "CONFIRMED": "To do"
         case "PREPARING": "Preparing"
         case "READY":     "Ready"
+        case "SERVED":    "Served"
         default: status
         }
     }

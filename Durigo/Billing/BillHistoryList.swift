@@ -94,10 +94,23 @@ struct BillHistoryList: View {
                     if uploader == nil {
                         uploader = BillUploader(session: session)
                     }
-                    if filteredBills.isEmpty || allBills.isEmpty {
-                        await loadInitialPage()
-                    }
-                    await pushUnsynced(silentIfEmpty: true)
+                    // Run the initial-page load and the unsynced-bill push
+                    // concurrently — they hit different endpoints and
+                    // don't share state. On tab-return the page already
+                    // exists so the load is a quiet refresh; both still
+                    // execute in parallel for snappier reconnection.
+                    async let primaryLoad: Void = {
+                        if filteredBills.isEmpty || allBills.isEmpty {
+                            await loadInitialPage()
+                        } else {
+                            // Tab-return — pull the latest page so any
+                            // bills created on other devices while we
+                            // were on POS / Kitchen show up immediately.
+                            await refreshFirstPageQuietly()
+                        }
+                    }()
+                    async let pushSync: Void = pushUnsynced(silentIfEmpty: true)
+                    _ = await (primaryLoad, pushSync)
                     startLiveStreamIfNeeded()
                 }
                 .onDisappear { stopLiveStream() }

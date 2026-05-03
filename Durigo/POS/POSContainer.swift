@@ -50,15 +50,32 @@ struct POSContainerView: View {
             }
         }
         .task {
+            // First-time setup: build the store + load the static-ish
+            // data (menu, waiters) that won't change during a service.
+            // Both fetches fire in parallel — they hit different endpoints
+            // and don't depend on each other.
             if store == nil {
                 let api = APIClient(session: session)
                 let s = POSStore(api: api)
                 store = s
-                await s.loadTables()
-                await s.loadMenu()
-                await s.loadWaiters()
-                await s.loadTableGroups()
-                await s.loadUpcomingReservations()
+                async let menu: Void = s.loadMenu()
+                async let waiters: Void = s.loadWaiters()
+                _ = await (menu, waiters)
+            }
+            // Every appearance: refresh the LIVE data — tables, table
+            // groups, and upcoming reservations can all change while we
+            // were on another tab, and SSE doesn't replay missed events.
+            // Without this catch-up, the wifi reconnects but the grid
+            // shows stale order counts / table statuses until the next
+            // event arrives. Done before startSSE so an in-flight event
+            // can't be overwritten by a slower load completing later.
+            // Three fetches, three endpoints, no inter-dependency — fire
+            // them concurrently so total wait = slowest, not sum.
+            if let s = store {
+                async let tables: Void = s.loadTables()
+                async let groups: Void = s.loadTableGroups()
+                async let reservations: Void = s.loadUpcomingReservations()
+                _ = await (tables, groups, reservations)
                 s.startSSE()
             }
         }

@@ -152,7 +152,7 @@ final class ReportsStore {
 /// link cards and the `--start-report=` debug launch arg, which lets us
 /// drive sim screenshots without UI automation.
 enum ReportBreakout: String, Hashable, CaseIterable {
-    case sales, performance, customers, staff, inventory
+    case sales, performance, customers, staff, inventory, ca
 }
 
 struct Reports: View {
@@ -216,6 +216,7 @@ struct Reports: View {
                 case .customers:   CustomersReportView()
                 case .staff:       StaffReportView()
                 case .inventory:   InventoryReportView()
+                case .ca:          CAReportView()
                 }
             }
         }
@@ -239,6 +240,7 @@ struct Reports: View {
 
     private var breakoutLinks: some View {
         VStack(spacing: DesignTokens.spacingM) {
+            breakoutLinkRow(route: .ca,          title: "CA report (monthly)",  icon: "doc.text")
             breakoutLinkRow(route: .sales,       title: "Sales & comparison",   icon: "indianrupeesign.circle")
             breakoutLinkRow(route: .performance, title: "Performance & efficiency", icon: "speedometer")
             breakoutLinkRow(route: .customers,   title: "Customers",             icon: "person.2")
@@ -1643,6 +1645,287 @@ private struct AnalyticsPeriodPicker: View {
     }
 }
 
+// MARK: - CA Report (monthly summary for Chartered Accountant)
+
+/// Mirrors `app/lib/data/admin-reports/ca.ts` on the web. Categories sum to
+/// totalSales because revenue uses pre-tax line-item subtotals.
+struct CAReportData: Decodable, Equatable {
+    let year: Int
+    let month: Int
+    let monthLabel: String
+    let totalSales: Int
+    let totalItems: Int
+    let totalBills: Int
+    let categories: [CategoryRow]
+
+    struct CategoryRow: Decodable, Equatable, Identifiable {
+        let type: String   // FOOD | BEVERAGE | ALCOHOL
+        let revenue: Int
+        let percentage: Double
+        var id: String { type }
+    }
+}
+
+@MainActor @Observable final class CAReportStore {
+    private let api: APIClient
+    var data: CAReportData?
+    var isLoading = false
+    var error: String?
+
+    init(session: Session) { self.api = APIClient(session: session) }
+
+    func load(year: Int, month: Int) async {
+        isLoading = true; error = nil
+        defer { isLoading = false }
+        do {
+            let bytes = try await api.get("/api/admin/reports/ca", query: [
+                URLQueryItem(name: "year", value: String(year)),
+                URLQueryItem(name: "month", value: String(month)),
+            ])
+            data = try JSONDecoder().decode(CAReportData.self, from: bytes)
+        } catch {
+            self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+}
+
+struct CAReportView: View {
+    @Environment(Session.self) private var session
+    @State private var store: CAReportStore?
+    @State private var year: Int = Calendar.current.component(.year, from: Date())
+    @State private var month: Int = Calendar.current.component(.month, from: Date())
+    @State private var copied = false
+
+    private static let inrLocale = Locale(identifier: "en_IN")
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingL) {
+                MonthYearPicker(year: $year, month: $month)
+
+                if let store, store.isLoading && store.data == nil {
+                    ProgressView().frame(maxWidth: .infinity).padding(.vertical, DesignTokens.spacing2XL)
+                } else if let d = store?.data {
+                    if d.totalBills == 0 {
+                        emptyMonth(label: d.monthLabel)
+                    } else {
+                        copyCard(d)
+                        metricGrid(d)
+                        breakdownSection(d)
+                    }
+                } else if let err = store?.error {
+                    errorBanner(err)
+                }
+            }
+            .padding(DesignTokens.spacingL)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("CA Report")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task {
+            if store == nil { store = CAReportStore(session: session) }
+            await store?.load(year: year, month: month)
+        }
+        .onChange(of: year) { _, _ in Task { await store?.load(year: year, month: month) } }
+        .onChange(of: month) { _, _ in Task { await store?.load(year: year, month: month) } }
+        .refreshable { await store?.load(year: year, month: month) }
+    }
+
+    private func emptyMonth(label: String) -> some View {
+        SectionCard(title: label) {
+            VStack(spacing: 8) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(.secondary)
+                Text("No completed bills in this month.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DesignTokens.spacingM)
+        }
+    }
+
+    private func copyCard(_ d: CAReportData) -> some View {
+        SectionCard(title: d.monthLabel, subtitle: "Pre-tax line-item totals, completed payments only") {
+            VStack(alignment: .leading, spacing: DesignTokens.spacingM) {
+                Text(buildCAText(d))
+                    .font(.system(.subheadline, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: DesignTokens.spacingM) {
+                    Button {
+                        copyToPasteboard(buildCAText(d))
+                        copied = true
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            copied = false
+                        }
+                    } label: {
+                        Label(copied ? "Copied" : "Copy for CA",
+                              systemImage: copied ? "checkmark" : "doc.on.doc")
+                    }
+                    .buttonStyle(.webPrimary)
+                    .accessibilityIdentifier("ca-copy-button")
+
+                    ShareLink(item: buildCAText(d)) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.webSecondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func metricGrid(_ d: CAReportData) -> some View {
+        let columns = [GridItem(.flexible(), spacing: DesignTokens.spacingM),
+                       GridItem(.flexible(), spacing: DesignTokens.spacingM)]
+        LazyVGrid(columns: columns, spacing: DesignTokens.spacingM) {
+            StatTile(title: "Total Sales",
+                     value: Double(d.totalSales).asCurrencyString(locale: Self.inrLocale) ?? "—",
+                     subtitle: nil, icon: "indianrupeesign.circle")
+            StatTile(title: "Total Bills", value: "\(d.totalBills)",
+                     subtitle: nil, icon: "doc.text")
+            StatTile(title: "Items Sold", value: "\(d.totalItems)",
+                     subtitle: nil, icon: "cart")
+            StatTile(title: "Avg Bill",
+                     value: d.totalBills > 0
+                        ? (Double(d.totalSales) / Double(d.totalBills)).asCurrencyString(locale: Self.inrLocale) ?? "—"
+                        : "—",
+                     subtitle: nil, icon: "chart.bar")
+        }
+    }
+
+    private func breakdownSection(_ d: CAReportData) -> some View {
+        SectionCard(title: "Category breakdown") {
+            VStack(spacing: DesignTokens.spacingM) {
+                ForEach(d.categories) { row in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(categoryLabel(row.type)).font(.system(.body, weight: .medium))
+                            Spacer()
+                            Text(Double(row.revenue).asCurrencyString(locale: Self.inrLocale) ?? "—")
+                                .font(.system(.body, design: .rounded, weight: .semibold))
+                            Text(String(format: "(%.1f%%)", row.percentage))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(Color.primary.opacity(0.08))
+                                    .frame(height: 6)
+                                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                    .fill(Color.accentColor)
+                                    .frame(width: geo.size.width * CGFloat(row.percentage / 100), height: 6)
+                            }
+                        }
+                        .frame(height: 6)
+                    }
+                }
+            }
+        }
+    }
+
+    private func categoryLabel(_ type: String) -> String {
+        switch type {
+        case "FOOD": return "Food Sales"
+        case "BEVERAGE": return "Beverage Sales"
+        case "ALCOHOL": return "Alcohol Sales"
+        default: return type.capitalized
+        }
+    }
+
+    private func buildCAText(_ d: CAReportData) -> String {
+        let totalStr = Double(d.totalSales).asCurrencyString(locale: Self.inrLocale) ?? "₹\(d.totalSales)"
+        var lines: [String] = [
+            "Total Sales: \(totalStr)",
+            "Total Items Sold: \(d.totalItems)",
+            "Total Bills: \(d.totalBills)",
+            "",
+            "Category Breakdown:",
+        ]
+        for row in d.categories {
+            let revStr = Double(row.revenue).asCurrencyString(locale: Self.inrLocale) ?? "₹\(row.revenue)"
+            let pctStr = String(format: "%.1f%%", row.percentage)
+            lines.append("\(categoryLabel(row.type)): \(revStr) (\(pctStr))")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red); Text(msg).font(.subheadline); Spacer() }
+            .padding(DesignTokens.spacingM)
+            .background(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall).fill(Color.red.opacity(0.08)))
+    }
+}
+
+private struct MonthYearPicker: View {
+    @Binding var year: Int
+    @Binding var month: Int
+
+    private static let monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ]
+
+    private var options: [(year: Int, month: Int)] {
+        let cal = Calendar.current
+        let now = Date()
+        var result: [(Int, Int)] = []
+        for offset in 0..<36 {
+            if let d = cal.date(byAdding: .month, value: -offset, to: now) {
+                let y = cal.component(.year, from: d)
+                let m = cal.component(.month, from: d)
+                result.append((y, m))
+            }
+        }
+        return result
+    }
+
+    private var label: String {
+        "\(Self.monthNames[max(0, min(11, month - 1))]) \(year)"
+    }
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.year.description) { opt in
+                Button {
+                    year = opt.year
+                    month = opt.month
+                } label: {
+                    let lbl = "\(Self.monthNames[max(0, min(11, opt.month - 1))]) \(opt.year)"
+                    if opt.year == year && opt.month == month {
+                        Label(lbl, systemImage: "checkmark")
+                    } else {
+                        Text(lbl)
+                    }
+                }
+            }
+        } label: {
+            HStack {
+                Text(label).font(.system(.body, weight: .medium))
+                Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DesignTokens.spacingL)
+            .padding(.vertical, DesignTokens.spacingM)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .webCardBackground(cornerRadius: DesignTokens.cornerRadiusSmall)
+        }
+    }
+}
+
 #Preview("Customers") {
     NavigationStack { CustomersReportView() }.environment(Session())
 }
@@ -1651,4 +1934,7 @@ private struct AnalyticsPeriodPicker: View {
 }
 #Preview("Inventory") {
     NavigationStack { InventoryReportView() }.environment(Session())
+}
+#Preview("CA") {
+    NavigationStack { CAReportView() }.environment(Session())
 }

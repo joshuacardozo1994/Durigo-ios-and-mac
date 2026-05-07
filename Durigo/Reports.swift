@@ -1880,32 +1880,42 @@ private struct MonthYearPicker: View {
         "July", "August", "September", "October", "November", "December",
     ]
 
-    private var options: [(year: Int, month: Int)] {
+    /// One option per row in the menu. Hashable+Identifiable so SwiftUI's
+    /// `ForEach` doesn't dedupe by year (the original bug — `id:\.year.description`
+    /// collapsed all 12 months of each year into a single visible row).
+    private struct Option: Hashable, Identifiable {
+        let year: Int
+        let month: Int
+        var id: String { "\(year)-\(month)" }
+    }
+
+    private var options: [Option] {
         let cal = Calendar.current
         let now = Date()
-        var result: [(Int, Int)] = []
+        var result: [Option] = []
         for offset in 0..<36 {
             if let d = cal.date(byAdding: .month, value: -offset, to: now) {
-                let y = cal.component(.year, from: d)
-                let m = cal.component(.month, from: d)
-                result.append((y, m))
+                result.append(Option(
+                    year: cal.component(.year, from: d),
+                    month: cal.component(.month, from: d)
+                ))
             }
         }
         return result
     }
 
-    private var label: String {
-        "\(Self.monthNames[max(0, min(11, month - 1))]) \(year)"
+    private static func label(year: Int, month: Int) -> String {
+        "\(monthNames[max(0, min(11, month - 1))]) \(year)"
     }
 
     var body: some View {
         Menu {
-            ForEach(options, id: \.year.description) { opt in
+            ForEach(options) { opt in
                 Button {
                     year = opt.year
                     month = opt.month
                 } label: {
-                    let lbl = "\(Self.monthNames[max(0, min(11, opt.month - 1))]) \(opt.year)"
+                    let lbl = Self.label(year: opt.year, month: opt.month)
                     if opt.year == year && opt.month == month {
                         Label(lbl, systemImage: "checkmark")
                     } else {
@@ -1915,7 +1925,8 @@ private struct MonthYearPicker: View {
             }
         } label: {
             HStack {
-                Text(label).font(.system(.body, weight: .medium))
+                Text(Self.label(year: year, month: month))
+                    .font(.system(.body, weight: .medium))
                 Image(systemName: "chevron.up.chevron.down").font(.caption).foregroundStyle(.secondary)
             }
             .padding(.horizontal, DesignTokens.spacingL)

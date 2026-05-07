@@ -1841,6 +1841,8 @@ struct CAReportView: View {
     private func buildCAText(_ d: CAReportData) -> String {
         let totalStr = Double(d.totalSales).asCurrencyString(locale: Self.inrLocale) ?? "₹\(d.totalSales)"
         var lines: [String] = [
+            d.monthLabel,
+            "",
             "Total Sales: \(totalStr)",
             "Total Items Sold: \(d.totalItems)",
             "Total Bills: \(d.totalBills)",

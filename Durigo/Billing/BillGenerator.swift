@@ -141,6 +141,78 @@ struct WaiterDropdownSelector: View {
     }
 }
 
+/// Filter dropdown for bill payment status. Mirrors the table/waiter selector
+/// styling so it slots into the BillHistoryList toolbar's filter menu without
+/// looking out of place. Uses raw-string tags because SwiftUI's `Picker` `tag`
+/// type has to be `Hashable` and matching enums via raw value avoids the need
+/// for the parent menu to know about the optional wrapping.
+struct PaymentStatusDropdownSelector: View {
+    var showIfSelected = false
+    @Binding var selectedOption: BillHistoryItemStatus?
+
+    var body: some View {
+        Picker(selection: Binding(
+            get: { selectedOption?.rawValue ?? "" },
+            set: { newValue in
+                selectedOption = newValue.isEmpty ? nil : BillHistoryItemStatus(rawValue: newValue)
+            }
+        )) {
+            Text("Bill status").tag("")
+            Section("Paid") {
+                Text("Cash").tag(BillHistoryItemStatus.paidByCash.rawValue)
+                Text("UPI").tag(BillHistoryItemStatus.paidByUPI.rawValue)
+                Text("Card").tag(BillHistoryItemStatus.paidByCard.rawValue)
+            }
+            Text("Pending").tag(BillHistoryItemStatus.pending.rawValue)
+        } label: {
+            pickerLabel
+        }
+        .pickerStyle(.menu)
+        .tint(Color.primary)
+        .accessibilityIdentifier("PaymentStatus-Selector")
+    }
+
+    private var pickerLabel: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "creditcard.fill")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Group {
+                if let selectedOption {
+                    Text(humanLabel(selectedOption))
+                        .foregroundStyle(.primary)
+                } else {
+                    Text("Bill status")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.system(.body, weight: .medium))
+            Image(systemName: "chevron.down")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .fill(Color(.tertiarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusSmall, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+    }
+
+    private func humanLabel(_ status: BillHistoryItemStatus) -> String {
+        switch status {
+        case .paidByCash: return "Paid – Cash"
+        case .paidByUPI:  return "Paid – UPI"
+        case .paidByCard: return "Paid – Card"
+        case .pending:    return "Pending"
+        }
+    }
+}
+
 // MARK: - Single editable bill row
 
 struct BillItem: View {

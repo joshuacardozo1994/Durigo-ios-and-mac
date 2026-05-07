@@ -318,6 +318,7 @@ struct BillHistoryList: View {
                     WaiterRef(id: "fallback-5", name: "Monica",  role: "WAITER"),
                     WaiterRef(id: "fallback-6", name: "Joshua",  role: "WAITER"),
                 ])
+                PaymentStatusDropdownSelector(showIfSelected: true, selectedOption: $selectedPaymentStatus)
 
                 Section {
                     Button {
